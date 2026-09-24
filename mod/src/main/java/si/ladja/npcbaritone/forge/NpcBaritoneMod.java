@@ -17,6 +17,7 @@
 
 package si.ladja.npcbaritone.forge;
 
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -25,11 +26,12 @@ import net.minecraftforge.fml.common.network.NetworkCheckHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import si.ladja.npcbaritone.core.api.BaritoneAPI;
 
 import java.util.Map;
 
 /**
- * Vstopna točka moda. M0: samo nalaganje, konfiguracija in sprejem povezav brez moda.
+ * Vstopna točka moda: config, skupni NPC profil, telemetrija, ukaz {@code /npcb} (M2).
  *
  * <p>D-024: vse delovanje je na strežniku; {@link #acceptRemote} sprejme vsako drugo
  * stran, zato se vanilla klient poveže na strežnik z modom in obratno. Mod ne
@@ -56,11 +58,15 @@ public final class NpcBaritoneMod {
     public void preInit(FMLPreInitializationEvent event) {
         Configuration cfg = new Configuration(event.getSuggestedConfigurationFile());
         config = NpcbConfig.load(cfg);
+        config.applyTo(BaritoneAPI.getSettings()); // skupni NPC profil (D-016)
+        MinecraftForge.EVENT_BUS.register(Telemetry.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(CourseRunner.INSTANCE);
         LOG.info("{} {} loaded (side={}, upstream={}); {}", NAME, VERSION, event.getSide(), UPSTREAM, config);
     }
 
     @Mod.EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
+        event.registerServerCommand(new NpcbCommand());
         LOG.info("{} ready on server (dedicated={})", MODID, event.getServer().isDedicatedServer());
     }
 

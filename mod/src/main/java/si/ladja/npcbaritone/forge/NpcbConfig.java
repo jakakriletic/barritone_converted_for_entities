@@ -18,6 +18,7 @@
 package si.ladja.npcbaritone.forge;
 
 import net.minecraftforge.common.config.Configuration;
+import si.ladja.npcbaritone.core.api.Settings;
 
 import java.util.Locale;
 
@@ -79,6 +80,20 @@ public final class NpcbConfig {
             cfg.save();
         }
         return new NpcbConfig(threads, queue, margin, share, parseSpeedMode(speed), turn, sync);
+    }
+
+    /**
+     * Prepiše strežniške vrednosti v profil jedra (D-016). Iskalne meje (niti, vrsta) bere
+     * forge plast sama (M5).
+     */
+    public Settings applyTo(Settings settings) {
+        settings.npcSnapshotMarginChunks.value = snapshotMarginChunks;
+        settings.npcMaxTurnDegrees.value = (float) maxTurnDegrees;
+        if (speedMode == SpeedMode.OWN) {
+            // D-010: v lastni hitrosti cene ne veljajo za skoke čez reže
+            settings.allowParkour.value = false;
+        }
+        return settings;
     }
 
     static SpeedMode parseSpeedMode(String value) {
