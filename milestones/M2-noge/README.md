@@ -42,3 +42,19 @@ bi ga igralec z Baritonom: s pravo hitrostjo, skoki in brez tresenja.
 ## Ni v obsegu
 
 Vrata, voda kot cilj testiranja (samo kot del T1, če je), vanilla AI taski (M6), izris (M3).
+
+## Stanje (2026-09-24, veja `m2-noge`)
+
+| # | Stanje |
+|---|---|
+| M2.1 | preskočen — `InputOverrideHandler` je že samo stanje vhodov |
+| M2.2–M2.8 | napisano, prevedeno, delno testirano headless (`ForgeLayerTest`) |
+| M2.9 | `CourseT1` + `CourseRunner` + `t1-run.ps1`; geometrija preverjena headless |
+| M2.10 | števec v `Telemetry`, stolpec `chunk_loads` v CSV |
+| M2.11 | ročno v klientu (glej spodaj) |
+| M2.12 | `t1-run.ps1` teče na dedicated strežniku |
+
+### Ročni preverbi v klientu
+
+1. **D-008:** `/summon zombie ~3 ~ ~` (noč ali `/difficulty easy`), `/npcb attach @e[type=zombie,c=1]` (brez `puppet`) → zombi te še vedno napade.
+2. **M2.11 / A6:** v `mod/run/mods` daj pravi Baritone 1.2.19 za Forge, `.\dev.ps1 runClient --offline`, enoigralski svet, `/npcb attach @e[type=husk,c=1] puppet`, `/npcb goto @e[type=husk,c=1] ~10 ~ ~` → husk hodi, v logu ni `LinkageError`.

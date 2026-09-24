@@ -4,6 +4,28 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-24 (6) — M2: noge (veja `m2-noge`)
+
+**Narejeno (oblak, 43/43 JUnit)**
+
+| # | Commit | Kaj |
+|---|---|---|
+| M2.4, M2.5 | `dcad71a` | obrat telesa ≤ `npcMaxTurnDegrees`/tick (yaw + renderYawOffset), POST prejšnjega ticka v `tick()` |
+| M2.2, M2.3, M2.5–M2.8, M2.10 | `041be87` | `BaritoneMoveHelper` (vrstni red D-010, način "kot igralec"), `BaritoneJumpHelper`, minimalni `BaritonePathNavigate`, `Attach` (refleksija, puppet), `/npcb`, `Telemetry` (ChunkEvent.Load, speedtest) |
+| M2.9 | `e8f7518` | tečaj T1 v Javi (`/npcb course t1 build|run`), CSV, headless preverba geometrije (`CourseT1PathTest`), `t1-run.ps1` |
+
+Odločitve pri izvedbi (brez spremembe D-xxx):
+- **M2.1 preskočen:** `InputOverrideHandler` je že samo stanje vhodov (M1); preimenovanje v `InputState` ne prinese ničesar, dokler ni druge implementacije.
+- **T1 ni `.mcfunction`**, ampak Java (`CourseT1`): ista geometrija se tako preveri headless z A* pred zagonom v igri.
+- **Odsek 7** ("reža pod ploščo 1,5"): odprtina z zgornjo polovično ploščo (1,5 bloka prostora) je za entiteto 1,95 neprehodna; uspeh = obhod skozi režo 1×2 brez vstopa v stolpec odprtine.
+- **Brez igralca:** vanilla `WorldServer` po 300 tickih brez igralcev ustavi entitete; tečaj in speedtest med tekom kličeta `resetUpdateEntityTick()` (samo takrat).
+
+**Čaka na zagon (Windows):** `.\dev.ps1 build --offline`, `.\t1-run.ps1` (A1–A5, A7 na dedicated), ročno v klientu M2.11 (soobstoj s pravim Baritonom, A6) in D-008 preverba (zombi brez `puppet` še vedno napade).
+
+**Naslednji korak:** uporabnik: `git checkout m2-noge; .\dev.ps1 build --offline; .\t1-run.ps1`.
+
+---
+
 ## 2026-09-24 (5) — M1 zaključen
 
 Uporabnik je na Windowsu na veji `m1-jedro` pognal build, JUnit in server smoke:
