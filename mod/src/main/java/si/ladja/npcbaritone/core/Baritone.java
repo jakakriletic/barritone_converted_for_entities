@@ -16,7 +16,7 @@
  * along with Baritone.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package baritone;
+package si.ladja.npcbaritone.core;
 
 import si.ladja.npcbaritone.core.api.BaritoneAPI;
 import si.ladja.npcbaritone.core.api.IBaritone;
