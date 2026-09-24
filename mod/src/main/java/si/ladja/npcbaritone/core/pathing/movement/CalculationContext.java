@@ -126,7 +126,7 @@ public class CalculationContext {
         this.allowJumpAt256 = settings.allowJumpAt256.value;
         this.allowParkourAscend = settings.allowParkourAscend.value;
         this.assumeWalkOnWater = settings.assumeWalkOnWater.value;
-        this.allowFallIntoLava = false; // Super secret internal setting for ElytraBehavior
+        this.allowFallIntoLava = false; // Super secret internal setting (upstream: za letenje; pri NPC vedno false)
         this.frostWalker = entity == null ? 0 : EnchantmentHelper.getMaxEnchantmentLevel(Enchantments.FROST_WALKER, entity);
         this.allowDiagonalDescend = settings.allowDiagonalDescend.value;
         this.allowDiagonalAscend = settings.allowDiagonalAscend.value;

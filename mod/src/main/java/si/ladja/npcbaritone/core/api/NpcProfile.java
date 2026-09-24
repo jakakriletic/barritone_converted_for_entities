@@ -26,6 +26,13 @@ public final class NpcProfile {
     private NpcProfile() {
     }
 
+    /**
+     * Nov, neodvisen nabor nastavitev z NPC privzetimi vrednostmi (profil instance, D-016).
+     */
+    public static Settings create() {
+        return applyDefaults(new Settings());
+    }
+
     public static Settings applyDefaults(Settings s) {
         // D-015: brez rušenja, postavljanja in inventarja
         s.allowBreak.value = false;

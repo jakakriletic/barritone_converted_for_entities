@@ -37,14 +37,14 @@ public final class VecUtils {
     /**
      * Calculates the center of the block at the specified position's bounding box
      *
-     * @param world The world that the block is in, used to provide the bounding box (NPC Baritone: BSI access, D-012)
+     * @param access The world that the block is in, used to provide the bounding box (NPC Baritone: BSI access, D-012)
      * @param pos   The block position
      * @return The center of the block's bounding box
      * @see #getBlockPosCenter(BlockPos)
      */
-    public static Vec3d calculateBlockCenter(IBlockAccess world, BlockPos pos) {
-        IBlockState b = world.getBlockState(pos);
-        AxisAlignedBB bbox = b.getBoundingBox(world, pos);
+    public static Vec3d calculateBlockCenter(IBlockAccess access, BlockPos pos) {
+        IBlockState b = access.getBlockState(pos);
+        AxisAlignedBB bbox = b.getBoundingBox(access, pos);
         double xDiff = (bbox.minX + bbox.maxX) / 2;
         double yDiff = (bbox.minY + bbox.maxY) / 2;
         double zDiff = (bbox.minZ + bbox.maxZ) / 2;
