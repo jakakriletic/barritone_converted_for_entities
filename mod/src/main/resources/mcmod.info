@@ -1,0 +1,16 @@
+[
+{
+  "modid": "npcbaritone",
+  "name": "NPC Baritone",
+  "description": "Baritone pathfinding for server-side NPCs (EntityLiving). Server only; clients without the mod may connect.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["jaka"],
+  "credits": "Based on Baritone v1.2.19 by cabaletta and contributors (LGPL-3.0); entity rework inspired by Automatone (Ladysnake).",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
