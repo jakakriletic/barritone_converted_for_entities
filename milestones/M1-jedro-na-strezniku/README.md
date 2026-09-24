@@ -19,7 +19,7 @@ posamezno datoteko.
 | M1.2 | **Izrez:** izbriši vse `DROP` in `CLIENT` datoteke iz `PORT-MAP.md` (skripta bere tabelo) | `d386d440` | −221 datotek (217 DROP + 4 CLIENT); nato prevod pokaže, kaj je še vezano |
 | M1.3 | MCP preimenovanja, ki ostanejo (`MCP-PREIMENOVANJA.md`, vrstice v KEEP/ADAPT) + `isSideSolid` v `BlockStateInterfaceAccessWrapper` | — | ~25 mest |
 | M1.4 | `IEntityContext` / `EntityContext` nad `EntityLiving`: `entity()`, `world()` (WorldServer), `feetPos()`, `headPos()` (višina oči iz entitete), `rotation()`, `frame()` = identiteta | `808f2b99`, `e757b3e5`, `8a97376b`, `00c370f8`, `2ba848ca`, `076c44ff` | D-006, D-021; 227 + 117 + 83 klicev |
-| M1.5 | `ChunkSnapshot` (omejena kopija `id2ChunkMap`, D-013) + `BlockStateInterface` nad njim; `isLoaded` = v posnetku | `4dae7a91`, `38c477f1` | Baritone že ima `copyLoadedChunks`; zamenja se vir |
+| M1.5 | `ChunkSnapshot` (omejena kopija `id2ChunkMap`, D-013) + `BlockStateInterface` nad njim; `isLoaded` = v posnetku | `4dae7a91`, `38c477f1` | Baritone že ima `copyLoadedChunks`; zamenja se vir. **M0.9:** `Chunk.getBlockState` rabi `World` (NPE brez njega) → beri iz `getBlockStorageArray()`; chunki `markLoaded(true)` (RAZISKAVA §4a) |
 | M1.6 | **Lint test D-012:** skenira `core/**` in pade ob `World.getBlockState`, `getChunkFromChunkCoords`, `provideChunk`, `loadChunk` izven `world/` | — | poceni in trajno |
 | M1.7 | `WorldData` minimalen (per dimenzija, brez diska); izbris `CachedWorld`/`CachedRegion` sklicev | — | D-014 |
 | M1.8 | `Settings` na instanco + NPC profil (§8 raziskave) | `89b1174a`, `7bd582c2`, `a1bb2422` | D-016; statični `Baritone.settings()` ven |

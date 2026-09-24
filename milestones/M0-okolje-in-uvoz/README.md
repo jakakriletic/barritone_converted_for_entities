@@ -48,3 +48,16 @@ Nobena sprememba Baritonove kode. Nobena entiteta, ukaz ali izris.
 
 - ForgeGradle 2.3 potrebuje assets prek HTTPS popravka → uporabi CNPC `prepare-assets.ps1` (R-08).
 - Git na mapi potrebuje brisanje lock datotek: seja mora imeti dovoljenje za brisanje v tej mapi.
+
+## Stanje (2026-09-24)
+
+| # | Stanje |
+|---|---|
+| M0.1–M0.3 | napisano, prevedeno v oblaku; čaka `.\dev.ps1 build` |
+| M0.4, M0.5 | **narejeno** — `3a4ea58`, `NOTICE.md` |
+| M0.6 | **narejeno** — `tools/cloud-compile.sh` |
+| M0.7 | **narejeno** — RAZISKAVA §1a (A6) |
+| M0.8 | zeleno v oblaku (16/16); čaka Gradle test na Windowsu (A4) |
+| M0.9 | **narejeno** — RAZISKAVA §4a |
+| M0.10 | **narejeno** (orodji v repozitoriju od priprave) |
+| M0.11 | `smoke-server.ps1` napisan; čaka zagon (A2, A3) |

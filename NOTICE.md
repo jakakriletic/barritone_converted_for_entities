@@ -13,4 +13,6 @@ Spremembe glede na izvor so razvidne iz git zgodovine tega repozitorija; prvi vs
 commit je nespremenjen uvoz upstream kode (D-026). Spremenjene datoteke nosijo oznako
 `Modified for NPC Baritone`.
 
-Stanje: kode še ni; ta datoteka velja od prvega uvoza v M0.
+Uvozni commit: `3a4ea58` "upstream import cabaletta/baritone v1.2.19 (d9cb2d9)" —
+`mod/src/upstream` je bitno enak `src/{api,main}` izvora (preveri
+`bash tools/check-upstream-import.sh`).

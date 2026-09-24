@@ -17,6 +17,6 @@ kjer se pokaže. Pregleda se na začetku vsakega milestona.
 | R-10 | LGPL obveznosti pozabljene ob izdaji | nizka / srednji | izdaja brez source jarja ali NOTICE | kontrolni seznam izdaje v `05-SEJA-PROTOKOL.md` §6 | vsaka izdaja |
 | R-11 | Obseg se razširi (rušenje, gradnja, letenje) | srednja / srednji | naloge izven README milestona | M10 je zaloga, ne načrt; vsaka ideja rabi odločitev | vedno |
 | R-12 | Baritone 1.12.2 ima napake, ki so bile popravljene samo v novejših verzijah | nizka / nizek | napaka, ki je v Automatonu že popravljena | `AUTOMATONE-ROADMAP.md` + `git log` novejših vej Baritona za isto datoteko | M1–M4 |
-| R-13 | Mapping razlike (stable_39 ↔ snapshot_20171003) skrijejo tiho napačno metodo z istim podpisom | nizka / srednji | test pade brez napake prevoda | M0.7 sonda; golden testi v M1 | M0, M1 |
+| R-13 | Mapping razlike (stable_39 ↔ snapshot_20171003) skrijejo tiho napačno metodo z istim podpisom | nizka / srednji | test pade brez napake prevoda | M0.7 sonda: profil napak enak (38/38 istih mest), tiha razlika ni izključena; golden testi v M1 | M0, M1 |
 | R-14 | Refleksija na `navigator`/`moveHelper` pri tujih entitetah odpove v obfuskiranem okolju | srednja / srednji | `attach` deluje v dev, ne v izdaji | SRG imena prek `ObfuscationReflectionHelper`; test na izdanem jarju v normalni instanci | M2 |
 | R-15 | Nagib ladje (roll/pitch) zlomi predpostavko gravitacije po −Y | srednja / srednji | M9 A2 pade pri zavijanju | meja nagiba, čakanje nad mejo (M9.4) | M9 |

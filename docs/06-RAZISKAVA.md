@@ -9,7 +9,8 @@ Revizije:
 |---|---|---|
 | cabaletta/baritone | tag `v1.2.19` = `d9cb2d9` (2023-08-17) | zadnja izdaja za 1.12.2; `master` = `f2679be` (2023-08-22) se razlikuje samo v `ElytraBehavior.java` |
 | Ladysnake/Automatone | `origin/main` = `843b8397` (2021-05-26) | vsebuje celotno zgodovino Baritona + 167 commitov predelave (avtor Pyrofab); novejše veje `1.18`–`1.20`, izdaja `0.11.0` |
-| Forge jar za prevod | `ladja_mod/.devsync/forgeBin.jar` (1.12.2, MCP snapshot_20170927) | M0 ponovi prevod proti CNPC okolju (snapshot_20171003) |
+| Forge jar za prevod | `ladja_mod/.devsync/forgeBin.jar` (1.12.2, MCP snapshot_20170927) | M0.7 je prevod ponovil proti CNPC okolju (snapshot_20171003) — glej §1a |
+| Forge jar od M0.6 | `tools/cache/forgeSrc-1.12.2-14.23.5.2847.jar` (snapshot_20171003, SHA-256 `e01c85cb…692a2d`) | iz uporabnikovega Gradle predpomnilnika; gitignore |
 | CustomNPC rework | `github.com/jakakriletic/customNPC_rework` HEAD 24. 9. | uradni `CustomNPCs_1.12.2-(01Oct19).jar` + `src/patch` |
 
 ---
@@ -41,6 +42,26 @@ Celoten seznam z datoteko in vrstico: `porting/MCP-PREIMENOVANJA.md`.
 
 **Zaključek:** jedro Baritona je API-združljivo z Forge 1.12.2; delo ni prevajanje med
 verzijami, ampak predelava igralec → entiteta.
+
+## §1a M0.7: isti prevod proti CNPC mappingu (snapshot_20171003)
+
+Izmerjeno 24. 9. 2026 s `tools/compile_probe.sh` proti
+`forgeSrc-1.12.2-14.23.5.2847.jar` iz `~/.gradle/caches/minecraft/.../snapshot/20171003`
+(isti jar, ki ga uporablja CNPC okolje) + 41 knjižnic iz `versionJsons/1.12.2.json`
++ jsr305 3.0.1:
+
+| | snapshot_20170927 (§1) | **snapshot_20171003** |
+|---|---:|---:|
+| skupaj | 81 | **81** |
+| elytra | 43 | **43** |
+| drugje | 38 | **38** |
+
+Vseh 38 napak izven Elytre je na **istih datotekah in vrsticah** kot v
+`porting/MCP-PREIMENOVANJA.md` (primerjava množic `datoteka:vrstica`: enaki). Mappinga se
+za Baritonovo uporabo API-ja ne razlikujeta; tabela preimenovanj velja brez sprememb.
+
+Opomba: brez `jsr305` na classpathu je napak 101 (20 × `Nullable`/`Nonnull`); jsr305 je
+del Forge userdev odvisnosti, zato ga `tools/cache/libs` vsebuje.
 
 ## §2 Velikost in odvisnost od klienta
 
@@ -133,9 +154,36 @@ sosednji blok                             → minecraft:air
 Blocks.OAK_DOOR.getDefaultState()         → wooden_door[facing=north,half=lower,…,open=false]
 ```
 
-Iskanje poti je torej mogoče testirati brez zagona igre (D-022). Odprto za M0: ali
-`BlockStateInterfaceAccessWrapper` pri kakšnem bloku rabi pravi `World`
-(npr. `getBiome`, svetloba) — sonda v M0 to zajame.
+Iskanje poti je torej mogoče testirati brez zagona igre (D-022).
+
+### §4a M0.9: katere metode sveta rabi iskanje poti
+
+Sonda `IBlockAccessProbeTest` (poročilo `mod/build/reports/npcb/iblockaccess-probe.txt`):
+za vsako veljavno stanje vsakega vanilla bloka (254 blokov, 5.485 stanj) postavi blok v
+`SyntheticWorld` in pokliče metodo skozi posredniški `IBlockAccess`, ki beleži klice.
+
+Baritonovo iskanje poti vpraša svet prek `IBlockAccess` samo na dveh mestih
+(`MovementHelper.canWalkThroughPosition` in `fullyPassablePosition`:
+`block.isPassable(bsi.access, pos)`); drugod kliče `isPassable(null, null)`.
+
+| klic | kje teče | metode `IBlockAccess` | bloki |
+|---|---|---|---|
+| `isPassable(access, pos)` | iskalna nit | **samo `getBlockState`** (1.576 klicev) | 16: vsa vrata, vrata ograje, obe loputi, `snow_layer` |
+| `getBoundingBox(access, pos)` | glavna nit (`VecUtils`, `RotationUtils`), pravi svet | `getBlockState` (29 blokov: ograje, zidovi, stekla, vrata, skrinja, redstone) + `getTileEntity` (samo 16 shulker boxov in `piston_extension`) | — |
+| `isPassable(null, null)` | iskalna nit (catch-all) | — | vrže NPE za **natanko istih 16 blokov**; vse Baritone obravnava pred catch-all vejo |
+
+Svetloba, biom, redstone moč in `getWorldType` se pri iskanju poti **ne kličejo**. Stubi v
+`BlockStateInterfaceAccessWrapper` (tile entity `null`, svetloba 0, biom gozd) so za vanilla
+bloke varni; posnetek chunkov (D-013) zadošča. Modded bloki so izven tega dokaza
+(ponovi sondo z modpackom, če se pokaže napaka).
+
+**Past, ki jo M1.5 mora upoštevati:** `Chunk.getBlockState(int,int,int)` najprej prebere
+`this.world.getWorldType()` (preverba `DEBUG_ALL_BLOCK_STATES`), zato na chunku brez sveta
+(`new Chunk(null, x, z)`) vrže NPE. Baritonov `BlockStateInterface.get0` kliče prav to
+metodo. Posnetek naj bere neposredno iz `getBlockStorageArray()[y >> 4]` (tudi hitreje)
+ali pa kopije chunkov obdržijo referenco na svet. Poleg tega BSI preskoči chunke z
+`isLoaded() == false` — sintetični chunki morajo imeti `markLoaded(true)`. Obe dejstvi sta
+pripeti kot testa v `HarnessTest`.
 
 ## §5 CustomNPC rework
 

@@ -2,7 +2,7 @@
 
 Izhod `tools/compile_probe.sh`: prevod `src/api` + `src/main` + `src/schematica_api` iz `references/baritone-1.12.2` z `javac --release 8` proti `forgeBin.jar` (MCP snapshot_20170927) + knjižnice Minecrafta + fastutil. Baritone sam uporablja `stable_39`. Skupaj 81 napak; 43 v `process/elytra/**` (odpade, D-002) ni v tabeli.
 
-M0.7 ponovi prevod proti CNPC mappingu (snapshot_20171003) in tabelo potrdi ali popravi.
+**M0.7 (24. 9. 2026): potrjeno** — prevod proti CNPC mappingu (snapshot_20171003, `forgeSrc`) da iste napake na istih datotekah in vrsticah (81 / 43 / 38); glej `06-RAZISKAVA.md` §1a.
 
 Od 38 napak jih je **24 v datotekah, ki ostanejo** (KEEP/ADAPT/REWRITE); ostale izginejo z izrezom v M1.2.
 

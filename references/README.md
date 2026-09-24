@@ -29,5 +29,5 @@ git -C references/automatone show HEAD:src/main/java/baritone/utils/InputOverrid
 | Kaj | Kje | Zakaj |
 |---|---|---|
 | CustomNPC rework | `github.com/jakakriletic/customNPC_rework` | porabnik (M7); okolje (D-007); merila M2.7 |
-| ladja_mod | `C:\Users\jakak\Desktop\ladja_mod` | `ShipNavigator`, shipyard (M9); `forgeBin.jar` za oblačni prevod do M0.6 |
+| ladja_mod | `C:\Users\jakak\Desktop\ladja_mod` | `ShipNavigator`, shipyard (M9); (od M0.6 oblačni prevod uporablja `tools/cache/forgeSrc-*.jar` iz Gradle predpomnilnika) |
 | Novejše veje Automatona (`1.18`–`1.20`, izdaja `0.11.0`) | isti repozitorij, `git fetch` | popravki, ki jih 1.12 port morda rabi (R-12) |
