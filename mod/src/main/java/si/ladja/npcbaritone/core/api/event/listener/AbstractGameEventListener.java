@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,7 +18,11 @@
 
 package si.ladja.npcbaritone.core.api.event.listener;
 
-import si.ladja.npcbaritone.core.api.event.events.*;
+import si.ladja.npcbaritone.core.api.event.events.BlockChangeEvent;
+import si.ladja.npcbaritone.core.api.event.events.ChunkEvent;
+import si.ladja.npcbaritone.core.api.event.events.PathEvent;
+import si.ladja.npcbaritone.core.api.event.events.PlayerUpdateEvent;
+import si.ladja.npcbaritone.core.api.event.events.TickEvent;
 
 /**
  * An implementation of {@link IGameEventListener} that has all methods
@@ -40,37 +45,10 @@ public interface AbstractGameEventListener extends IGameEventListener {
     default void onPlayerUpdate(PlayerUpdateEvent event) {}
 
     @Override
-    default void onSendChatMessage(ChatEvent event) {}
-
-    @Override
-    default void onPreTabComplete(TabCompleteEvent event) {}
-
-    @Override
     default void onChunkEvent(ChunkEvent event) {}
 
     @Override
     default void onBlockChange(BlockChangeEvent event) {}
-
-    @Override
-    default void onRenderPass(RenderEvent event) {}
-
-    @Override
-    default void onWorldEvent(WorldEvent event) {}
-
-    @Override
-    default void onSendPacket(PacketEvent event) {}
-
-    @Override
-    default void onReceivePacket(PacketEvent event) {}
-
-    @Override
-    default void onPlayerRotationMove(RotationMoveEvent event) {}
-
-    @Override
-    default void onPlayerSprintState(SprintStateEvent event) {}
-
-    @Override
-    default void onBlockInteract(BlockInteractEvent event) {}
 
     @Override
     default void onPlayerDeath() {}

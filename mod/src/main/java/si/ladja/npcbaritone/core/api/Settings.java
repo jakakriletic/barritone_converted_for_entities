@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,12 +18,10 @@
 
 package si.ladja.npcbaritone.core.api;
 
-import si.ladja.npcbaritone.core.api.utils.NotificationHelper;
+import si.ladja.npcbaritone.core.api.utils.Helper;
 import si.ladja.npcbaritone.core.api.utils.SettingsUtil;
 import si.ladja.npcbaritone.core.api.utils.TypeUtils;
-import si.ladja.npcbaritone.core.api.utils.gui.BaritoneToast;
 import net.minecraft.block.Block;
-import net.minecraft.client.Minecraft;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.util.math.Vec3i;
@@ -1198,7 +1197,7 @@ public final class Settings {
      * {@link Setting#value};
      */
     @JavaOnly
-    public final Setting<Consumer<ITextComponent>> logger = new Setting<>(msg -> Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessage(msg));
+    public final Setting<Consumer<ITextComponent>> logger = new Setting<>(msg -> Helper.LOG.info(msg.getUnformattedText())); // NPC Baritone: log namesto klepeta
 
     /**
      * The function that is called when Baritone will send a desktop notification. This function can be added to
@@ -1206,7 +1205,7 @@ public final class Settings {
      * {@link Setting#value};
      */
     @JavaOnly
-    public final Setting<BiConsumer<String, Boolean>> notifier = new Setting<>(NotificationHelper::notify);
+    public final Setting<BiConsumer<String, Boolean>> notifier = new Setting<>((msg, error) -> Helper.LOG.info(msg)); // NPC Baritone: brez namiznih obvestil
 
     /**
      * The function that is called when Baritone will show a toast. This function can be added to
@@ -1214,7 +1213,7 @@ public final class Settings {
      * {@link Setting#value};
      */
     @JavaOnly
-    public final Setting<BiConsumer<ITextComponent, ITextComponent>> toaster = new Setting<>(BaritoneToast::addOrUpdate);
+    public final Setting<BiConsumer<ITextComponent, ITextComponent>> toaster = new Setting<>((title, msg) -> Helper.LOG.info(title.getUnformattedText() + ": " + msg.getUnformattedText())); // NPC Baritone: brez toastov
 
     /**
      * The size of the box that is rendered when the current goal is a GoalYLevel

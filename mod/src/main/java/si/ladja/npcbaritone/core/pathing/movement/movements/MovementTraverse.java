@@ -195,7 +195,7 @@ public class MovementTraverse extends Movement {
 
             // combine the yaw to the center of the destination, and the pitch to the specific block we're trying to break
             // it's safe to do this since the two blocks we break (in a traverse) are right on top of each other and so will have the same yaw
-            float yawToDest = RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(ctx.world(), dest), ctx.entityRotations()).getYaw();
+            float yawToDest = RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(new BlockStateInterface(ctx).access, dest), ctx.entityRotations()).getYaw();
             float pitchToBreak = state.getTarget().getRotation().get().getPitch();
             if ((pb0.isFullCube() || pb0.getBlock() instanceof BlockAir && (pb1.isFullCube() || pb1.getBlock() instanceof BlockAir))) {
                 // in the meantime, before we're right up against the block, we can break efficiently at this angle
@@ -219,7 +219,7 @@ public class MovementTraverse extends Movement {
             boolean canOpen = !(Blocks.IRON_DOOR.equals(pb0.getBlock()) || Blocks.IRON_DOOR.equals(pb1.getBlock()));
 
             if (notPassable && canOpen) {
-                return state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(ctx.world(), positionsToBreak[0]), ctx.entityRotations()), true))
+                return state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(new BlockStateInterface(ctx).access, positionsToBreak[0]), ctx.entityRotations()), true))
                         .setInput(Input.CLICK_RIGHT, true);
             }
         }

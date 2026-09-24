@@ -18,14 +18,7 @@
 
 package si.ladja.npcbaritone.core.utils;
 
-import si.ladja.npcbaritone.core.Baritone;
-import si.ladja.npcbaritone.core.api.utils.IEntityContext;
-import si.ladja.npcbaritone.core.cache.CachedRegion;
-import si.ladja.npcbaritone.core.cache.WorldData;
-import si.ladja.npcbaritone.core.utils.accessor.IChunkProviderClient;
-import si.ladja.npcbaritone.core.utils.pathing.BetterWorldBorder;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
@@ -33,25 +26,32 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
+import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
+import si.ladja.npcbaritone.core.utils.pathing.BetterWorldBorder;
+import si.ladja.npcbaritone.core.world.ChunkSnapshot;
 
 /**
- * Wraps get for chuck caching capability
+ * Wraps get for chunk caching capability
+ *
+ * <p>NPC Baritone (D-012, D-013, RAZISKAVA §4a): bere samo že naložene strežniške chunke
+ * (neposredno iz {@link ExtendedBlockStorage}, ker {@code Chunk.getBlockState} rabi svet),
+ * nikoli ne naloži ali generira chunka. Nenaloženo = zrak in {@link #isLoaded} = false;
+ * A* se tam ustavi (D-014). Predpomnilnika regij ni več.
  *
  * @author leijurv
  */
 public class BlockStateInterface {
 
     private final Long2ObjectMap<Chunk> loadedChunks;
-    private final WorldData worldData;
     public final BlockPos.MutableBlockPos isPassableBlockPos;
     public final IBlockAccess access;
     public final BetterWorldBorder worldBorder;
 
     private Chunk prev = null;
-    private CachedRegion prevCached = null;
-
-    private final boolean useTheRealWorld;
 
     private static final IBlockState AIR = Blocks.AIR.getDefaultState();
 
@@ -59,22 +59,44 @@ public class BlockStateInterface {
         this(ctx, false);
     }
 
+    /**
+     * @param copyLoadedChunks true za iskalno nit: kopija mape naloženih chunkov (D-013).
+     *                         Kopija je omejena na {@code snapshot} pravokotnik, če je podan
+     *                         prek {@link #BlockStateInterface(IEntityContext, ChunkSnapshot.Bounds)}.
+     */
     public BlockStateInterface(IEntityContext ctx, boolean copyLoadedChunks) {
-        final World world = ctx.world();
+        this(ctx, copyLoadedChunks ? ChunkSnapshot.Bounds.ALL : null);
+    }
+
+    /**
+     * @param bounds null = brez kopije (samo glavna nit), sicer kopija v mejah (iskalna nit)
+     */
+    public BlockStateInterface(IEntityContext ctx, ChunkSnapshot.Bounds bounds) {
+        World world = ctx.world();
+        if (!(world instanceof WorldServer)) {
+            throw new IllegalStateException("NPC Baritone runs on the server world only (D-024)");
+        }
+        WorldServer server = (WorldServer) world;
+        if (!server.getMinecraftServer().isCallingFromMinecraftThread()) {
+            throw new IllegalStateException("BlockStateInterface must be created on the server thread");
+        }
+        Long2ObjectMap<Chunk> live = server.getChunkProvider().id2ChunkMap;
+        this.loadedChunks = bounds == null ? live : ChunkSnapshot.copy(live, bounds);
         this.worldBorder = new BetterWorldBorder(world.getWorldBorder());
-        this.worldData = (WorldData) ctx.worldData();
-        Long2ObjectMap<Chunk> worldLoaded = ((IChunkProviderClient) world.getChunkProvider()).loadedChunks();
-        if (copyLoadedChunks) {
-            this.loadedChunks = new Long2ObjectOpenHashMap<>(worldLoaded); // make a copy that we can safely access from another thread
-        } else {
-            this.loadedChunks = worldLoaded; // this will only be used on the main thread
-        }
-        this.useTheRealWorld = !Baritone.settings().pathThroughCachedOnly.value;
-        if (!ctx.minecraft().isCallingFromMinecraftThread()) {
-            throw new IllegalStateException();
-        }
         this.isPassableBlockPos = new BlockPos.MutableBlockPos();
         this.access = new BlockStateInterfaceAccessWrapper(this, world);
+    }
+
+    /**
+     * Headless / posnetek: bere samo iz podane mape (ključ {@link ChunkPos#asLong}).
+     *
+     * @param worldType svet za {@code IBlockAccess.getWorldType()}; lahko null (privzeto DEFAULT)
+     */
+    public BlockStateInterface(Long2ObjectMap<Chunk> chunks, WorldBorder border, IBlockAccess worldType) {
+        this.loadedChunks = chunks;
+        this.worldBorder = new BetterWorldBorder(border == null ? new WorldBorder() : border);
+        this.isPassableBlockPos = new BlockPos.MutableBlockPos();
+        this.access = new BlockStateInterfaceAccessWrapper(this, worldType);
     }
 
     public boolean worldContainsLoadedChunk(int blockX, int blockZ) {
@@ -102,43 +124,22 @@ public class BlockStateInterface {
             return AIR;
         }
 
-        if (useTheRealWorld) {
-            Chunk cached = prev;
-            // there's great cache locality in block state lookups
-            // generally it's within each movement
-            // if it's the same chunk as last time
-            // we can just skip the mc.world.getChunk lookup
-            // which is a Long2ObjectOpenHashMap.get
-            // see issue #113
-            if (cached != null && cached.x == x >> 4 && cached.z == z >> 4) {
-                return cached.getBlockState(x, y, z);
-            }
-            Chunk chunk = loadedChunks.get(ChunkPos.asLong(x >> 4, z >> 4));
-
-            if (chunk != null && chunk.isLoaded()) {
-                prev = chunk;
-                return chunk.getBlockState(x, y, z);
-            }
-        }
-        // same idea here, skip the Long2ObjectOpenHashMap.get if at all possible
-        // except here, it's 512x512 tiles instead of 16x16, so even better repetition
-        CachedRegion cached = prevCached;
-        if (cached == null || cached.getX() != x >> 9 || cached.getZ() != z >> 9) {
-            if (worldData == null) {
+        Chunk cached = prev;
+        // there's great cache locality in block state lookups
+        // generally it's within each movement
+        // if it's the same chunk as last time
+        // we can just skip the mc.world.getChunk lookup
+        // which is a Long2ObjectOpenHashMap.get
+        // see issue #113
+        if (cached == null || cached.x != x >> 4 || cached.z != z >> 4) {
+            cached = loadedChunks.get(ChunkPos.asLong(x >> 4, z >> 4));
+            if (cached == null || !cached.isLoaded()) {
                 return AIR;
             }
-            CachedRegion region = worldData.cache.getRegion(x >> 9, z >> 9);
-            if (region == null) {
-                return AIR;
-            }
-            prevCached = region;
-            cached = region;
+            prev = cached;
         }
-        IBlockState type = cached.getBlock(x & 511, y, z & 511);
-        if (type == null) {
-            return AIR;
-        }
-        return type;
+        ExtendedBlockStorage section = cached.getBlockStorageArray()[y >> 4];
+        return section == Chunk.NULL_BLOCK_STORAGE ? AIR : section.get(x & 15, y & 15, z & 15);
     }
 
     public boolean isLoaded(int x, int z) {
@@ -151,18 +152,6 @@ public class BlockStateInterface {
             prev = prevChunk;
             return true;
         }
-        CachedRegion prevRegion = prevCached;
-        if (prevRegion != null && prevRegion.getX() == x >> 9 && prevRegion.getZ() == z >> 9) {
-            return prevRegion.isCached(x & 511, z & 511);
-        }
-        if (worldData == null) {
-            return false;
-        }
-        prevRegion = worldData.cache.getRegion(x >> 9, z >> 9);
-        if (prevRegion == null) {
-            return false;
-        }
-        prevCached = prevRegion;
-        return prevRegion.isCached(x & 511, z & 511);
+        return false;
     }
 }

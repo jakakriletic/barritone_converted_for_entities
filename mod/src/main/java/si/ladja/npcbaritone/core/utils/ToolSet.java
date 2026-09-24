@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,10 +19,9 @@
 package si.ladja.npcbaritone.core.utils;
 
 import si.ladja.npcbaritone.core.Baritone;
-import si.ladja.npcbaritone.core.utils.accessor.IItemTool;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.init.Enchantments;
 import net.minecraft.init.MobEffects;
@@ -51,9 +51,10 @@ public class ToolSet {
      */
     private final Function<Block, Double> backendCalculation;
 
-    private final EntityPlayerSP player;
+    /** NPC Baritone: entiteta ali null (headless iskanje: prazna roka, brez učinkov). */
+    private final EntityLivingBase player;
 
-    public ToolSet(EntityPlayerSP player) {
+    public ToolSet(EntityLivingBase player) {
         breakStrengthCache = new HashMap<>();
         this.player = player;
 
@@ -76,23 +77,6 @@ public class ToolSet {
         return breakStrengthCache.computeIfAbsent(state.getBlock(), backendCalculation);
     }
 
-    /**
-     * Evaluate the material cost of a possible tool. The priority matches the
-     * harvest level order; there is a chance for multiple at the same with modded tools
-     * but in that case we don't really care.
-     *
-     * @param itemStack a possibly empty ItemStack
-     * @return values from 0 up
-     */
-    private int getMaterialCost(ItemStack itemStack) {
-        if (itemStack.getItem() instanceof ItemTool) {
-            ItemTool tool = (ItemTool) itemStack.getItem();
-            return ((IItemTool) tool).getHarvestLevel();
-        } else {
-            return -1;
-        }
-    }
-
     public boolean hasSilkTouch(ItemStack stack) {
         return EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, stack) > 0;
     }
@@ -110,48 +94,12 @@ public class ToolSet {
     }
 
     public int getBestSlot(Block b, boolean preferSilkTouch, boolean pathingCalculation) {
+        // NPC Baritone (D-015): entiteta nima hotbara; orodje je vedno tisto v glavni roki.
+        return 0;
+    }
 
-        /*
-        If we actually want know what efficiency our held item has instead of the best one
-        possible, this lets us make pathing depend on the actual tool to be used (if auto tool is disabled)
-        */
-        if (!Baritone.settings().autoTool.value && pathingCalculation) {
-            return player.inventory.currentItem;
-        }
-
-        int best = 0;
-        double highestSpeed = Double.NEGATIVE_INFINITY;
-        int lowestCost = Integer.MIN_VALUE;
-        boolean bestSilkTouch = false;
-        IBlockState blockState = b.getDefaultState();
-        for (int i = 0; i < 9; i++) {
-            ItemStack itemStack = player.inventory.getStackInSlot(i);
-            if (!Baritone.settings().useSwordToMine.value && itemStack.getItem() instanceof ItemSword) {
-                continue;
-            }
-
-            if (Baritone.settings().itemSaver.value && (itemStack.getItemDamage() + Baritone.settings().itemSaverThreshold.value) >= itemStack.getMaxDamage() && itemStack.getMaxDamage() > 1) {
-                continue;
-            }
-            double speed = calculateSpeedVsBlock(itemStack, blockState);
-            boolean silkTouch = hasSilkTouch(itemStack);
-            if (speed > highestSpeed) {
-                highestSpeed = speed;
-                best = i;
-                lowestCost = getMaterialCost(itemStack);
-                bestSilkTouch = silkTouch;
-            } else if (speed == highestSpeed) {
-                int cost = getMaterialCost(itemStack);
-                if ((cost < lowestCost && (silkTouch || !bestSilkTouch)) ||
-                        (preferSilkTouch && !bestSilkTouch && silkTouch)) {
-                    highestSpeed = speed;
-                    best = i;
-                    lowestCost = cost;
-                    bestSilkTouch = silkTouch;
-                }
-            }
-        }
-        return best;
+    private ItemStack heldItem() {
+        return player == null ? ItemStack.EMPTY : player.getHeldItemMainhand();
     }
 
     /**
@@ -161,7 +109,7 @@ public class ToolSet {
      * @return A double containing the destruction ticks with the best tool
      */
     private double getBestDestructionTime(Block b) {
-        ItemStack stack = player.inventory.getStackInSlot(getBestSlot(b, false, true));
+        ItemStack stack = heldItem();
         return calculateSpeedVsBlock(stack, b.getDefaultState()) * avoidanceMultiplier(b);
     }
 
@@ -206,6 +154,9 @@ public class ToolSet {
      */
     private double potionAmplifier() {
         double speed = 1;
+        if (player == null) {
+            return speed;
+        }
         if (player.isPotionActive(MobEffects.HASTE)) {
             speed *= 1 + (player.getActivePotionEffect(MobEffects.HASTE).getAmplifier() + 1) * 0.2;
         }

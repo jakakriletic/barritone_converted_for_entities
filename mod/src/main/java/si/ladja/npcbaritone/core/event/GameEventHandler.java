@@ -19,24 +19,24 @@
 package si.ladja.npcbaritone.core.event;
 
 import si.ladja.npcbaritone.core.Baritone;
-import si.ladja.npcbaritone.core.api.event.events.*;
-import si.ladja.npcbaritone.core.api.event.events.type.EventState;
+import si.ladja.npcbaritone.core.api.event.events.BlockChangeEvent;
+import si.ladja.npcbaritone.core.api.event.events.ChunkEvent;
+import si.ladja.npcbaritone.core.api.event.events.PathEvent;
+import si.ladja.npcbaritone.core.api.event.events.PlayerUpdateEvent;
+import si.ladja.npcbaritone.core.api.event.events.TickEvent;
 import si.ladja.npcbaritone.core.api.event.listener.IEventBus;
 import si.ladja.npcbaritone.core.api.event.listener.IGameEventListener;
 import si.ladja.npcbaritone.core.api.utils.Helper;
-import si.ladja.npcbaritone.core.api.utils.Pair;
-import si.ladja.npcbaritone.core.cache.CachedChunk;
-import si.ladja.npcbaritone.core.cache.WorldProvider;
 import si.ladja.npcbaritone.core.utils.BlockStateInterface;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * NPC Baritone: brez predpomnilnika chunkov/regij (D-014) in brez klientskih dogodkov.
+ * {@code baritone.bsi} je BSI nad živimi naloženimi chunki brez kopije (samo glavna nit);
+ * Baritone na klientu je tu vsak tick kopiral celotno mapo chunkov.
+ *
  * @author Brady
  * @since 7/31/2018
  */
@@ -54,13 +54,14 @@ public final class GameEventHandler implements IEventBus, Helper {
     public final void onTick(TickEvent event) {
         if (event.getType() == TickEvent.Type.IN) {
             try {
-                baritone.bsi = new BlockStateInterface(baritone.getEntityContext(), true);
+                baritone.bsi = new BlockStateInterface(baritone.getEntityContext());
             } catch (Exception ex) {
                 baritone.bsi = null;
             }
         } else {
             baritone.bsi = null;
         }
+
         listeners.forEach(l -> l.onTick(event));
     }
 
@@ -75,101 +76,13 @@ public final class GameEventHandler implements IEventBus, Helper {
     }
 
     @Override
-    public final void onSendChatMessage(ChatEvent event) {
-        listeners.forEach(l -> l.onSendChatMessage(event));
-    }
-
-    @Override
-    public void onPreTabComplete(TabCompleteEvent event) {
-        listeners.forEach(l -> l.onPreTabComplete(event));
-    }
-
-    @Override
     public void onChunkEvent(ChunkEvent event) {
-        EventState state = event.getState();
-        ChunkEvent.Type type = event.getType();
-
-        World world = baritone.getEntityContext().world();
-
-        // Whenever the server sends us to another dimension, chunks are unloaded
-        // technically after the new world has been loaded, so we perform a check
-        // to make sure the chunk being unloaded is already loaded.
-        boolean isPreUnload = state == EventState.PRE
-                && type == ChunkEvent.Type.UNLOAD
-                && world.getChunkProvider().isChunkGeneratedAt(event.getX(), event.getZ());
-
-        if (event.isPostPopulate() || isPreUnload) {
-            baritone.getWorldProvider().ifWorldLoaded(worldData -> {
-                Chunk chunk = world.getChunk(event.getX(), event.getZ());
-                worldData.getCachedWorld().queueForPacking(chunk);
-            });
-        }
-
-
         listeners.forEach(l -> l.onChunkEvent(event));
     }
 
     @Override
     public void onBlockChange(BlockChangeEvent event) {
-        if (Baritone.settings().repackOnAnyBlockChange.value) {
-            final boolean keepingTrackOf = event.getBlocks().stream()
-                    .map(Pair::second).map(IBlockState::getBlock)
-                    .anyMatch(CachedChunk.BLOCKS_TO_KEEP_TRACK_OF::contains);
-
-            if (keepingTrackOf) {
-                baritone.getWorldProvider().ifWorldLoaded(worldData -> {
-                    final World world = baritone.getEntityContext().world();
-                    ChunkPos pos = event.getChunkPos();
-                    worldData.getCachedWorld().queueForPacking(world.getChunk(pos.x, pos.z));
-                });
-            }
-        }
-
         listeners.forEach(l -> l.onBlockChange(event));
-    }
-
-    @Override
-    public final void onRenderPass(RenderEvent event) {
-        listeners.forEach(l -> l.onRenderPass(event));
-    }
-
-    @Override
-    public final void onWorldEvent(WorldEvent event) {
-        WorldProvider cache = baritone.getWorldProvider();
-
-        if (event.getState() == EventState.POST) {
-            cache.closeWorld();
-            if (event.getWorld() != null) {
-                cache.initWorld(event.getWorld());
-            }
-        }
-
-        listeners.forEach(l -> l.onWorldEvent(event));
-    }
-
-    @Override
-    public final void onSendPacket(PacketEvent event) {
-        listeners.forEach(l -> l.onSendPacket(event));
-    }
-
-    @Override
-    public final void onReceivePacket(PacketEvent event) {
-        listeners.forEach(l -> l.onReceivePacket(event));
-    }
-
-    @Override
-    public void onPlayerRotationMove(RotationMoveEvent event) {
-        listeners.forEach(l -> l.onPlayerRotationMove(event));
-    }
-
-    @Override
-    public void onPlayerSprintState(SprintStateEvent event) {
-        listeners.forEach(l -> l.onPlayerSprintState(event));
-    }
-
-    @Override
-    public void onBlockInteract(BlockInteractEvent event) {
-        listeners.forEach(l -> l.onBlockInteract(event));
     }
 
     @Override

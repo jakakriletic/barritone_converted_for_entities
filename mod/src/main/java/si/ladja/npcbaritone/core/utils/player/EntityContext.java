@@ -18,63 +18,46 @@
 
 package si.ladja.npcbaritone.core.utils.player;
 
-import si.ladja.npcbaritone.core.Baritone;
-import si.ladja.npcbaritone.core.api.cache.IWorldData;
-import si.ladja.npcbaritone.core.api.utils.*;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
+import si.ladja.npcbaritone.core.Baritone;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
+import si.ladja.npcbaritone.core.api.utils.IPlayerController;
+import si.ladja.npcbaritone.core.api.utils.RayTraceUtils;
+import si.ladja.npcbaritone.core.api.utils.Rotation;
 
 /**
- * Implementation of {@link IEntityContext} that provides information about the primary player.
+ * {@link IEntityContext} za eno {@link EntityLiving} na strežniku (D-006).
  *
  * @author Brady
  * @since 11/12/2018
  */
 public final class EntityContext implements IEntityContext {
 
+    private static final IPlayerController CONTROLLER = new IPlayerController() {};
+
     private final Baritone baritone;
-    private final Minecraft mc;
-    private final IPlayerController playerController;
+    private final EntityLiving entity;
 
-    public EntityContext(Baritone baritone, Minecraft mc) {
+    public EntityContext(Baritone baritone, EntityLiving entity) {
         this.baritone = baritone;
-        this.mc = mc;
-        this.playerController = new BaritonePlayerController(mc);
+        this.entity = entity;
     }
 
     @Override
-    public Minecraft minecraft() {
-        return this.mc;
-    }
-
-    @Override
-    public EntityPlayerSP entity() {
-        return this.mc.player;
+    public EntityLiving entity() {
+        return this.entity;
     }
 
     @Override
     public IPlayerController playerController() {
-        return this.playerController;
+        return CONTROLLER;
     }
 
     @Override
     public World world() {
-        return this.mc.world;
-    }
-
-    @Override
-    public IWorldData worldData() {
-        return this.baritone.getWorldProvider().getCurrentWorld();
-    }
-
-    @Override
-    public BetterBlockPos viewerPos() {
-        final Entity entity = this.mc.getRenderViewEntity();
-        return entity == null ? this.feetPos() : BetterBlockPos.from(new BlockPos(entity));
+        return this.entity.world;
     }
 
     @Override

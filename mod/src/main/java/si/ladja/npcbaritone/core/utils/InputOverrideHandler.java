@@ -19,20 +19,17 @@
 package si.ladja.npcbaritone.core.utils;
 
 import si.ladja.npcbaritone.core.Baritone;
-import si.ladja.npcbaritone.core.api.BaritoneAPI;
-import si.ladja.npcbaritone.core.api.event.events.TickEvent;
 import si.ladja.npcbaritone.core.api.utils.IInputOverrideHandler;
 import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.behavior.Behavior;
-import net.minecraft.util.MovementInputFromOptions;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * An interface with the game's control system allowing the ability to
- * force down certain controls, having the same effect as if we were actually
- * physically forcing down the assigned key.
+ * NPC Baritone (D-010): samo stanje vhodov, ki ga premiki nastavijo v ticku. Na entiteto
+ * ga preslika forge plast ({@code BaritoneMoveHelper}/{@code BaritoneJumpHelper}, M2) —
+ * brez {@code MovementInput}, brez klikov miške, brez rušenja/postavljanja (D-015).
  *
  * @author Brady
  * @since 7/31/2018
@@ -42,15 +39,10 @@ public final class InputOverrideHandler extends Behavior implements IInputOverri
     /**
      * Maps inputs to whether or not we are forcing their state down.
      */
-    private final Map<Input, Boolean> inputForceStateMap = new HashMap<>();
-
-    private final BlockBreakHelper blockBreakHelper;
-    private final BlockPlaceHelper blockPlaceHelper;
+    private final Map<Input, Boolean> inputForceStateMap = new EnumMap<>(Input.class);
 
     public InputOverrideHandler(Baritone baritone) {
         super(baritone);
-        this.blockBreakHelper = new BlockBreakHelper(baritone.getEntityContext());
-        this.blockPlaceHelper = new BlockPlaceHelper(baritone.getEntityContext());
     }
 
     /**
@@ -83,41 +75,15 @@ public final class InputOverrideHandler extends Behavior implements IInputOverri
         this.inputForceStateMap.clear();
     }
 
-    @Override
-    public final void onTick(TickEvent event) {
-        if (event.getType() == TickEvent.Type.OUT) {
-            return;
-        }
-        if (isInputForcedDown(Input.CLICK_LEFT)) {
-            setInputForceState(Input.CLICK_RIGHT, false);
-        }
-        blockBreakHelper.tick(isInputForcedDown(Input.CLICK_LEFT));
-        blockPlaceHelper.tick(isInputForcedDown(Input.CLICK_RIGHT));
-
-        if (inControl()) {
-            if (ctx.entity().movementInput.getClass() != PlayerMovementInput.class) {
-                ctx.entity().movementInput = new PlayerMovementInput(this);
-            }
-        } else {
-            if (ctx.entity().movementInput.getClass() == PlayerMovementInput.class) { // allow other movement inputs that aren't this one, e.g. for a freecam
-                ctx.entity().movementInput = new MovementInputFromOptions(ctx.minecraft().gameSettings);
-            }
-        }
-        // only set it if it was previously incorrect
-        // gotta do it this way, or else it constantly thinks you're beginning a double tap W sprint lol
-    }
-
-    private boolean inControl() {
+    /**
+     * @return true, če kateri od gibalnih vhodov trenutno velja (forge plast vodi entiteto)
+     */
+    public boolean isInControl() {
         for (Input input : new Input[]{Input.MOVE_FORWARD, Input.MOVE_BACK, Input.MOVE_LEFT, Input.MOVE_RIGHT, Input.SNEAK, Input.JUMP}) {
             if (isInputForcedDown(input)) {
                 return true;
             }
         }
-        // if we are not primary (a bot) we should set the movementinput even when idle (not pathing)
-        return baritone.getPathingBehavior().isPathing() || baritone != BaritoneAPI.getProvider().getPrimaryBaritone();
-    }
-
-    public BlockBreakHelper getBlockBreakHelper() {
-        return blockBreakHelper;
+        return baritone.getPathingBehavior().isPathing();
     }
 }

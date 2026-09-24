@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,17 +19,16 @@
 package si.ladja.npcbaritone.core.api.event.events;
 
 import si.ladja.npcbaritone.core.api.event.events.type.EventState;
-import net.minecraft.client.Minecraft;
 
 import java.util.function.BiFunction;
 
 /**
- * Called on and after each game tick of the primary {@link Minecraft} instance and dispatched to all Baritone
+ * Called on and after each game tick of the primary {@code Minecraft} instance and dispatched to all Baritone
  * instances.
  * <p>
  * When {@link #state} is {@link EventState#PRE}, the event is being called just prior to when the current in-game
  * screen is ticked. When {@link #state} is {@link EventState#POST}, the event is being called at the very end
- * of the {@link Minecraft#runTick()} method.
+ * of the {@code Minecraft#runTick()} method.
  */
 public final class TickEvent {
 

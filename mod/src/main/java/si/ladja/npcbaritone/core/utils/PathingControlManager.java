@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,7 +29,6 @@ import si.ladja.npcbaritone.core.api.process.PathingCommandType;
 import si.ladja.npcbaritone.core.behavior.PathingBehavior;
 import si.ladja.npcbaritone.core.pathing.path.PathExecutor;
 import si.ladja.npcbaritone.core.process.CustomGoalProcess;
-import si.ladja.npcbaritone.core.process.ElytraProcess;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.*;

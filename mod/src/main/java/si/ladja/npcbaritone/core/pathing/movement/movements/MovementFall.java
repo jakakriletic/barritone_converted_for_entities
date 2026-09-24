@@ -30,6 +30,7 @@ import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.MovementState;
 import si.ladja.npcbaritone.core.pathing.movement.MovementState.MovementTarget;
+import si.ladja.npcbaritone.core.utils.BlockStateInterface;
 import si.ladja.npcbaritone.core.utils.pathing.MutableMoveResult;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLadder;
@@ -92,22 +93,12 @@ public class MovementFall extends Movement {
         BlockPos feetPos = ctx.feetPos();
         Rotation toDest = RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.getBlockPosCenter(dest), ctx.entityRotations());
         Rotation targetRotation = null;
-        Block destBlock = ctx.world().getBlockState(dest).getBlock();
+        Block destBlock = BlockStateInterface.get(ctx, dest).getBlock(); // D-012
         boolean isWater = destBlock == Blocks.WATER || destBlock == Blocks.FLOWING_WATER;
         if (!isWater && willPlaceBucket() && !feetPos.equals(dest)) {
-            if (!InventoryPlayer.isHotbar(ctx.entity().inventory.getSlotFor(STACK_BUCKET_WATER)) || ctx.world().provider.isNether()) {
-                return state.setStatus(MovementStatus.UNREACHABLE);
-            }
-
-            if (ctx.entity().posY - dest.getY() < ctx.playerController().getBlockReachDistance() && !ctx.entity().onGround) {
-                ctx.entity().inventory.currentItem = ctx.entity().inventory.getSlotFor(STACK_BUCKET_WATER);
-
-                targetRotation = new Rotation(toDest.getYaw(), 90.0F);
-
-                if (ctx.isLookingAt(dest) || ctx.isLookingAt(dest.down())) {
-                    state.setInput(Input.CLICK_RIGHT, true);
-                }
-            }
+            // D-015: entiteta nima vedra (CalculationContext.hasWaterBucket je vedno false),
+            // zato padec, ki bi rabil vedro, ni izvedljiv.
+            return state.setStatus(MovementStatus.UNREACHABLE);
         }
         if (targetRotation != null) {
             state.setTarget(new MovementTarget(targetRotation, true));
@@ -116,18 +107,10 @@ public class MovementFall extends Movement {
         }
         if (feetPos.equals(dest) && (ctx.entity().posY - feetPos.getY() < 0.094 || isWater)) { // 0.094 because lilypads
             if (isWater) { // only match water, not flowing water (which we cannot pick up with a bucket)
-                if (InventoryPlayer.isHotbar(ctx.entity().inventory.getSlotFor(STACK_BUCKET_EMPTY))) {
-                    ctx.entity().inventory.currentItem = ctx.entity().inventory.getSlotFor(STACK_BUCKET_EMPTY);
-                    if (ctx.entity().motionY >= 0) {
-                        return state.setInput(Input.CLICK_RIGHT, true);
-                    } else {
-                        return state;
-                    }
-                } else {
-                    if (ctx.entity().motionY >= 0) {
-                        return state.setStatus(MovementStatus.SUCCESS);
-                    } // don't else return state; we need to stay centered because this water might be flowing under the surface
-                }
+                // D-015: brez pobiranja vode z vedrom
+                if (ctx.entity().motionY >= 0) {
+                    return state.setStatus(MovementStatus.SUCCESS);
+                } // don't else return state; we need to stay centered because this water might be flowing under the surface
             } else {
                 return state.setStatus(MovementStatus.SUCCESS);
             }
@@ -159,7 +142,7 @@ public class MovementFall extends Movement {
 
     private EnumFacing avoid() {
         for (int i = 0; i < 15; i++) {
-            IBlockState state = ctx.world().getBlockState(ctx.feetPos().down(i));
+            IBlockState state = BlockStateInterface.get(ctx, ctx.feetPos().down(i));
             if (state.getBlock() == Blocks.LADDER) {
                 return state.getValue(BlockLadder.FACING);
             }

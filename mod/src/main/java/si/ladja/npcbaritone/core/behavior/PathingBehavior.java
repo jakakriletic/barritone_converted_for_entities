@@ -34,8 +34,6 @@ import si.ladja.npcbaritone.core.pathing.calc.AbstractNodeCostSearch;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.path.PathExecutor;
-import si.ladja.npcbaritone.core.process.ElytraProcess;
-import si.ladja.npcbaritone.core.utils.PathRenderer;
 import si.ladja.npcbaritone.core.utils.PathingCommandContext;
 import si.ladja.npcbaritone.core.utils.pathing.Favoring;
 import net.minecraft.util.math.BlockPos;
@@ -45,6 +43,7 @@ import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 
 public final class PathingBehavior extends Behavior implements IPathingBehavior, Helper {
 
@@ -109,20 +108,12 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
         dispatchEvents();
     }
 
-    @Override
-    public void onPlayerSprintState(SprintStateEvent event) {
-        if (isPathing()) {
-            event.setState(current.isSprinting());
-        }
-    }
-
     private void tickPath() {
         pausedThisTick = false;
         if (pauseRequestedLastTick && safeToCancel) {
             pauseRequestedLastTick = false;
             if (unpausedLastTick) {
                 baritone.getInputOverrideHandler().clearAllKeys();
-                baritone.getInputOverrideHandler().getBlockBreakHelper().stopBreakingBlock();
             }
             unpausedLastTick = false;
             pausedThisTick = true;
@@ -159,9 +150,6 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                     logDebug("All done. At " + goal);
                     queuePathEvent(PathEvent.AT_GOAL);
                     next = null;
-                    if (Baritone.settings().disconnectOnArrival.value) {
-                        ctx.world().sendQuittingDisconnectingPacket();
-                    }
                     return;
                 }
                 if (next != null && !next.getPath().positions().contains(ctx.feetPos()) && !next.getPath().positions().contains(expectedSegmentStart)) { // can contain either one
@@ -236,23 +224,6 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
         }
     }
 
-    @Override
-    public void onPlayerUpdate(PlayerUpdateEvent event) {
-        if (current != null) {
-            switch (event.getState()) {
-                case PRE:
-                    lastAutoJump = ctx.minecraft().gameSettings.autoJump;
-                    ctx.minecraft().gameSettings.autoJump = false;
-                    break;
-                case POST:
-                    ctx.minecraft().gameSettings.autoJump = lastAutoJump;
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-
     public void secretInternalSetGoal(Goal goal) {
         this.goal = goal;
     }
@@ -312,7 +283,7 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
 
     public boolean isSafeToCancel() {
         if (current == null) {
-            return !baritone.getElytraProcess().isActive() || baritone.getElytraProcess().isSafeToCancel();
+            return true;
         }
         return safeToCancel;
     }
@@ -365,7 +336,6 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                 current = null;
                 next = null;
                 baritone.getInputOverrideHandler().clearAllKeys();
-                baritone.getInputOverrideHandler().getBlockBreakHelper().stopBreakingBlock();
             }
         }
     }
@@ -500,7 +470,18 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
             logDebug("Simplifying " + goal.getClass() + " to GoalXZ due to distance");
         }
         inProgress = pathfinder;
-        Baritone.getExecutor().execute(() -> {
+        try {
+            Baritone.getExecutor().execute(() -> runSearch(pathfinder, start, goal, talkAboutIt, primaryTimeout, failureTimeout));
+        } catch (RejectedExecutionException ex) {
+            // M1.11: vrsta iskanj je polna; iskanje se šteje kot neuspelo, naslednji tick poskusi znova
+            inProgress = null;
+            queuePathEvent(PathEvent.CALC_FAILED);
+            logDebug("Search queue full, path calculation rejected");
+        }
+    }
+
+    private void runSearch(AbstractNodeCostSearch pathfinder, BlockPos start, Goal goal, boolean talkAboutIt, long primaryTimeout, long failureTimeout) {
+        {
             if (talkAboutIt) {
                 logDebug("Starting to search for path from " + start + " to " + goal);
             }
@@ -552,7 +533,7 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                     inProgress = null;
                 }
             }
-        });
+        }
     }
 
     private static AbstractNodeCostSearch createPathfinder(BlockPos start, Goal goal, IPath previous, CalculationContext context) {
@@ -567,8 +548,4 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
         return new AStarPathFinder(start.getX(), start.getY(), start.getZ(), transformed, favoring, context);
     }
 
-    @Override
-    public void onRenderPass(RenderEvent event) {
-        PathRenderer.render(event, this);
-    }
 }

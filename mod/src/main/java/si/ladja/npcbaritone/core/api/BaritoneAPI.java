@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,13 +18,12 @@
 
 package si.ladja.npcbaritone.core.api;
 
-import si.ladja.npcbaritone.core.api.utils.SettingsUtil;
-
-import java.util.Iterator;
-import java.util.ServiceLoader;
+import si.ladja.npcbaritone.core.BaritoneProvider;
 
 /**
- * Exposes the {@link IBaritoneProvider} instance and the {@link Settings} instance for API usage.
+ * Globalni vhod v jedro. NPC Baritone: brez {@code ServiceLoader} in brez branja
+ * {@code .minecraft/baritone/settings.txt}; privzete nastavitve so NPC profil (§8 raziskave,
+ * D-016), ki ga forge plast lahko prepiše iz strežniškega configa.
  *
  * @author Brady
  * @since 9/23/2018
@@ -35,11 +35,11 @@ public final class BaritoneAPI {
 
     static {
         settings = new Settings();
-        SettingsUtil.readAndApply(settings, SettingsUtil.SETTINGS_DEFAULT_NAME);
+        NpcProfile.applyDefaults(settings);
+        provider = new BaritoneProvider();
+    }
 
-        ServiceLoader<IBaritoneProvider> baritoneLoader = ServiceLoader.load(IBaritoneProvider.class);
-        Iterator<IBaritoneProvider> instances = baritoneLoader.iterator();
-        provider = instances.next();
+    private BaritoneAPI() {
     }
 
     public static IBaritoneProvider getProvider() {

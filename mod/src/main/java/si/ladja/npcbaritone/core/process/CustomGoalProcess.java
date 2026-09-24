@@ -57,9 +57,6 @@ public final class CustomGoalProcess extends BaritoneProcessHelper implements IC
     public void setGoal(Goal goal) {
         this.goal = goal;
         this.mostRecentGoal = goal;
-        if (baritone.getElytraProcess().isActive()) {
-            baritone.getElytraProcess().pathTo(goal);
-        }
         if (this.state == State.NONE) {
             this.state = State.GOAL_SET;
         }
@@ -105,9 +102,6 @@ public final class CustomGoalProcess extends BaritoneProcessHelper implements IC
                 }
                 if (this.goal == null || (this.goal.isInGoal(ctx.feetPos()) && this.goal.isInGoal(baritone.getPathingBehavior().pathStart()))) {
                     onLostControl(); // we're there xd
-                    if (Baritone.settings().disconnectOnArrival.value) {
-                        ctx.world().sendQuittingDisconnectingPacket();
-                    }
                     if (Baritone.settings().notificationOnPathComplete.value) {
                         logNotification("Pathing complete", false);
                     }

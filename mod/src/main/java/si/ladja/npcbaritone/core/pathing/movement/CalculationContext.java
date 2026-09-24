@@ -18,24 +18,20 @@
 
 package si.ladja.npcbaritone.core.pathing.movement;
 
-import si.ladja.npcbaritone.core.Baritone;
+import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.init.Enchantments;
+import net.minecraft.util.math.BlockPos;
 import si.ladja.npcbaritone.core.api.IBaritone;
+import si.ladja.npcbaritone.core.api.Settings;
 import si.ladja.npcbaritone.core.api.pathing.movement.ActionCosts;
-import si.ladja.npcbaritone.core.cache.WorldData;
 import si.ladja.npcbaritone.core.pathing.precompute.PrecomputedData;
 import si.ladja.npcbaritone.core.utils.BlockStateInterface;
 import si.ladja.npcbaritone.core.utils.ToolSet;
 import si.ladja.npcbaritone.core.utils.pathing.BetterWorldBorder;
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.init.Enchantments;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import si.ladja.npcbaritone.core.world.ChunkSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,12 +44,10 @@ import static si.ladja.npcbaritone.core.api.pathing.movement.ActionCosts.COST_IN
  */
 public class CalculationContext {
 
-    private static final ItemStack STACK_BUCKET_WATER = new ItemStack(Items.WATER_BUCKET);
-
     public final boolean safeForThreadedUse;
     public final IBaritone baritone;
-    public final World world;
-    public final WorldData worldData;
+    /** NPC Baritone (D-016): nastavitve, iz katerih je kontekst narejen (profil instance). */
+    public final Settings settings;
     public final BlockStateInterface bsi;
     public final ToolSet toolSet;
     public final boolean hasWaterBucket;
@@ -89,47 +83,71 @@ public class CalculationContext {
     }
 
     public CalculationContext(IBaritone baritone, boolean forUseOnAnotherThread) {
+        this(baritone, forUseOnAnotherThread ? ChunkSnapshot.Bounds.ALL : null);
+    }
+
+    /**
+     * @param snapshot null = BSI nad živimi chunki (glavna nit); sicer omejena kopija (D-013),
+     *                 kontekst je varen za iskalno nit.
+     */
+    public CalculationContext(IBaritone baritone, ChunkSnapshot.Bounds snapshot) {
+        this(baritone, baritone.getSettings(), baritone.getEntityContext().entity(),
+                new BlockStateInterface(baritone.getEntityContext(), snapshot), snapshot != null);
+    }
+
+    /**
+     * Headless (golden testi, D-022): brez entitete in brez instance. Iskanje poti deluje;
+     * premikov iz take poti ni mogoče izvajati.
+     */
+    public static CalculationContext headless(Settings settings, BlockStateInterface bsi) {
+        return new CalculationContext(null, settings, null, bsi, true);
+    }
+
+    /**
+     * @param entity lahko null (headless): brez orodja, očarov in učinkov
+     */
+    public CalculationContext(IBaritone baritone, Settings settings, EntityLivingBase entity, BlockStateInterface bsi, boolean forUseOnAnotherThread) {
         this.precomputedData = new PrecomputedData();
         this.safeForThreadedUse = forUseOnAnotherThread;
         this.baritone = baritone;
-        EntityPlayerSP player = baritone.getEntityContext().entity();
-        this.world = baritone.getEntityContext().world();
-        this.worldData = (WorldData) baritone.getEntityContext().worldData();
-        this.bsi = new BlockStateInterface(baritone.getEntityContext(), forUseOnAnotherThread);
-        this.toolSet = new ToolSet(player);
-        this.hasThrowaway = Baritone.settings().allowPlace.value && ((Baritone) baritone).getInventoryBehavior().hasGenericThrowaway();
-        this.hasWaterBucket = Baritone.settings().allowWaterBucketFall.value && InventoryPlayer.isHotbar(player.inventory.getSlotFor(STACK_BUCKET_WATER)) && !world.provider.isNether();
-        this.canSprint = Baritone.settings().allowSprint.value && player.getFoodStats().getFoodLevel() > 6;
-        this.placeBlockCost = Baritone.settings().blockPlacementPenalty.value;
-        this.allowBreak = Baritone.settings().allowBreak.value;
-        this.allowBreakAnyway = new ArrayList<>(Baritone.settings().allowBreakAnyway.value);
-        this.allowParkour = Baritone.settings().allowParkour.value;
-        this.allowParkourPlace = Baritone.settings().allowParkourPlace.value;
-        this.allowJumpAt256 = Baritone.settings().allowJumpAt256.value;
-        this.allowParkourAscend = Baritone.settings().allowParkourAscend.value;
-        this.assumeWalkOnWater = Baritone.settings().assumeWalkOnWater.value;
+        this.settings = settings;
+        this.bsi = bsi;
+        this.toolSet = new ToolSet(entity);
+        // D-015: brez inventarja ni metnih blokov ne vedra
+        this.hasThrowaway = false;
+        this.hasWaterBucket = false;
+        // Mobi nimajo lakote; igralčeva meja 6 hrane odpade
+        this.canSprint = settings.allowSprint.value;
+        this.placeBlockCost = settings.blockPlacementPenalty.value;
+        this.allowBreak = settings.allowBreak.value;
+        this.allowBreakAnyway = new ArrayList<>(settings.allowBreakAnyway.value);
+        this.allowParkour = settings.allowParkour.value;
+        this.allowParkourPlace = settings.allowParkourPlace.value;
+        this.allowJumpAt256 = settings.allowJumpAt256.value;
+        this.allowParkourAscend = settings.allowParkourAscend.value;
+        this.assumeWalkOnWater = settings.assumeWalkOnWater.value;
         this.allowFallIntoLava = false; // Super secret internal setting for ElytraBehavior
-        this.frostWalker = EnchantmentHelper.getMaxEnchantmentLevel(Enchantments.FROST_WALKER, baritone.getEntityContext().entity());
-        this.allowDiagonalDescend = Baritone.settings().allowDiagonalDescend.value;
-        this.allowDiagonalAscend = Baritone.settings().allowDiagonalAscend.value;
-        this.allowDownward = Baritone.settings().allowDownward.value;
+        this.frostWalker = entity == null ? 0 : EnchantmentHelper.getMaxEnchantmentLevel(Enchantments.FROST_WALKER, entity);
+        this.allowDiagonalDescend = settings.allowDiagonalDescend.value;
+        this.allowDiagonalAscend = settings.allowDiagonalAscend.value;
+        this.allowDownward = settings.allowDownward.value;
         this.minFallHeight = 3; // Minimum fall height used by MovementFall
-        this.maxFallHeightNoWater = Baritone.settings().maxFallHeightNoWater.value;
-        this.maxFallHeightBucket = Baritone.settings().maxFallHeightBucket.value;
-        int depth = EnchantmentHelper.getDepthStriderModifier(player);
+        this.maxFallHeightNoWater = settings.maxFallHeightNoWater.value;
+        this.maxFallHeightBucket = settings.maxFallHeightBucket.value;
+        int depth = entity == null ? 0 : EnchantmentHelper.getDepthStriderModifier(entity);
         if (depth > 3) {
             depth = 3;
         }
         float mult = depth / 3.0F;
         this.waterWalkSpeed = ActionCosts.WALK_ONE_IN_WATER_COST * (1 - mult) + ActionCosts.WALK_ONE_BLOCK_COST * mult;
-        this.breakBlockAdditionalCost = Baritone.settings().blockBreakAdditionalPenalty.value;
-        this.backtrackCostFavoringCoefficient = Baritone.settings().backtrackCostFavoringCoefficient.value;
-        this.jumpPenalty = Baritone.settings().jumpPenalty.value;
-        this.walkOnWaterOnePenalty = Baritone.settings().walkOnWaterOnePenalty.value;
+        this.breakBlockAdditionalCost = settings.blockBreakAdditionalPenalty.value;
+        this.backtrackCostFavoringCoefficient = settings.backtrackCostFavoringCoefficient.value;
+        this.jumpPenalty = settings.jumpPenalty.value;
+        this.walkOnWaterOnePenalty = settings.walkOnWaterOnePenalty.value;
         // why cache these things here, why not let the movements just get directly from settings?
         // because if some movements are calculated one way and others are calculated another way,
         // then you get a wildly inconsistent path that isn't optimal for either scenario.
-        this.worldBorder = new BetterWorldBorder(world.getWorldBorder());
+        this.worldBorder = bsi.worldBorder;
     }
 
     public final IBaritone getBaritone() {

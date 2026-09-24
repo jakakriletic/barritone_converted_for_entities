@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +24,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.world.IBlockAccess;
 
 /**
  * @author Brady
@@ -36,12 +37,12 @@ public final class VecUtils {
     /**
      * Calculates the center of the block at the specified position's bounding box
      *
-     * @param world The world that the block is in, used to provide the bounding box
+     * @param world The world that the block is in, used to provide the bounding box (NPC Baritone: BSI access, D-012)
      * @param pos   The block position
      * @return The center of the block's bounding box
      * @see #getBlockPosCenter(BlockPos)
      */
-    public static Vec3d calculateBlockCenter(World world, BlockPos pos) {
+    public static Vec3d calculateBlockCenter(IBlockAccess world, BlockPos pos) {
         IBlockState b = world.getBlockState(pos);
         AxisAlignedBB bbox = b.getBoundingBox(world, pos);
         double xDiff = (bbox.minX + bbox.maxX) / 2;
@@ -65,7 +66,7 @@ public final class VecUtils {
      *
      * @param pos The block position
      * @return The assumed center of the position
-     * @see #calculateBlockCenter(World, BlockPos)
+     * @see #calculateBlockCenter(IBlockAccess, BlockPos)
      */
     public static Vec3d getBlockPosCenter(BlockPos pos) {
         return new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);

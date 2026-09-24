@@ -18,19 +18,19 @@
 
 package si.ladja.npcbaritone.core.api.utils;
 
-import si.ladja.npcbaritone.core.api.BaritoneAPI;
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import si.ladja.npcbaritone.core.api.BaritoneAPI;
 
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 /**
- * An ease-of-access interface to provide the {@link Minecraft} game instance,
- * chat and console logging mechanisms, and the Baritone chat prefix.
+ * NPC Baritone (M1.9): namesto klepeta, toastov in namiznih obvestil gre vse v log4j
+ * ({@code npcbaritone/core}). Podpisi so ohranjeni, da klicna mesta ostanejo nespremenjena.
+ * {@code logDebug} gre na INFO samo, če je {@code chatDebug} vklopljen, sicer na DEBUG.
  *
  * @author Brady
  * @since 8/1/2018
@@ -42,200 +42,86 @@ public interface Helper {
      */
     Helper HELPER = new Helper() {};
 
-    /**
-     * The main game instance returned by {@link Minecraft#getMinecraft()}.
-     * Deprecated since {@link IEntityContext#minecraft()} should be used instead (In the majority of cases).
-     */
-    @Deprecated
-    Minecraft mc = Minecraft.getMinecraft();
+    Logger LOG = LogManager.getLogger("npcbaritone/core");
 
-    static ITextComponent getPrefix() {
-        // Inner text component
-        final Calendar now = Calendar.getInstance();
-        final boolean xd = now.get(Calendar.MONTH) == Calendar.APRIL && now.get(Calendar.DAY_OF_MONTH) <= 3;
-        ITextComponent baritone = new TextComponentString(xd ? "Baritoe" : BaritoneAPI.getSettings().shortBaritonePrefix.value ? "B" : "Baritone");
-        baritone.getStyle().setColor(TextFormatting.LIGHT_PURPLE);
-
-        // Outer brackets
-        ITextComponent prefix = new TextComponentString("");
-        prefix.getStyle().setColor(TextFormatting.DARK_PURPLE);
-        prefix.appendText("[");
-        prefix.appendSibling(baritone);
-        prefix.appendText("]");
-
-        return prefix;
+    static String text(ITextComponent... components) {
+        return Arrays.stream(components).map(ITextComponent::getUnformattedText).collect(Collectors.joining());
     }
 
-    /**
-     * Send a message to display as a toast popup
-     *
-     * @param title   The title to display in the popup
-     * @param message The message to display in the popup
-     */
     default void logToast(ITextComponent title, ITextComponent message) {
-        Minecraft.getMinecraft().addScheduledTask(() -> BaritoneAPI.getSettings().toaster.value.accept(title, message));
+        LOG.info("{}: {}", title.getUnformattedText(), message.getUnformattedText());
     }
 
-    /**
-     * Send a message to display as a toast popup
-     *
-     * @param title   The title to display in the popup
-     * @param message The message to display in the popup
-     */
     default void logToast(String title, String message) {
-        logToast(new TextComponentString(title), new TextComponentString(message));
+        LOG.info("{}: {}", title, message);
     }
 
-    /**
-     * Send a message to display as a toast popup
-     *
-     * @param message The message to display in the popup
-     */
     default void logToast(String message) {
-        logToast(Helper.getPrefix(), new TextComponentString(message));
+        LOG.info(message);
     }
 
-    /**
-     * Send a message as a desktop notification
-     *
-     * @param message The message to display in the notification
-     */
     default void logNotification(String message) {
         logNotification(message, false);
     }
 
-    /**
-     * Send a message as a desktop notification
-     *
-     * @param message The message to display in the notification
-     * @param error   Whether to log as an error
-     */
     default void logNotification(String message, boolean error) {
-        if (BaritoneAPI.getSettings().desktopNotifications.value) {
-            logNotificationDirect(message, error);
-        }
+        logNotificationDirect(message, error);
     }
 
-    /**
-     * Send a message as a desktop notification regardless of desktopNotifications
-     * (should only be used for critically important messages)
-     *
-     * @param message The message to display in the notification
-     */
     default void logNotificationDirect(String message) {
         logNotificationDirect(message, false);
     }
 
-    /**
-     * Send a message as a desktop notification regardless of desktopNotifications
-     * (should only be used for critically important messages)
-     *
-     * @param message The message to display in the notification
-     * @param error   Whether to log as an error
-     */
     default void logNotificationDirect(String message, boolean error) {
-        Minecraft.getMinecraft().addScheduledTask(() -> BaritoneAPI.getSettings().notifier.value.accept(message, error));
-    }
-
-    /**
-     * Send a message to chat only if chatDebug is on
-     *
-     * @param message The message to display in chat
-     */
-    default void logDebug(String message) {
-        if (!BaritoneAPI.getSettings().chatDebug.value) {
-            //System.out.println("Suppressed debug message:");
-            //System.out.println(message);
-            return;
-        }
-        // We won't log debug chat into toasts
-        // Because only a madman would want that extreme spam -_-
-        logDirect(message, false);
-    }
-
-    /**
-     * Send components to chat with the [Baritone] prefix
-     *
-     * @param logAsToast Whether to log as a toast notification
-     * @param components The components to send
-     */
-    default void logDirect(boolean logAsToast, ITextComponent... components) {
-        ITextComponent component = new TextComponentString("");
-        if (!logAsToast) {
-            // If we are not logging as a Toast
-            // Append the prefix to the base component line
-            component.appendSibling(getPrefix());
-            component.appendSibling(new TextComponentString(" "));
-        }
-        Arrays.asList(components).forEach(component::appendSibling);
-        if (logAsToast) {
-            logToast(getPrefix(), component);
+        if (error) {
+            LOG.warn(message);
         } else {
-            Minecraft.getMinecraft().addScheduledTask(() -> BaritoneAPI.getSettings().logger.value.accept(component));
+            LOG.info(message);
         }
     }
 
-    /**
-     * Send components to chat with the [Baritone] prefix
-     *
-     * @param components The components to send
-     */
+    default void logDebug(String message) {
+        if (BaritoneAPI.getSettings().chatDebug.value) {
+            LOG.info(message);
+        } else {
+            LOG.debug(message);
+        }
+    }
+
+    default void logDirect(boolean logAsToast, ITextComponent... components) {
+        LOG.info(text(components));
+    }
+
     default void logDirect(ITextComponent... components) {
-        logDirect(BaritoneAPI.getSettings().logAsToast.value, components);
+        LOG.info(text(components));
     }
 
-    /**
-     * Send a message to chat regardless of chatDebug (should only be used for critically important messages, or as a
-     * direct response to a chat command)
-     *
-     * @param message    The message to display in chat
-     * @param color      The color to print that message in
-     * @param logAsToast Whether to log as a toast notification
-     */
     default void logDirect(String message, TextFormatting color, boolean logAsToast) {
-        Stream.of(message.split("\n")).forEach(line -> {
-            ITextComponent component = new TextComponentString(line.replace("\t", "    "));
-            component.getStyle().setColor(color);
-            logDirect(logAsToast, component);
-        });
+        if (color == TextFormatting.RED) {
+            LOG.warn(message);
+        } else {
+            LOG.info(message);
+        }
     }
 
-    /**
-     * Send a message to chat regardless of chatDebug (should only be used for critically important messages, or as a
-     * direct response to a chat command)
-     *
-     * @param message The message to display in chat
-     * @param color   The color to print that message in
-     */
     default void logDirect(String message, TextFormatting color) {
-        logDirect(message, color, BaritoneAPI.getSettings().logAsToast.value);
+        logDirect(message, color, false);
     }
 
-    /**
-     * Send a message to chat regardless of chatDebug (should only be used for critically important messages, or as a
-     * direct response to a chat command)
-     *
-     * @param message    The message to display in chat
-     * @param logAsToast Whether to log as a toast notification
-     */
     default void logDirect(String message, boolean logAsToast) {
-        logDirect(message, TextFormatting.GRAY, logAsToast);
+        LOG.info(message);
     }
 
     /**
-     * Send a message to chat regardless of chatDebug (should only be used for critically important messages, or as a
-     * direct response to a chat command)
+     * Send a message to the log regardless of chatDebug.
      *
-     * @param message The message to display in chat
+     * @param message The message to log
      */
     default void logDirect(String message) {
-        logDirect(message, BaritoneAPI.getSettings().logAsToast.value);
+        LOG.info(message);
     }
 
     default void logUnhandledException(final Throwable exception) {
-        HELPER.logDirect("An unhandled exception occurred. " +
-                        "The error is in your game's log, please report this at https://github.com/cabaletta/baritone/issues",
-                TextFormatting.RED);
-        exception.printStackTrace();
+        LOG.error("An unhandled exception occurred in NPC Baritone", exception);
     }
 }

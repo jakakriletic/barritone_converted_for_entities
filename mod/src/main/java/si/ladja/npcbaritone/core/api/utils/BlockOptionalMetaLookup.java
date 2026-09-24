@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,7 +18,6 @@
 
 package si.ladja.npcbaritone.core.api.utils;
 
-import si.ladja.npcbaritone.core.api.utils.accessor.IItemStack;
 import com.google.common.collect.ImmutableSet;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -78,7 +78,7 @@ public class BlockOptionalMetaLookup {
     }
 
     public boolean has(ItemStack stack) {
-        int hash = ((IItemStack) (Object) stack).getBaritoneHash();
+        int hash = BlockOptionalMeta.stackHash(stack);
         return stackHashes.contains(hash)
                 || stackHashes.contains(hash - stack.getItemDamage());
     }

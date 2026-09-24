@@ -259,7 +259,7 @@ public interface MovementHelper extends ActionCosts, Helper {
     }
 
     static boolean fullyPassable(IEntityContext ctx, BlockPos pos) {
-        IBlockState state = ctx.world().getBlockState(pos);
+        IBlockState state = BlockStateInterface.get(ctx, pos); // D-012
         Ternary fullyPassable = fullyPassableBlockState(state);
         if (fullyPassable == YES) {
             return true;
@@ -593,9 +593,7 @@ public interface MovementHelper extends ActionCosts, Helper {
      * @param ts  previously calculated ToolSet
      */
     static void switchToBestToolFor(IEntityContext ctx, IBlockState b, ToolSet ts, boolean preferSilkTouch) {
-        if (Baritone.settings().autoTool.value && !Baritone.settings().assumeExternalAutoTool.value) {
-            ctx.entity().inventory.currentItem = ts.getBestSlot(b.getBlock(), preferSilkTouch);
-        }
+        // D-015: entiteta nima hotbara; orodje v roki se ne menja.
     }
 
     static void moveTowards(IEntityContext ctx, MovementState state, BlockPos pos) {
@@ -685,7 +683,7 @@ public interface MovementHelper extends ActionCosts, Helper {
                 double faceY = (placeAt.getY() + against1.getY() + 0.5D) * 0.5D;
                 double faceZ = (placeAt.getZ() + against1.getZ() + 1.0D) * 0.5D;
                 Rotation place = RotationUtils.calcRotationFromVec3d(wouldSneak ? RayTraceUtils.inferSneakingEyePosition(ctx.entity()) : ctx.headPos(), new Vec3d(faceX, faceY, faceZ), ctx.entityRotations());
-                Rotation actual = baritone.getLookBehavior().getAimProcessor().peekRotation(place);
+                Rotation actual = place; // NPC Baritone: brez aim procesorja (D-011)
                 RayTraceResult res = RayTraceUtils.rayTraceTowards(ctx.entity(), actual, ctx.playerController().getBlockReachDistance(), wouldSneak);
                 if (res != null && res.typeOfHit == RayTraceResult.Type.BLOCK && res.getBlockPos().equals(against1) && res.getBlockPos().offset(res.sideHit).equals(placeAt)) {
                     state.setTarget(new MovementState.MovementTarget(place, true));

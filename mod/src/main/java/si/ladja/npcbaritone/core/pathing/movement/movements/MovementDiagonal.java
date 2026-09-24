@@ -32,7 +32,7 @@ import si.ladja.npcbaritone.core.utils.pathing.MutableMoveResult;
 import com.google.common.collect.ImmutableSet;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.entity.EntityLiving;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
@@ -62,7 +62,7 @@ public class MovementDiagonal extends Movement {
     protected boolean safeToCancel(MovementState state) {
         //too simple. backfill does not work after cornering with this
         //return context.precomputedData.canWalkOn(ctx, ctx.feetPos().down());
-        EntityPlayerSP player = ctx.entity();
+        EntityLiving player = ctx.entity();
         double offset = 0.25;
         double x = player.posX;
         double y = player.posY - 1;

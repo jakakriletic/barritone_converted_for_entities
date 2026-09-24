@@ -69,7 +69,7 @@ public abstract class Movement implements IMovement, MovementHelper {
 
     protected Movement(IBaritone baritone, BetterBlockPos src, BetterBlockPos dest, BetterBlockPos[] toBreak, BetterBlockPos toPlace) {
         this.baritone = baritone;
-        this.ctx = baritone.getEntityContext();
+        this.ctx = baritone == null ? null : baritone.getEntityContext(); // headless iskanje nima instance
         this.src = src;
         this.dest = dest;
         this.positionsToBreak = toBreak;
@@ -124,7 +124,6 @@ public abstract class Movement implements IMovement, MovementHelper {
      */
     @Override
     public MovementStatus update() {
-        ctx.entity().capabilities.isFlying = false;
         currentState = updateState(currentState);
         if (MovementHelper.isLiquid(ctx, ctx.feetPos())) {
             currentState.setInput(Input.JUMP, true);

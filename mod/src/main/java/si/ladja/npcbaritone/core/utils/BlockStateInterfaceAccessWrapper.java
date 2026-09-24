@@ -79,7 +79,7 @@ public final class BlockStateInterfaceAccessWrapper implements IBlockAccess {
 
     @Override
     public WorldType getWorldType() {
-        return this.world.getWorldType();
+        return this.world == null ? WorldType.DEFAULT : this.world.getWorldType(); // headless posnetek nima sveta
     }
 
     @Override

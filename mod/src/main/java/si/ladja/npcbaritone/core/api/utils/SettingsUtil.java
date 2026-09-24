@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +21,6 @@ package si.ladja.npcbaritone.core.api.utils;
 import si.ladja.npcbaritone.core.api.BaritoneAPI;
 import si.ladja.npcbaritone.core.api.Settings;
 import net.minecraft.block.Block;
-import net.minecraft.client.Minecraft;
 import net.minecraft.item.Item;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.Vec3i;
@@ -66,9 +66,12 @@ public class SettingsUtil {
         }
     }
 
-    public static void readAndApply(Settings settings, String settingsName) {
+    /**
+     * NPC Baritone: pot do datoteke poda klicatelj (strežniški config), ne .minecraft/baritone.
+     */
+    public static void readAndApply(Settings settings, Path settingsFile) {
         try {
-            forEachLine(settingsByName(settingsName), line -> {
+            forEachLine(settingsFile, line -> {
                 Matcher matcher = SETTING_PATTERN.matcher(line);
                 if (!matcher.matches()) {
                     Helper.HELPER.logDirect("Invalid syntax in setting file: " + line);
@@ -92,8 +95,8 @@ public class SettingsUtil {
         }
     }
 
-    public static synchronized void save(Settings settings) {
-        try (BufferedWriter out = Files.newBufferedWriter(settingsByName(SETTINGS_DEFAULT_NAME))) {
+    public static synchronized void save(Settings settings, Path settingsFile) {
+        try (BufferedWriter out = Files.newBufferedWriter(settingsFile)) {
             for (Settings.Setting setting : modifiedSettings(settings)) {
                 out.write(settingToString(setting) + "\n");
             }
@@ -101,10 +104,6 @@ public class SettingsUtil {
             Helper.HELPER.logDirect("Exception thrown while saving Baritone settings!");
             ex.printStackTrace();
         }
-    }
-
-    private static Path settingsByName(String name) {
-        return Minecraft.getMinecraft().gameDir.toPath().resolve("baritone").resolve(name);
     }
 
     public static List<Settings.Setting> modifiedSettings(Settings settings) {

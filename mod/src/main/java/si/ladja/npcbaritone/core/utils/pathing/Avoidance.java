@@ -26,6 +26,8 @@ import net.minecraft.entity.monster.EntityEnderman;
 import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.monster.EntityPigZombie;
 import net.minecraft.entity.monster.EntitySpider;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.tileentity.TileEntityMobSpawner;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
@@ -33,6 +35,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class Avoidance {
+
+    /** Iskalni polmer za spawnerje (Baritone je iskal v 2 regijah predpomnilnika). */
+    private static final double SPAWNER_SEARCH_RADIUS_SQ = 256.0 * 256.0;
 
     private final int centerX;
     private final int centerY;
@@ -69,7 +74,12 @@ public class Avoidance {
         double mobSpawnerCoeff = Baritone.settings().mobSpawnerAvoidanceCoefficient.value;
         double mobCoeff = Baritone.settings().mobAvoidanceCoefficient.value;
         if (mobSpawnerCoeff != 1.0D) {
-            ctx.worldData().getCachedWorld().getLocationsOf("mob_spawner", 1, ctx.feetPos().x, ctx.feetPos().z, 2)
+            // NPC Baritone: brez predpomnilnika regij (D-014); naložene tile entitete na glavni niti
+            BlockPos feet = ctx.feetPos();
+            ctx.world().loadedTileEntityList.stream()
+                    .filter(te -> te instanceof TileEntityMobSpawner)
+                    .map(TileEntity::getPos)
+                    .filter(pos -> pos.distanceSq(feet) <= SPAWNER_SEARCH_RADIUS_SQ)
                     .forEach(mobspawner -> res.add(new Avoidance(mobspawner, mobSpawnerCoeff, Baritone.settings().mobSpawnerAvoidanceRadius.value)));
         }
         if (mobCoeff != 1.0D) {

@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,75 +18,51 @@
 
 package si.ladja.npcbaritone.core;
 
+import net.minecraft.entity.EntityLiving;
 import si.ladja.npcbaritone.core.api.IBaritone;
 import si.ladja.npcbaritone.core.api.IBaritoneProvider;
-import si.ladja.npcbaritone.core.api.cache.IWorldScanner;
-import si.ladja.npcbaritone.core.api.command.ICommandSystem;
-import si.ladja.npcbaritone.core.api.schematic.ISchematicSystem;
-import si.ladja.npcbaritone.core.cache.FasterWorldScanner;
-import si.ladja.npcbaritone.core.command.CommandSystem;
-import si.ladja.npcbaritone.core.command.ExampleBaritoneControl;
-import si.ladja.npcbaritone.core.utils.schematic.SchematicSystem;
-import net.minecraft.client.Minecraft;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
+ * Register instanc po entiteti s šibkimi ključi: instanca izgine z entiteto (M1.10).
+ *
  * @author Brady
  * @since 9/29/2018
  */
 public final class BaritoneProvider implements IBaritoneProvider {
 
-    private final List<IBaritone> all;
-    private final List<IBaritone> allView;
+    private final Map<EntityLiving, Baritone> byEntity = new WeakHashMap<>();
 
-    public BaritoneProvider() {
-        this.all = new CopyOnWriteArrayList<>();
-        this.allView = Collections.unmodifiableList(this.all);
-
-        // Setup chat control, just for the primary instance
-        final Baritone primary = (Baritone) this.createBaritone(Minecraft.getMinecraft());
-        primary.registerBehavior(ExampleBaritoneControl::new);
+    @Override
+    public synchronized List<IBaritone> getAllBaritones() {
+        return new ArrayList<>(this.byEntity.values());
     }
 
     @Override
-    public IBaritone getPrimaryBaritone() {
-        return this.all.get(0);
+    public synchronized IBaritone getBaritone(EntityLiving entity) {
+        return this.byEntity.get(entity);
     }
 
     @Override
-    public List<IBaritone> getAllBaritones() {
-        return this.allView;
-    }
-
-    @Override
-    public synchronized IBaritone createBaritone(Minecraft minecraft) {
-        IBaritone baritone = this.getBaritoneForMinecraft(minecraft);
-        if (baritone == null) {
-            this.all.add(baritone = new Baritone(minecraft));
-        }
-        return baritone;
+    public synchronized IBaritone createBaritone(EntityLiving entity) {
+        return this.byEntity.computeIfAbsent(entity, Baritone::new);
     }
 
     @Override
     public synchronized boolean destroyBaritone(IBaritone baritone) {
-        return baritone != this.getPrimaryBaritone() && this.all.remove(baritone);
-    }
-
-    @Override
-    public IWorldScanner getWorldScanner() {
-        return FasterWorldScanner.INSTANCE;
-    }
-
-    @Override
-    public ICommandSystem getCommandSystem() {
-        return CommandSystem.INSTANCE;
-    }
-
-    @Override
-    public ISchematicSystem getSchematicSystem() {
-        return SchematicSystem.INSTANCE;
+        if (!(baritone instanceof Baritone)) {
+            return false;
+        }
+        Baritone b = (Baritone) baritone;
+        if (this.byEntity.get(b.getEntityContext().entity()) != b) {
+            return false;
+        }
+        b.getPathingBehavior().forceCancel();
+        this.byEntity.remove(b.getEntityContext().entity());
+        return true;
     }
 }

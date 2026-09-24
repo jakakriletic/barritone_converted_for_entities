@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,45 +19,17 @@
 package si.ladja.npcbaritone.core.api.utils;
 
 import si.ladja.npcbaritone.core.api.BaritoneAPI;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.ClickType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameType;
-import net.minecraft.world.World;
 
 /**
+ * NPC Baritone (D-015): entiteta ne ruši, ne postavlja in nima inventarja; od klientskega
+ * nadzornika ostane samo doseg. Interakcije z vrati pridejo v M4.
+ *
  * @author Brady
- * @since 12/14/2018
+ * @since 12.14.2018
  */
 public interface IPlayerController {
 
-    void syncHeldItem();
-
-    boolean hasBrokenBlock();
-
-    boolean onPlayerDamageBlock(BlockPos pos, EnumFacing side);
-
-    void resetBlockRemoving();
-
-    ItemStack windowClick(int windowId, int slotId, int mouseButton, ClickType type, EntityPlayer player);
-
-    GameType getGameType();
-
-    EnumActionResult processRightClickBlock(EntityPlayerSP player, World world, BlockPos pos, EnumFacing direction, Vec3d vec, EnumHand hand);
-
-    EnumActionResult processRightClick(EntityPlayerSP player, World world, EnumHand hand);
-
-    boolean clickBlock(BlockPos loc, EnumFacing face);
-
-    void setHittingBlock(boolean hittingBlock);
-
     default double getBlockReachDistance() {
-        return this.getGameType().isCreative() ? 5.0F : BaritoneAPI.getSettings().blockReachDistance.value;
+        return BaritoneAPI.getSettings().blockReachDistance.value;
     }
 }

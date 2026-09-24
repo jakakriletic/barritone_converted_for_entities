@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,7 +18,6 @@
 
 package si.ladja.npcbaritone.core.api.utils;
 
-import si.ladja.npcbaritone.core.api.utils.accessor.IItemStack;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.block.*;
@@ -37,6 +37,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public final class BlockOptionalMeta {
+
+    /**
+     * NPC Baritone: nadomestek mixina {@code IItemStack.getBaritoneHash()} (brez mixinov, D-008);
+     * enaka formula kot {@code MixinItemStack.recalculateHash}.
+     */
+    public static int stackHash(ItemStack stack) {
+        return stack.getItem() == null ? -1 : stack.getItem().hashCode() + stack.getItemDamage();
+    }
+
     // id:meta or id[] or id[properties] where id and properties are any text with at least one character and meta is a one or two digit number
     private static final Pattern PATTERN = Pattern.compile("^(?<id>.+?)(?::(?<meta>\\d\\d?)|\\[(?<properties>.+?)?\\])?$");
 
@@ -295,7 +304,7 @@ public final class BlockOptionalMeta {
                                 state.getBlock().getItemDropped(state, new Random(), 0),
                                 state.getBlock().damageDropped(state)
                         ))
-                        .map(stack -> ((IItemStack) (Object) stack).getBaritoneHash())
+                        .map(stack -> BlockOptionalMeta.stackHash(stack))
                         .toArray(Integer[]::new)
         );
     }
@@ -320,7 +329,7 @@ public final class BlockOptionalMeta {
 
     public boolean matches(ItemStack stack) {
         //noinspection ConstantConditions
-        int hash = ((IItemStack) (Object) stack).getBaritoneHash();
+        int hash = BlockOptionalMeta.stackHash(stack);
 
         if (noMeta) {
             hash -= stack.getItemDamage();

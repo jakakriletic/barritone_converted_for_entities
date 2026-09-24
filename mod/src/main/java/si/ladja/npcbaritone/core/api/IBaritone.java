@@ -20,16 +20,17 @@ package si.ladja.npcbaritone.core.api;
 
 import si.ladja.npcbaritone.core.api.behavior.ILookBehavior;
 import si.ladja.npcbaritone.core.api.behavior.IPathingBehavior;
-import si.ladja.npcbaritone.core.api.cache.IWorldProvider;
-import si.ladja.npcbaritone.core.api.command.manager.ICommandManager;
 import si.ladja.npcbaritone.core.api.event.listener.IEventBus;
 import si.ladja.npcbaritone.core.api.pathing.calc.IPathingControlManager;
-import si.ladja.npcbaritone.core.api.process.*;
-import si.ladja.npcbaritone.core.api.selection.ISelectionManager;
-import si.ladja.npcbaritone.core.api.utils.IInputOverrideHandler;
+import si.ladja.npcbaritone.core.api.process.ICustomGoalProcess;
 import si.ladja.npcbaritone.core.api.utils.IEntityContext;
+import si.ladja.npcbaritone.core.api.utils.IInputOverrideHandler;
 
 /**
+ * Ena instanca Baritona na eno entiteto. NPC Baritone (D-020): samo iskanje in izvajanje
+ * poti do cilja; brez rudarjenja, gradnje, farmanja, raziskovanja, sledenja, elytre,
+ * ukazov in izbir.
+ *
  * @author Brady
  * @since 9/29/2018
  */
@@ -48,65 +49,13 @@ public interface IBaritone {
     ILookBehavior getLookBehavior();
 
     /**
-     * @return The {@link IFollowProcess} instance
-     * @see IFollowProcess
-     */
-    IFollowProcess getFollowProcess();
-
-    /**
-     * @return The {@link IMineProcess} instance
-     * @see IMineProcess
-     */
-    IMineProcess getMineProcess();
-
-    /**
-     * @return The {@link IBuilderProcess} instance
-     * @see IBuilderProcess
-     */
-    IBuilderProcess getBuilderProcess();
-
-    /**
-     * @return The {@link IExploreProcess} instance
-     * @see IExploreProcess
-     */
-    IExploreProcess getExploreProcess();
-
-    /**
-     * @return The {@link IFarmProcess} instance
-     * @see IFarmProcess
-     */
-    IFarmProcess getFarmProcess();
-
-    /**
      * @return The {@link ICustomGoalProcess} instance
      * @see ICustomGoalProcess
      */
     ICustomGoalProcess getCustomGoalProcess();
 
     /**
-     * @return The {@link IGetToBlockProcess} instance
-     * @see IGetToBlockProcess
-     */
-    IGetToBlockProcess getGetToBlockProcess();
-
-    /**
-     * @return The {@link IElytraProcess} instance
-     * @see IElytraProcess
-     */
-    IElytraProcess getElytraProcess();
-
-    /**
-     * @return The {@link IWorldProvider} instance
-     * @see IWorldProvider
-     */
-    IWorldProvider getWorldProvider();
-
-    /**
-     * Returns the {@link IPathingControlManager} for this {@link IBaritone} instance, which is responsible
-     * for managing the {@link IBaritoneProcess}es which control the {@link IPathingBehavior} state.
-     *
-     * @return The {@link IPathingControlManager} instance
-     * @see IPathingControlManager
+     * @return The {@link IPathingControlManager} for this {@link IBaritone}
      */
     IPathingControlManager getPathingControlManager();
 
@@ -129,19 +78,7 @@ public interface IBaritone {
     IEventBus getGameEventHandler();
 
     /**
-     * @return The {@link ISelectionManager} instance
-     * @see ISelectionManager
+     * Nastavitve te instance (D-016). Do M1.8 so vse instance na istem globalnem profilu.
      */
-    ISelectionManager getSelectionManager();
-
-    /**
-     * @return The {@link ICommandManager} instance
-     * @see ICommandManager
-     */
-    ICommandManager getCommandManager();
-
-    /**
-     * Open click
-     */
-    void openClick();
+    Settings getSettings();
 }
