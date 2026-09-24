@@ -46,6 +46,10 @@ si.ladja.npcbaritone
 └── client/                 samo klient, neobvezno (M3): izris poti iz paketa
 ```
 
+Stanje po M1: Baritonovi razredi so ohranili svoje podpakete (`core/utils/BlockStateInterface`,
+`core/utils/InputOverrideHandler`, `core/api/...`); nov je `core/world/ChunkSnapshot`. BSI nosi
+profil nastavitev instance (`bsi.settings`, D-016), `IEntityContext.baritone()` vodi do instance.
+
 Pravilo meje: `core` ne uvaža `forge` in nikoli `net.minecraft.client`. `api` ne uvaža
 `core` razen ciljev. Test v M1 preveri uvoze (ArchUnit-lite: skeniranje izvornih
 datotek).

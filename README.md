@@ -13,8 +13,8 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 | | |
 |---|---|
 | Datum zadnje posodobitve | 2026-09-24 |
-| Trenutna faza | **M0 zaključen** (build, JUnit, klient in dedicated server zeleni); **M1 — jedro na strežniku** v teku |
-| Naslednji korak | M1 ([`milestones/M1-jedro-na-strezniku`](milestones/M1-jedro-na-strezniku/README.md)), stanje v [`docs/04-STANJE.md`](docs/04-STANJE.md) |
+| Trenutna faza | **M1 — jedro na strežniku:** na veji `m1-jedro` se Baritone prevede nad `EntityLiving`, golden testi G1–G12 zeleni v oblaku (38/38 JUnit); čaka Windows build |
+| Naslednji korak | `git checkout m1-jedro`, `.\dev.ps1 build --offline`, `.\smoke-server.ps1` → merge v `main` → **M2 (noge)**; glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |
@@ -86,11 +86,10 @@ barittone_for_npc_rework/
 │   ├── baritone-1.12.2/     cabaletta/baritone @ v1.2.19 (d9cb2d9)
 │   └── automatone/          Ladysnake/Automatone @ 843b8397
 ├── mod/                     Gradle projekt knjižnice (FG 2.3, Forge 14.23.5.2847)
-│   ├── src/main/java        naša koda (si.ladja.npcbaritone)
-│   ├── src/upstream/java    nespremenjen Baritone v1.2.19 (ni v prevodu do M1.1)
-│   └── src/test/java        headless JUnit (SyntheticWorld, sonde)
+│   ├── src/main/java        si.ladja.npcbaritone.core (port Baritona) + forge
+│   └── src/test/java        headless JUnit (SyntheticWorld, golden testi, lint)
 ├── dev.ps1, prepare-assets.ps1, smoke-server.ps1
-└── tools/                   cloud-compile.sh, compile_probe.sh, check-upstream-import.sh, *.py
+└── tools/                   cloud-compile.sh, compile_probe.sh, check-upstream-import.sh, portmap_cut.py, mark_modified.py
 ```
 
 Reference se ne spreminjajo in se iz njih ne gradi.

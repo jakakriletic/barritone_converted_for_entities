@@ -185,6 +185,30 @@ ali pa kopije chunkov obdržijo referenco na svet. Poleg tega BSI preskoči chun
 `isLoaded() == false` — sintetični chunki morajo imeti `markLoaded(true)`. Obe dejstvi sta
 pripeti kot testa v `HarnessTest`.
 
+### §4b M1: kar se je pokazalo pri prenosu jedra
+
+Izmerjeno 24. 9. 2026 na veji `m1-jedro`.
+
+- **Obseg predelave (vrata V1):** v `core/pathing/**` je proti relokaciji (`d99d792`)
+  spremenjenih/izbrisanih **270 od 5.764 vrstic (4,7 %)** — daleč pod mejo 20 % iz D-001.
+  Celoten `core` proti izrezu: +1.190 / −2.493 od 17.026 vrstic (večinoma brisanje
+  klientske kode).
+- **Kontekst vsak tick:** Baritonov `PathingBehavior.secretInternalSetGoalAndPath` je
+  `new CalculationContext(baritone, true)` (kopija **celotne** mape naloženih chunkov +
+  `PrecomputedData` ~12k intov) naredil **vsak tick**, dokler proces vrača
+  `SET_GOAL_AND_PATH`, tudi ko iskanje že teče ali pot že obstaja. Na klientu en bot, na
+  strežniku N NPC-jev × kopija na tick (R-04). Popravljeno: kontekst se naredi šele ob
+  začetku iskanja, z omejenim posnetkom (M1.5). Podobno `PathExecutor` za preverbo
+  sprinta vsak tick.
+- **Rob posnetka ustavi iskanje:** A* se konča, ko `pathingMaxChunkBorderFetch` (50)
+  krat poskusi stopiti v nenaložen chunk. V majhnem posnetku (G12: zid čez celo 5×5
+  območje) to zgodi, preden A* pride do drage poti (rušenje), zato je iskanje obupalo
+  pri 1.733 vozliščih. Posledica za D-013/D-014: rob posnetka (`npcSnapshotMarginChunks`)
+  in ta meja skupaj določata, kako daleč okoli ovire NPC še išče. Umeri se v M5.
+- **Golden testi G1–G12** zeleni (`GoldenPathTest`, poročilo `golden.txt`): vsa iskanja
+  na 5×5 chunkih < 60 ms; G8 voda stane 102 proti 71 na ravnini; G7 (padec 4) konča s
+  `FAILURE`; G10 in G11 vrneta `SUCCESS_SEGMENT`.
+
 ## §5 CustomNPC rework
 
 Okolje (`OKOLJE.md`): Minecraft 1.12.2, Forge 14.23.5.2847, Temurin 8u492-b09

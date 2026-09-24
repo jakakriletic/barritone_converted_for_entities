@@ -66,3 +66,29 @@ ustavi in revidiraj D-001 (zapis v `02-ODLOCITVE.md`).
 ## Ni v obsegu
 
 Premikanje entitete (M2), vrata (M4), pravi executor (M5), `PathNavigate` (M6).
+
+## Stanje (2026-09-24, veja `m1-jedro`)
+
+| # | Stanje |
+|---|---|
+| M1.1–M1.3 | **narejeno** (mehanski commiti ločeni) |
+| M1.4 | **narejeno** — `IEntityContext`/`EntityContext` nad `EntityLiving`, `frame()` = identiteta |
+| M1.5 | **narejeno** — `ChunkSnapshot`, BSI bere `ExtendedBlockStorage`, posnetek ob začetku iskanja |
+| M1.6 | **narejeno** — `ArchitectureLintTest` |
+| M1.7 | **narejeno drugače** — `WorldData` izbrisan (nič ga ne rabi) |
+| M1.8 | **narejeno** — profil na instanco (prek BSI) |
+| M1.9 | **narejeno** — `Helper` → log4j |
+| M1.10 | **narejeno** — vitka instanca, šibek register |
+| M1.11 | **narejeno** — `SearchExecutor` (1 nit, vrsta 256) |
+| M1.12 | **narejeno** — G1–G12 zeleni v oblaku |
+| M1.13 | **narejeno** — lint meja paketov |
+
+| Merilo | Stanje |
+|---|---|
+| A1 | oblak zelen; Windows čaka |
+| A2 | G1–G12 zeleni v oblaku; Gradle na Windowsu čaka |
+| A3 | zeleno |
+| A4 | zeleno (`elytra` 0, `net.minecraft.client` 0) |
+| A5 | čaka `smoke-server.ps1` |
+| A6 | zeleno (`d99d792` relokacija, `b121b5c` izrez pred vsebinskimi) |
+| V1 | 4,7 % vrstic `pathing/**` spremenjenih — D-001 drži |
