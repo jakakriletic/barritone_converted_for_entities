@@ -4,6 +4,26 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-24 (3) — M0 zaključen
+
+Uporabnik je na Windowsu pognal build, server smoke in klient. Vsa merila M0 zelena:
+
+| # | Merilo | Dokaz |
+|---|---|---|
+| A1 | `.\dev.ps1 build` zelen | `mod/build/libs/npcbaritone-0.0.1-m0.jar` (LICENSE + NOTICE v `META-INF`) |
+| A2 | `runClient` naloži mod | `latest.log`: `NPC Baritone 0.0.1-m0 loaded (side=CLIENT…)`, `successfully loaded 5 mods`, integrirani strežnik `ready (dedicated=false)`, igralec vstopi v svet |
+| A3 | `runServer` (dedicated) naloži mod | `docs/build-logs/m0-server-smoke.log`: `side=SERVER`, `Done (0.856s)`, `ready (dedicated=true)`, čist `stop` |
+| A4 | `HarnessTest` zelen v oblaku in na Windowsu | Gradle JUnit: NpcbConfigTest 5/5, HarnessTest 8/8, IBlockAccessProbeTest 3/3 |
+| A5 | uvoz = upstream | `tools/check-upstream-import.sh` OK (311 datotek) |
+| A6 | profil napak zapisan | RAZISKAVA §1a |
+
+Opombe iz loga (nenevarne): `Missing English translation for npcbaritone` (mod nima lang
+datotek), FML `maven library folder` / `signature data` napake so standardne v dev okolju.
+
+**Naslednji korak:** M1.1 — mehanska relokacija `mod/src/upstream` → `core`/`api`.
+
+---
+
 ## 2026-09-24 (2) — M0: okolje, uvoz, headless harness
 
 **Namen seje:** M0 do točke, ko ostane samo Windows build in zagon v igri.
