@@ -18,7 +18,7 @@
 
 package si.ladja.npcbaritone.core.utils.pathing;
 
-import si.ladja.npcbaritone.core.Baritone;
+import si.ladja.npcbaritone.core.api.Settings;
 import si.ladja.npcbaritone.core.api.utils.BetterBlockPos;
 import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
@@ -67,12 +67,13 @@ public class Avoidance {
     }
 
     public static List<Avoidance> create(IEntityContext ctx) {
-        if (!Baritone.settings().avoidance.value) {
+        Settings settings = ctx.baritone().getSettings();
+        if (!settings.avoidance.value) {
             return Collections.emptyList();
         }
         List<Avoidance> res = new ArrayList<>();
-        double mobSpawnerCoeff = Baritone.settings().mobSpawnerAvoidanceCoefficient.value;
-        double mobCoeff = Baritone.settings().mobAvoidanceCoefficient.value;
+        double mobSpawnerCoeff = settings.mobSpawnerAvoidanceCoefficient.value;
+        double mobCoeff = settings.mobAvoidanceCoefficient.value;
         if (mobSpawnerCoeff != 1.0D) {
             // NPC Baritone: brez predpomnilnika regij (D-014); naložene tile entitete na glavni niti
             BlockPos feet = ctx.feetPos();
@@ -80,7 +81,7 @@ public class Avoidance {
                     .filter(te -> te instanceof TileEntityMobSpawner)
                     .map(TileEntity::getPos)
                     .filter(pos -> pos.distanceSq(feet) <= SPAWNER_SEARCH_RADIUS_SQ)
-                    .forEach(mobspawner -> res.add(new Avoidance(mobspawner, mobSpawnerCoeff, Baritone.settings().mobSpawnerAvoidanceRadius.value)));
+                    .forEach(mobspawner -> res.add(new Avoidance(mobspawner, mobSpawnerCoeff, settings.mobSpawnerAvoidanceRadius.value)));
         }
         if (mobCoeff != 1.0D) {
             ctx.world().loadedEntityList.stream()
@@ -88,7 +89,7 @@ public class Avoidance {
                     .filter(entity -> (!(entity instanceof EntitySpider)) || ctx.entity().getBrightness() < 0.5)
                     .filter(entity -> !(entity instanceof EntityPigZombie) || ((EntityPigZombie) entity).isAngry())
                     .filter(entity -> !(entity instanceof EntityEnderman) || ((EntityEnderman) entity).isScreaming())
-                    .forEach(entity -> res.add(new Avoidance(new BlockPos(entity), mobCoeff, Baritone.settings().mobAvoidanceRadius.value)));
+                    .forEach(entity -> res.add(new Avoidance(new BlockPos(entity), mobCoeff, settings.mobAvoidanceRadius.value)));
         }
         return res;
     }

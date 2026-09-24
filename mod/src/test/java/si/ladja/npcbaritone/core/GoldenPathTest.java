@@ -201,7 +201,8 @@ public class GoldenPathTest {
         if (r.path != null) {
             r.assertNoneInside(10, 10, 64, 66, -31, 46);
         }
-        // kontrola: isti teren z allowBreak=true gre skozi zid (dokaz, da test vidi razliko)
+        // kontrola: isti teren z allowBreak=true gre skozi zid (dokaz, da test vidi razliko in
+        // da je profil res na instanco: obe iskanji tečeta v istem JVM z različnima profiloma, D-016)
         Settings breaking = NpcProfile.create();
         breaking.allowBreak.value = true;
         Run control = search("G12 kontrola allowBreak=true", w, pos(0, 64, 0), new GoalBlock(20, 64, 0), breaking);
@@ -245,8 +246,8 @@ public class GoldenPathTest {
     }
 
     private static Run search(String name, SyntheticWorld w, BlockPos start, Goal goal, Settings settings) {
-        BlockStateInterface bsi = new BlockStateInterface(w.chunks(), null, null);
-        CalculationContext ctx = CalculationContext.headless(settings, bsi);
+        BlockStateInterface bsi = new BlockStateInterface(w.chunks(), null, null, settings);
+        CalculationContext ctx = CalculationContext.headless(bsi);
         AStarPathFinder finder = new AStarPathFinder(start.getX(), start.getY(), start.getZ(), goal, new Favoring(null, ctx), ctx);
         long t0 = System.nanoTime();
         PathCalculationResult result = finder.calculate(PRIMARY_TIMEOUT_MS, FAILURE_TIMEOUT_MS);

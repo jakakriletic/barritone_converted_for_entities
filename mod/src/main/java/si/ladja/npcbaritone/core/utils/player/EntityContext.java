@@ -22,6 +22,7 @@ import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 import si.ladja.npcbaritone.core.Baritone;
+import si.ladja.npcbaritone.core.api.IBaritone;
 import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 import si.ladja.npcbaritone.core.api.utils.IPlayerController;
 import si.ladja.npcbaritone.core.api.utils.RayTraceUtils;
@@ -34,8 +35,6 @@ import si.ladja.npcbaritone.core.api.utils.Rotation;
  * @since 11/12/2018
  */
 public final class EntityContext implements IEntityContext {
-
-    private static final IPlayerController CONTROLLER = new IPlayerController() {};
 
     private final Baritone baritone;
     private final EntityLiving entity;
@@ -51,8 +50,13 @@ public final class EntityContext implements IEntityContext {
     }
 
     @Override
+    public IBaritone baritone() {
+        return this.baritone;
+    }
+
+    @Override
     public IPlayerController playerController() {
-        return CONTROLLER;
+        return () -> this.baritone.getSettings().blockReachDistance.value;
     }
 
     @Override

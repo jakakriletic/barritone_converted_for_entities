@@ -18,7 +18,7 @@
 
 package si.ladja.npcbaritone.core.utils;
 
-import si.ladja.npcbaritone.core.Baritone;
+import si.ladja.npcbaritone.core.api.Settings;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
@@ -54,11 +54,14 @@ public class ToolSet {
     /** NPC Baritone: entiteta ali null (headless iskanje: prazna roka, brez učinkov). */
     private final EntityLivingBase player;
 
-    public ToolSet(EntityLivingBase player) {
+    private final Settings settings;
+
+    public ToolSet(EntityLivingBase player, Settings settings) {
         breakStrengthCache = new HashMap<>();
         this.player = player;
+        this.settings = settings;
 
-        if (Baritone.settings().considerPotionEffects.value) {
+        if (settings.considerPotionEffects.value) {
             double amplifier = potionAmplifier();
             Function<Double, Double> amplify = x -> amplifier * x;
             backendCalculation = amplify.compose(this::getBestDestructionTime);
@@ -114,7 +117,7 @@ public class ToolSet {
     }
 
     private double avoidanceMultiplier(Block b) {
-        return Baritone.settings().blocksToAvoidBreaking.value.contains(b) ? Baritone.settings().avoidBreakingMultiplier.value : 1;
+        return settings.blocksToAvoidBreaking.value.contains(b) ? settings.avoidBreakingMultiplier.value : 1;
     }
 
     /**

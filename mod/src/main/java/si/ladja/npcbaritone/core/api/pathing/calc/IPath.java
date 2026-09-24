@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -139,7 +140,7 @@ public interface IPath {
      * @see Settings#pathCutoffMinimumLength
      * @see Settings#pathCutoffFactor
      */
-    default IPath staticCutoff(Goal destination) {
+    default IPath staticCutoff(Goal destination, Settings settings) {
         throw new UnsupportedOperationException();
     }
 

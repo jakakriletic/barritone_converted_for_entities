@@ -24,6 +24,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import si.ladja.npcbaritone.core.api.IBaritone;
 import si.ladja.npcbaritone.core.utils.BlockStateInterface;
 
 import java.util.Optional;
@@ -39,6 +40,9 @@ import java.util.Optional;
 public interface IEntityContext {
 
     EntityLiving entity();
+
+    /** Instanca, ki ji kontekst pripada (za nastavitve profila, D-016). */
+    IBaritone baritone();
 
     /** Strežniški svet entitete ({@code WorldServer} v igri). */
     World world();

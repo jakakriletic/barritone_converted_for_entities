@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,6 +21,7 @@ package si.ladja.npcbaritone.core.pathing.precompute;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.utils.BlockStateInterface;
 import net.minecraft.block.Block;
+import si.ladja.npcbaritone.core.api.Settings;
 import net.minecraft.block.state.IBlockState;
 
 import static si.ladja.npcbaritone.core.pathing.precompute.Ternary.MAYBE;
@@ -28,6 +30,12 @@ import static si.ladja.npcbaritone.core.pathing.precompute.Ternary.YES;
 public class PrecomputedData {
 
     private final int[] data = new int[Block.BLOCK_STATE_IDS.size()];
+
+    private final Settings settings;
+
+    public PrecomputedData(Settings settings) {
+        this.settings = settings;
+    }
 
     private static final int COMPLETED_MASK = 1 << 0;
     private static final int CAN_WALK_ON_MASK = 1 << 1;
@@ -40,7 +48,7 @@ public class PrecomputedData {
     private int fillData(int id, IBlockState state) {
         int blockData = 0;
 
-        Ternary canWalkOnState = MovementHelper.canWalkOnBlockState(state);
+        Ternary canWalkOnState = MovementHelper.canWalkOnBlockState(state, settings);
         if (canWalkOnState == YES) {
             blockData |= CAN_WALK_ON_MASK;
         }
@@ -48,7 +56,7 @@ public class PrecomputedData {
             blockData |= CAN_WALK_ON_SPECIAL_MASK;
         }
 
-        Ternary canWalkThroughState = MovementHelper.canWalkThroughBlockState(state);
+        Ternary canWalkThroughState = MovementHelper.canWalkThroughBlockState(state, settings);
         if (canWalkThroughState == YES) {
             blockData |= CAN_WALK_THROUGH_MASK;
         }

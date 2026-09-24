@@ -276,7 +276,7 @@ public class MovementDiagonal extends Movement {
     }
 
     private boolean sprint() {
-        if (MovementHelper.isLiquid(ctx, ctx.feetPos()) && !Baritone.settings().sprintInWater.value) {
+        if (MovementHelper.isLiquid(ctx, ctx.feetPos()) && !baritone.getSettings().sprintInWater.value) {
             return false;
         }
         for (int i = 0; i < 4; i++) {

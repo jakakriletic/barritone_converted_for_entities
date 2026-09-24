@@ -170,7 +170,7 @@ public final class RotationUtils {
     }
 
     public static Optional<Rotation> reachable(IEntityContext ctx, BlockPos pos, double blockReachDistance, boolean wouldSneak) {
-        if (BaritoneAPI.getSettings().remainWithExistingLookDirection.value && ctx.isLookingAt(pos)) {
+        if (ctx.baritone().getSettings().remainWithExistingLookDirection.value && ctx.isLookingAt(pos)) {
             /*
              * why add 0.0001?
              * to indicate that we actually have a desired pitch

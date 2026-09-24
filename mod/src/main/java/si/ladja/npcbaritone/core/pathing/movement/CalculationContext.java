@@ -46,7 +46,7 @@ public class CalculationContext {
 
     public final boolean safeForThreadedUse;
     public final IBaritone baritone;
-    /** NPC Baritone (D-016): nastavitve, iz katerih je kontekst narejen (profil instance). */
+    /** NPC Baritone (D-016): nastavitve, iz katerih je kontekst narejen (profil instance = {@code bsi.settings}). */
     public final Settings settings;
     public final BlockStateInterface bsi;
     public final ToolSet toolSet;
@@ -91,7 +91,7 @@ public class CalculationContext {
      *                 kontekst je varen za iskalno nit.
      */
     public CalculationContext(IBaritone baritone, ChunkSnapshot.Bounds snapshot) {
-        this(baritone, baritone.getSettings(), baritone.getEntityContext().entity(),
+        this(baritone, baritone.getEntityContext().entity(),
                 new BlockStateInterface(baritone.getEntityContext(), snapshot), snapshot != null);
     }
 
@@ -99,20 +99,21 @@ public class CalculationContext {
      * Headless (golden testi, D-022): brez entitete in brez instance. Iskanje poti deluje;
      * premikov iz take poti ni mogoče izvajati.
      */
-    public static CalculationContext headless(Settings settings, BlockStateInterface bsi) {
-        return new CalculationContext(null, settings, null, bsi, true);
+    public static CalculationContext headless(BlockStateInterface bsi) {
+        return new CalculationContext(null, null, bsi, true);
     }
 
     /**
      * @param entity lahko null (headless): brez orodja, očarov in učinkov
      */
-    public CalculationContext(IBaritone baritone, Settings settings, EntityLivingBase entity, BlockStateInterface bsi, boolean forUseOnAnotherThread) {
-        this.precomputedData = new PrecomputedData();
+    public CalculationContext(IBaritone baritone, EntityLivingBase entity, BlockStateInterface bsi, boolean forUseOnAnotherThread) {
+        Settings settings = bsi.settings;
+        this.precomputedData = new PrecomputedData(settings);
         this.safeForThreadedUse = forUseOnAnotherThread;
         this.baritone = baritone;
         this.settings = settings;
         this.bsi = bsi;
-        this.toolSet = new ToolSet(entity);
+        this.toolSet = new ToolSet(entity, settings);
         // D-015: brez inventarja ni metnih blokov ne vedra
         this.hasThrowaway = false;
         this.hasWaterBucket = false;

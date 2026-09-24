@@ -66,9 +66,17 @@ public class Baritone implements IBaritone {
 
     public BlockStateInterface bsi;
 
+    /** Profil nastavitev (D-016); privzeto skupni NPC profil {@link BaritoneAPI#getSettings()}. */
+    private volatile Settings settings;
+
     private int tickCount;
 
     Baritone(EntityLiving entity) {
+        this(entity, BaritoneAPI.getSettings());
+    }
+
+    Baritone(EntityLiving entity, Settings settings) {
+        this.settings = java.util.Objects.requireNonNull(settings);
         this.gameEventHandler = new GameEventHandler(this);
 
         // Define this before behaviors try and get it, or else it will be null and the builds will fail!
@@ -162,11 +170,15 @@ public class Baritone implements IBaritone {
 
     @Override
     public Settings getSettings() {
-        return BaritoneAPI.getSettings();
+        return this.settings;
     }
 
-    public static Settings settings() {
-        return BaritoneAPI.getSettings();
+    /**
+     * Zamenja profil te instance (D-016). Velja za naslednje iskanje; trenutna pot se ne
+     * preračuna.
+     */
+    public void setSettings(Settings settings) {
+        this.settings = java.util.Objects.requireNonNull(settings);
     }
 
     public static Executor getExecutor() {

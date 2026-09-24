@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -87,7 +88,7 @@ public abstract class AbstractNodeCostSearch implements IPathFinder, Helper {
         this.startZ = startZ;
         this.goal = goal;
         this.context = context;
-        this.map = new Long2ObjectOpenHashMap<>(Baritone.settings().pathingMapDefaultSize.value, Baritone.settings().pathingMapLoadFactor.value);
+        this.map = new Long2ObjectOpenHashMap<>(context.settings.pathingMapDefaultSize.value, context.settings.pathingMapLoadFactor.value);
     }
 
     public void cancel() {
@@ -117,7 +118,7 @@ public abstract class AbstractNodeCostSearch implements IPathFinder, Helper {
                 Helper.HELPER.logDebug("Path ends within loaded chunks");
             }
             previousLength = path.length();
-            path = path.staticCutoff(goal);
+            path = path.staticCutoff(goal, context.settings);
             if (path.length() < previousLength) {
                 Helper.HELPER.logDebug("Static cutoff " + previousLength + " to " + path.length());
             }

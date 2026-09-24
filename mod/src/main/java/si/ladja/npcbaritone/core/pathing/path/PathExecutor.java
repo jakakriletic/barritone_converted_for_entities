@@ -198,7 +198,7 @@ public class PathExecutor implements IPathExecutor, Helper {
             costEstimateIndex = pathPosition;
             // do this only once, when the movement starts, and deliberately get the cost as cached when this path was calculated, not the cost as it is right now
             currentMovementOriginalCostEstimate = movement.getCost();
-            for (int i = 1; i < Baritone.settings().costVerificationLookahead.value && pathPosition + i < path.length() - 1; i++) {
+            for (int i = 1; i < behavior.baritone.getSettings().costVerificationLookahead.value && pathPosition + i < path.length() - 1; i++) {
                 if (((Movement) path.movements().get(pathPosition + i)).calculateCost(behavior.secretInternalGetCalculationContext()) >= ActionCosts.COST_INF && canCancel) {
                     logDebug("Something has changed in the world and a future movement has become impossible. Cancelling.");
                     cancel();
@@ -212,7 +212,7 @@ public class PathExecutor implements IPathExecutor, Helper {
             cancel();
             return true;
         }
-        if (!movement.calculatedWhileLoaded() && currentCost - currentMovementOriginalCostEstimate > Baritone.settings().maxCostIncrease.value && canCancel) {
+        if (!movement.calculatedWhileLoaded() && currentCost - currentMovementOriginalCostEstimate > behavior.baritone.getSettings().maxCostIncrease.value && canCancel) {
             // don't do this if the movement was calculated while loaded
             // that means that this isn't a cache error, it's just part of the path interfering with a later part
             logDebug("Original cost " + currentMovementOriginalCostEstimate + " current cost " + currentCost + ". Cancelling.");
@@ -242,7 +242,7 @@ public class PathExecutor implements IPathExecutor, Helper {
                 ctx.entity().setSprinting(false); // letting go of control doesn't make you stop sprinting actually
             }
             ticksOnCurrent++;
-            if (ticksOnCurrent > currentMovementOriginalCostEstimate + Baritone.settings().movementTimeoutTicks.value) {
+            if (ticksOnCurrent > currentMovementOriginalCostEstimate + behavior.baritone.getSettings().movementTimeoutTicks.value) {
                 // only cancel if the total time has exceeded the initial estimate
                 // as you break the blocks required, the remaining cost goes down, to the point where
                 // ticksOnCurrent is greater than recalculateCost + 100
@@ -388,7 +388,7 @@ public class PathExecutor implements IPathExecutor, Helper {
                     // frostwalker only works if you cross the edge of the block on ground so in some cases we may not overshoot
                     // Since MovementDescend can't know the next movement we have to tell it
                     if (next instanceof MovementTraverse || next instanceof MovementParkour) {
-                        boolean couldPlaceInstead = Baritone.settings().allowPlace.value && behavior.baritone.getInventoryBehavior().hasGenericThrowaway() && next instanceof MovementParkour; // traverse doesn't react fast enough
+                        boolean couldPlaceInstead = behavior.baritone.getSettings().allowPlace.value && behavior.baritone.getInventoryBehavior().hasGenericThrowaway() && next instanceof MovementParkour; // traverse doesn't react fast enough
                         // this is true if the next movement does not ascend or descends and goes into the same cardinal direction (N-NE-E-SE-S-SW-W-NW) as the descend
                         // in that case current.getDirection() is e.g. (0, -1, 1) and next.getDirection() is e.g. (0, 0, 3) so the cross product of (0, 0, 1) and (0, 0, 3) is taken, which is (0, 0, 0) because the vectors are colinear (don't form a plane)
                         // since movements in exactly the opposite direction (e.g. descend (0, -1, 1) and traverse (0, 0, -1)) would also pass this check we also have to rule out that case
@@ -530,7 +530,7 @@ public class PathExecutor implements IPathExecutor, Helper {
     }
 
     private static boolean sprintableAscend(IEntityContext ctx, MovementTraverse current, MovementAscend next, IMovement nextnext) {
-        if (!Baritone.settings().sprintAscends.value) {
+        if (!ctx.baritone().getSettings().sprintAscends.value) {
             return false;
         }
         if (!current.getDirection().equals(next.getDirection().down())) {
@@ -575,7 +575,7 @@ public class PathExecutor implements IPathExecutor, Helper {
         if (next instanceof MovementTraverse && next.getDirection().down().equals(current.getDirection())) {
             return true;
         }
-        return next instanceof MovementDiagonal && Baritone.settings().allowOvershootDiagonalDescend.value;
+        return next instanceof MovementDiagonal && ctx.baritone().getSettings().allowOvershootDiagonalDescend.value;
     }
 
     private void onChangeInPathPosition() {
@@ -617,8 +617,8 @@ public class PathExecutor implements IPathExecutor, Helper {
     }
 
     private PathExecutor cutIfTooLong() {
-        if (pathPosition > Baritone.settings().maxPathHistoryLength.value) {
-            int cutoffAmt = Baritone.settings().pathHistoryCutoffAmount.value;
+        if (pathPosition > behavior.baritone.getSettings().maxPathHistoryLength.value) {
+            int cutoffAmt = behavior.baritone.getSettings().pathHistoryCutoffAmount.value;
             CutoffPath newPath = new CutoffPath(path, cutoffAmt, path.length() - 1);
             if (!newPath.getDest().equals(path.getDest())) {
                 throw new IllegalStateException();

@@ -194,7 +194,7 @@ public class MovementAscend extends Movement {
             return state; // don't jump while walking from a non double slab into a bottom slab
         }
 
-        if (Baritone.settings().assumeStep.value || ctx.feetPos().equals(src.up())) {
+        if (baritone.getSettings().assumeStep.value || ctx.feetPos().equals(src.up())) {
             // no need to hit space if we're already jumping
             return state;
         }

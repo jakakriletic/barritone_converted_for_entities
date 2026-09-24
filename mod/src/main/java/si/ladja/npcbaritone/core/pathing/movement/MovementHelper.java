@@ -21,6 +21,7 @@ package si.ladja.npcbaritone.core.pathing.movement;
 import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.BaritoneAPI;
 import si.ladja.npcbaritone.core.api.IBaritone;
+import si.ladja.npcbaritone.core.api.Settings;
 import si.ladja.npcbaritone.core.api.pathing.movement.ActionCosts;
 import si.ladja.npcbaritone.core.api.pathing.movement.MovementStatus;
 import si.ladja.npcbaritone.core.api.utils.*;
@@ -56,7 +57,7 @@ public interface MovementHelper extends ActionCosts, Helper {
             return true;
         }
         Block b = state.getBlock();
-        return Baritone.settings().blocksToDisallowBreaking.value.contains(b)
+        return bsi.settings.blocksToDisallowBreaking.value.contains(b)
                 || b == Blocks.ICE // ice becomes water, and water can mess up the path
                 || b instanceof BlockSilverfish // obvious reasons
                 // call context.get directly with x,y,z. no need to make 5 new BlockPos for no reason
@@ -76,12 +77,12 @@ public interface MovementHelper extends ActionCosts, Helper {
         if (!directlyAbove // it is fine to mine a block that has a falling block directly above, this (the cost of breaking the stacked fallings) is included in cost calculations
                 // therefore if directlyAbove is true, we will actually ignore if this is falling
                 && block instanceof BlockFalling // obviously, this check is only valid for falling blocks
-                && Baritone.settings().avoidUpdatingFallingBlocks.value // and if the setting is enabled
+                && bsi.settings.avoidUpdatingFallingBlocks.value // and if the setting is enabled
                 && BlockFalling.canFallThrough(bsi.get0(x, y - 1, z))) { // and if it would fall (i.e. it's unsupported)
             return true; // dont break a block that is adjacent to unsupported gravel because it can cause really weird stuff
         }
         if (block instanceof BlockLiquid) {
-            if (directlyAbove || Baritone.settings().strictLiquidCheck.value) {
+            if (directlyAbove || bsi.settings.strictLiquidCheck.value) {
                 return true;
             }
             int level = state.getValue(BlockLiquid.LEVEL);
@@ -111,7 +112,7 @@ public interface MovementHelper extends ActionCosts, Helper {
     }
 
     static boolean canWalkThrough(BlockStateInterface bsi, int x, int y, int z, IBlockState state) {
-        Ternary canWalkThrough = canWalkThroughBlockState(state);
+        Ternary canWalkThrough = canWalkThroughBlockState(state, bsi.settings);
         if (canWalkThrough == YES) {
             return true;
         }
@@ -121,7 +122,7 @@ public interface MovementHelper extends ActionCosts, Helper {
         return canWalkThroughPosition(bsi, x, y, z, state);
     }
 
-    static Ternary canWalkThroughBlockState(IBlockState state) {
+    static Ternary canWalkThroughBlockState(IBlockState state, Settings settings) {
         Block block = state.getBlock();
         if (block == Blocks.AIR) {
             return YES;
@@ -129,7 +130,7 @@ public interface MovementHelper extends ActionCosts, Helper {
         if (block == Blocks.FIRE || block == Blocks.TRIPWIRE || block == Blocks.WEB || block == Blocks.END_PORTAL || block == Blocks.COCOA || block instanceof BlockSkull || block instanceof BlockTrapDoor || block == Blocks.END_ROD) {
             return NO;
         }
-        if (Baritone.settings().blocksToAvoid.value.contains(block)) {
+        if (settings.blocksToAvoid.value.contains(block)) {
             return NO;
         }
         if (block instanceof BlockDoor || block instanceof BlockFenceGate) {
@@ -196,7 +197,7 @@ public interface MovementHelper extends ActionCosts, Helper {
                 return false;
             }
             // Everything after this point has to be a special case as it relies on the water not being flowing, which means a special case is needed.
-            if (Baritone.settings().assumeWalkOnWater.value) {
+            if (bsi.settings.assumeWalkOnWater.value) {
                 return false;
             }
 
@@ -379,7 +380,7 @@ public interface MovementHelper extends ActionCosts, Helper {
      * @return Whether or not the specified block can be walked on
      */
     static boolean canWalkOn(BlockStateInterface bsi, int x, int y, int z, IBlockState state) {
-        Ternary canWalkOn = canWalkOnBlockState(state);
+        Ternary canWalkOn = canWalkOnBlockState(state, bsi.settings);
         if (canWalkOn == YES) {
             return true;
         }
@@ -389,12 +390,12 @@ public interface MovementHelper extends ActionCosts, Helper {
         return canWalkOnPosition(bsi, x, y, z, state);
     }
 
-    static Ternary canWalkOnBlockState(IBlockState state) {
+    static Ternary canWalkOnBlockState(IBlockState state, Settings settings) {
         Block block = state.getBlock();
         if (state.isBlockNormalCube() && block != Blocks.MAGMA) {
             return YES;
         }
-        if (block == Blocks.LADDER || (block == Blocks.VINE && Baritone.settings().allowVines.value)) { // TODO reconsider this
+        if (block == Blocks.LADDER || (block == Blocks.VINE && settings.allowVines.value)) { // TODO reconsider this
             return YES;
         }
         if (block == Blocks.FARMLAND || block == Blocks.GRASS_PATH) {
@@ -412,11 +413,11 @@ public interface MovementHelper extends ActionCosts, Helper {
         if (isWater(block)) {
             return MAYBE;
         }
-        if (MovementHelper.isLava(block) && Baritone.settings().assumeWalkOnLava.value) {
+        if (MovementHelper.isLava(block) && settings.assumeWalkOnLava.value) {
             return MAYBE;
         }
         if (block instanceof BlockSlab) {
-            if (!Baritone.settings().allowWalkOnBottomSlab.value) {
+            if (!settings.allowWalkOnBottomSlab.value) {
                 if (((BlockSlab) block).isDouble()) {
                     return YES;
                 }
@@ -441,14 +442,14 @@ public interface MovementHelper extends ActionCosts, Helper {
             }
             if (MovementHelper.isFlowing(x, y, z, state, bsi) || block == Blocks.FLOWING_WATER) {
                 // the only scenario in which we can walk on flowing water is if it's under still water with jesus off
-                return isWater(up) && !Baritone.settings().assumeWalkOnWater.value;
+                return isWater(up) && !bsi.settings.assumeWalkOnWater.value;
             }
             // if assumeWalkOnWater is on, we can only walk on water if there isn't water above it
             // if assumeWalkOnWater is off, we can only walk on water if there is water above it
-            return isWater(up) ^ Baritone.settings().assumeWalkOnWater.value;
+            return isWater(up) ^ bsi.settings.assumeWalkOnWater.value;
         }
 
-        if (MovementHelper.isLava(block) && !MovementHelper.isFlowing(x, y, z, state, bsi) && Baritone.settings().assumeWalkOnLava.value) { // if we get here it means that assumeWalkOnLava must be true, so put it last
+        if (MovementHelper.isLava(block) && !MovementHelper.isFlowing(x, y, z, state, bsi) && bsi.settings.assumeWalkOnLava.value) { // if we get here it means that assumeWalkOnLava must be true, so put it last
             return true;
         }
 
@@ -582,7 +583,8 @@ public interface MovementHelper extends ActionCosts, Helper {
      * @param b   the blockstate to mine
      */
     static void switchToBestToolFor(IEntityContext ctx, IBlockState b) {
-        switchToBestToolFor(ctx, b, new ToolSet(ctx.entity()), BaritoneAPI.getSettings().preferSilkTouch.value);
+        Settings settings = ctx.baritone().getSettings();
+        switchToBestToolFor(ctx, b, new ToolSet(ctx.entity(), settings), settings.preferSilkTouch.value);
     }
 
     /**

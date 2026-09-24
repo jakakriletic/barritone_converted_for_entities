@@ -277,7 +277,7 @@ public class MovementParkour extends Movement {
             }
         } else if (!ctx.feetPos().equals(src)) {
             if (ctx.feetPos().equals(src.offset(direction)) || ctx.entity().posY - src.y > 0.0001) {
-                if (Baritone.settings().allowPlace.value // see PR #3775
+                if (baritone.getSettings().allowPlace.value // see PR #3775
                         && ((Baritone) baritone).getInventoryBehavior().hasGenericThrowaway()
                         && !MovementHelper.canWalkOn(ctx, dest.down())
                         && !ctx.entity().onGround

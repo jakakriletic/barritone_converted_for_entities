@@ -30,6 +30,7 @@ import net.minecraft.world.WorldServer;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
+import si.ladja.npcbaritone.core.api.Settings;
 import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 import si.ladja.npcbaritone.core.utils.pathing.BetterWorldBorder;
 import si.ladja.npcbaritone.core.world.ChunkSnapshot;
@@ -50,6 +51,11 @@ public class BlockStateInterface {
     public final BlockPos.MutableBlockPos isPassableBlockPos;
     public final IBlockAccess access;
     public final BetterWorldBorder worldBorder;
+    /**
+     * NPC Baritone (D-016): profil instance, ki razlaga bloke (hoja po vodi, trte, bloki za
+     * izogibanje, ...). BSI je "svet, kot ga vidi ta instanca", zato nosi njene nastavitve.
+     */
+    public final Settings settings;
 
     private Chunk prev = null;
 
@@ -83,6 +89,7 @@ public class BlockStateInterface {
         Long2ObjectMap<Chunk> live = server.getChunkProvider().id2ChunkMap;
         this.loadedChunks = bounds == null ? live : ChunkSnapshot.copy(live, bounds);
         this.worldBorder = new BetterWorldBorder(world.getWorldBorder());
+        this.settings = ctx.baritone().getSettings();
         this.isPassableBlockPos = new BlockPos.MutableBlockPos();
         this.access = new BlockStateInterfaceAccessWrapper(this, world);
     }
@@ -91,9 +98,11 @@ public class BlockStateInterface {
      * Headless / posnetek: bere samo iz podane mape (ključ {@link ChunkPos#asLong}).
      *
      * @param worldType svet za {@code IBlockAccess.getWorldType()}; lahko null (privzeto DEFAULT)
+     * @param settings  profil, s katerim se razlagajo bloki
      */
-    public BlockStateInterface(Long2ObjectMap<Chunk> chunks, WorldBorder border, IBlockAccess worldType) {
+    public BlockStateInterface(Long2ObjectMap<Chunk> chunks, WorldBorder border, IBlockAccess worldType, Settings settings) {
         this.loadedChunks = chunks;
+        this.settings = settings;
         this.worldBorder = new BetterWorldBorder(border == null ? new WorldBorder() : border);
         this.isPassableBlockPos = new BlockPos.MutableBlockPos();
         this.access = new BlockStateInterfaceAccessWrapper(this, worldType);

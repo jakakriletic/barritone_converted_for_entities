@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,8 +18,7 @@
 
 package si.ladja.npcbaritone.core.utils.pathing;
 
-import si.ladja.npcbaritone.core.Baritone;
-import si.ladja.npcbaritone.core.api.BaritoneAPI;
+import si.ladja.npcbaritone.core.api.Settings;
 import si.ladja.npcbaritone.core.api.pathing.calc.IPath;
 import si.ladja.npcbaritone.core.api.pathing.goals.Goal;
 import si.ladja.npcbaritone.core.pathing.path.CutoffPath;
@@ -29,10 +29,10 @@ public abstract class PathBase implements IPath {
 
     @Override
     public PathBase cutoffAtLoadedChunks(Object bsi0) { // <-- cursed cursed cursed
-        if (!Baritone.settings().cutoffAtLoadBoundary.value) {
+        BlockStateInterface bsi = (BlockStateInterface) bsi0;
+        if (!bsi.settings.cutoffAtLoadBoundary.value) {
             return this;
         }
-        BlockStateInterface bsi = (BlockStateInterface) bsi0;
         for (int i = 0; i < positions().size(); i++) {
             BlockPos pos = positions().get(i);
             if (!bsi.worldContainsLoadedChunk(pos.getX(), pos.getZ())) {
@@ -43,15 +43,15 @@ public abstract class PathBase implements IPath {
     }
 
     @Override
-    public PathBase staticCutoff(Goal destination) {
-        int min = BaritoneAPI.getSettings().pathCutoffMinimumLength.value;
+    public PathBase staticCutoff(Goal destination, Settings settings) {
+        int min = settings.pathCutoffMinimumLength.value;
         if (length() < min) {
             return this;
         }
         if (destination == null || destination.isInGoal(getDest())) {
             return this;
         }
-        double factor = BaritoneAPI.getSettings().pathCutoffFactor.value;
+        double factor = settings.pathCutoffFactor.value;
         int newLength = (int) ((length() - min) * factor) + min - 1;
         return new CutoffPath(this, newLength);
     }

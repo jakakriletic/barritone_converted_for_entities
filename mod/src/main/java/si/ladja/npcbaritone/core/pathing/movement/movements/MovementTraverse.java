@@ -169,7 +169,7 @@ public class MovementTraverse extends Movement {
         IBlockState pb1 = BlockStateInterface.get(ctx, positionsToBreak[1]);
         if (state.getStatus() != MovementStatus.RUNNING) {
             // if the setting is enabled
-            if (!Baritone.settings().walkWhileBreaking.value) {
+            if (!baritone.getSettings().walkWhileBreaking.value) {
                 return state;
             }
             // and if we're prepping (aka mining the block in front)
@@ -250,7 +250,7 @@ public class MovementTraverse extends Movement {
             if (feet.equals(dest)) {
                 return state.setStatus(MovementStatus.SUCCESS);
             }
-            if (Baritone.settings().overshootTraverse.value && (feet.equals(dest.add(getDirection())) || feet.equals(dest.add(getDirection()).add(getDirection())))) {
+            if (baritone.getSettings().overshootTraverse.value && (feet.equals(dest.add(getDirection())) || feet.equals(dest.add(getDirection()).add(getDirection())))) {
                 return state.setStatus(MovementStatus.SUCCESS);
             }
             Block low = BlockStateInterface.get(ctx, src).getBlock();
@@ -263,7 +263,7 @@ public class MovementTraverse extends Movement {
             BlockPos into = dest.subtract(src).add(dest);
             Block intoBelow = BlockStateInterface.get(ctx, into).getBlock();
             Block intoAbove = BlockStateInterface.get(ctx, into.up()).getBlock();
-            if (wasTheBridgeBlockAlwaysThere && (!MovementHelper.isLiquid(ctx, feet) || Baritone.settings().sprintInWater.value) && (!MovementHelper.avoidWalkingInto(intoBelow) || MovementHelper.isWater(intoBelow)) && !MovementHelper.avoidWalkingInto(intoAbove)) {
+            if (wasTheBridgeBlockAlwaysThere && (!MovementHelper.isLiquid(ctx, feet) || baritone.getSettings().sprintInWater.value) && (!MovementHelper.avoidWalkingInto(intoBelow) || MovementHelper.isWater(intoBelow)) && !MovementHelper.avoidWalkingInto(intoAbove)) {
                 state.setInput(Input.SPRINT, true);
             }
 
@@ -291,12 +291,12 @@ public class MovementTraverse extends Movement {
             }
             double dist1 = Math.max(Math.abs(ctx.entity().posX - (dest.getX() + 0.5D)), Math.abs(ctx.entity().posZ - (dest.getZ() + 0.5D)));
             PlaceResult p = MovementHelper.attemptToPlaceABlock(state, baritone, dest.down(), false, true);
-            if ((p == PlaceResult.READY_TO_PLACE || dist1 < 0.6) && !Baritone.settings().assumeSafeWalk.value) {
+            if ((p == PlaceResult.READY_TO_PLACE || dist1 < 0.6) && !baritone.getSettings().assumeSafeWalk.value) {
                 state.setInput(Input.SNEAK, true);
             }
             switch (p) {
                 case READY_TO_PLACE: {
-                    if (ctx.entity().isSneaking() || Baritone.settings().assumeSafeWalk.value) {
+                    if (ctx.entity().isSneaking() || baritone.getSettings().assumeSafeWalk.value) {
                         state.setInput(Input.CLICK_RIGHT, true);
                     }
                     return state;

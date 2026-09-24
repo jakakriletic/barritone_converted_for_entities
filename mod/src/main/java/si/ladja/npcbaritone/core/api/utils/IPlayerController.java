@@ -18,8 +18,6 @@
 
 package si.ladja.npcbaritone.core.api.utils;
 
-import si.ladja.npcbaritone.core.api.BaritoneAPI;
-
 /**
  * NPC Baritone (D-015): entiteta ne ruši, ne postavlja in nima inventarja; od klientskega
  * nadzornika ostane samo doseg. Interakcije z vrati pridejo v M4.
@@ -29,7 +27,5 @@ import si.ladja.npcbaritone.core.api.BaritoneAPI;
  */
 public interface IPlayerController {
 
-    default double getBlockReachDistance() {
-        return BaritoneAPI.getSettings().blockReachDistance.value;
-    }
+    double getBlockReachDistance();
 }
