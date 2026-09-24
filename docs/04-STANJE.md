@@ -4,6 +4,26 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-24 (5) — M1 zaključen
+
+Uporabnik je na Windowsu na veji `m1-jedro` pognal build, JUnit in server smoke:
+
+| # | Merilo | Dokaz |
+|---|---|---|
+| A1 | prevod oblak + Windows | `npcbaritone-0.0.1-m0.jar` z 163 razredi `core` (reobf OK) |
+| A2 | G1–G12 zeleni | Gradle JUnit: GoldenPathTest 13/13 (vsak < 0,1 s); skupaj 38/38 |
+| A3 | lint | ArchitectureLintTest 5/5 |
+| A4 | brez elytre in klienta | lint + grep = 0 |
+| A5 | dedicated server smoke | `m0-server-smoke.log`: `side=SERVER`, `Done (0.629s)`, `ready (dedicated=true)` |
+| A6 | ločeni mehanski commiti | `d99d792`, `b121b5c` |
+
+Veja združena v `main` z `--no-ff` (`262c819`), commiti ostanejo vidni. Obe veji sta na
+GitHubu (`jakakriletic/barritone_converted_for_entities`); `main` po tem commitu je treba pushati.
+
+**Naslednji korak:** M2 — noge (`BaritoneMoveHelper`, `BaritoneJumpHelper`, `/npcb attach`, tečaj T1).
+
+---
+
 ## 2026-09-24 (4) — M1: jedro na strežniku (veja `m1-jedro`)
 
 **Namen seje:** M1 do točke, ko jedro dela headless in ostane samo Windows build.

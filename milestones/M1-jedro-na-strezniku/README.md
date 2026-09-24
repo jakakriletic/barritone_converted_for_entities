@@ -67,7 +67,7 @@ ustavi in revidiraj D-001 (zapis v `02-ODLOCITVE.md`).
 
 Premikanje entitete (M2), vrata (M4), pravi executor (M5), `PathNavigate` (M6).
 
-## Stanje (2026-09-24, veja `m1-jedro`)
+## Stanje: **zaključen 2026-09-24** (merge `262c819`)
 
 | # | Stanje |
 |---|---|
@@ -85,10 +85,10 @@ Premikanje entitete (M2), vrata (M4), pravi executor (M5), `PathNavigate` (M6).
 
 | Merilo | Stanje |
 |---|---|
-| A1 | oblak zelen; Windows čaka |
-| A2 | G1–G12 zeleni v oblaku; Gradle na Windowsu čaka |
+| A1 | **zeleno** (oblak + Windows) |
+| A2 | **zeleno** (oblak + Gradle na Windowsu) |
 | A3 | zeleno |
 | A4 | zeleno (`elytra` 0, `net.minecraft.client` 0) |
-| A5 | čaka `smoke-server.ps1` |
+| A5 | **zeleno** |
 | A6 | zeleno (`d99d792` relokacija, `b121b5c` izrez pred vsebinskimi) |
 | V1 | 4,7 % vrstic `pathing/**` spremenjenih — D-001 drži |

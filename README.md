@@ -13,8 +13,8 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 | | |
 |---|---|
 | Datum zadnje posodobitve | 2026-09-24 |
-| Trenutna faza | **M1 — jedro na strežniku:** na veji `m1-jedro` se Baritone prevede nad `EntityLiving`, golden testi G1–G12 zeleni v oblaku (38/38 JUnit); čaka Windows build |
-| Naslednji korak | `git checkout m1-jedro`, `.\dev.ps1 build --offline`, `.\smoke-server.ps1` → merge v `main` → **M2 (noge)**; glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
+| Trenutna faza | **M1 zaključen:** Baritonovo jedro teče na strežniku nad `EntityLiving`, golden testi G1–G12 zeleni (oblak + Windows); **M2 — noge** na vrsti |
+| Naslednji korak | **M2 — noge** ([`milestones/M2-noge`](milestones/M2-noge/README.md)); stanje v [`docs/04-STANJE.md`](docs/04-STANJE.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |
