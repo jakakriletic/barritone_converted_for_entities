@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,8 +30,8 @@ public class BlockUtils {
 
     public static String blockToString(Block block) {
         ResourceLocation loc = Block.REGISTRY.getNameForObject(block);
-        String name = loc.getPath(); // normally, only write the part after the minecraft:
-        if (!loc.getNamespace().equals("minecraft")) {
+        String name = loc.getResourcePath(); // normally, only write the part after the minecraft:
+        if (!loc.getResourceDomain().equals("minecraft")) {
             // Baritone is running on top of forge with mods installed, perhaps?
             name = loc.toString(); // include the namespace with the colon
         }

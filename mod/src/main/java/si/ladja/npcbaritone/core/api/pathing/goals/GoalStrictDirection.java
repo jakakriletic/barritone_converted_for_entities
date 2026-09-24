@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -37,8 +38,8 @@ public class GoalStrictDirection implements Goal {
         x = origin.getX();
         y = origin.getY();
         z = origin.getZ();
-        dx = direction.getXOffset();
-        dz = direction.getZOffset();
+        dx = direction.getFrontOffsetX();
+        dz = direction.getFrontOffsetZ();
         if (dx == 0 && dz == 0) {
             throw new IllegalArgumentException(direction + "");
         }

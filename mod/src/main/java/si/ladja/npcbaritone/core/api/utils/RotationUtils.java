@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -202,7 +203,7 @@ public final class RotationUtils {
             double xDiff = aabb.minX * sideOffset.x + aabb.maxX * (1 - sideOffset.x);
             double yDiff = aabb.minY * sideOffset.y + aabb.maxY * (1 - sideOffset.y);
             double zDiff = aabb.minZ * sideOffset.z + aabb.maxZ * (1 - sideOffset.z);
-            possibleRotation = reachableOffset(ctx, pos, new Vec3d(pos).add(xDiff, yDiff, zDiff), blockReachDistance, wouldSneak);
+            possibleRotation = reachableOffset(ctx, pos, new Vec3d(pos).addVector(xDiff, yDiff, zDiff), blockReachDistance, wouldSneak);
             if (possibleRotation.isPresent()) {
                 return possibleRotation;
             }

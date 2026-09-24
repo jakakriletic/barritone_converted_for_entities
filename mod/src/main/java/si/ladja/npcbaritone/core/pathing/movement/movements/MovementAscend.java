@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -78,9 +79,9 @@ public class MovementAscend extends Movement {
             }
             boolean foundPlaceOption = false;
             for (int i = 0; i < 5; i++) {
-                int againstX = destX + HORIZONTALS_BUT_ALSO_DOWN_____SO_EVERY_DIRECTION_EXCEPT_UP[i].getXOffset();
-                int againstY = y + HORIZONTALS_BUT_ALSO_DOWN_____SO_EVERY_DIRECTION_EXCEPT_UP[i].getYOffset();
-                int againstZ = destZ + HORIZONTALS_BUT_ALSO_DOWN_____SO_EVERY_DIRECTION_EXCEPT_UP[i].getZOffset();
+                int againstX = destX + HORIZONTALS_BUT_ALSO_DOWN_____SO_EVERY_DIRECTION_EXCEPT_UP[i].getFrontOffsetX();
+                int againstY = y + HORIZONTALS_BUT_ALSO_DOWN_____SO_EVERY_DIRECTION_EXCEPT_UP[i].getFrontOffsetY();
+                int againstZ = destZ + HORIZONTALS_BUT_ALSO_DOWN_____SO_EVERY_DIRECTION_EXCEPT_UP[i].getFrontOffsetZ();
                 if (againstX == x && againstZ == z) { // we might be able to backplace now, but it doesn't matter because it will have been broken by the time we'd need to use it
                     continue;
                 }
@@ -225,7 +226,7 @@ public class MovementAscend extends Movement {
     public boolean headBonkClear() {
         BetterBlockPos startUp = src.up(2);
         for (int i = 0; i < 4; i++) {
-            BetterBlockPos check = startUp.offset(EnumFacing.byHorizontalIndex(i));
+            BetterBlockPos check = startUp.offset(EnumFacing.getHorizontal(i));
             if (!MovementHelper.canWalkThrough(ctx, check)) {
                 // We might bonk our head
                 return false;

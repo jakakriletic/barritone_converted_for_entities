@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -51,7 +52,7 @@ public final class RayTraceUtils {
             start = entity.getPositionEyes(1.0F); // do whatever is correct
         }
         Vec3d direction = RotationUtils.calcLookDirectionFromRotation(rotation);
-        Vec3d end = start.add(
+        Vec3d end = start.addVector(
                 direction.x * blockReachDistance,
                 direction.y * blockReachDistance,
                 direction.z * blockReachDistance

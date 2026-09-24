@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -79,5 +80,11 @@ public final class BlockStateInterfaceAccessWrapper implements IBlockAccess {
     @Override
     public WorldType getWorldType() {
         return this.world.getWorldType();
+    }
+
+    @Override
+    public boolean isSideSolid(BlockPos pos, EnumFacing side, boolean _default) {
+        // Forge doda to metodo v IBlockAccess; nenaloženo se v BSI bere kot zrak.
+        return getBlockState(pos).isSideSolid(this, pos, side);
     }
 }
