@@ -407,6 +407,12 @@ public final class Settings {
     public final Setting<Integer> pathingMaxChunkBorderFetch = new Setting<>(50);
 
     /**
+     * NPC Baritone (D-013): rob posnetka chunkov v chunkih okoli pravokotnika začetek ∪ cilj.
+     * Forge plast ga nastavi iz {@code search.snapshotMarginChunks}.
+     */
+    public final Setting<Integer> npcSnapshotMarginChunks = new Setting<>(8);
+
+    /**
      * Set to 1.0 to effectively disable this feature
      *
      * @see <a href="https://github.com/cabaletta/baritone/issues/18">Issue #18</a>

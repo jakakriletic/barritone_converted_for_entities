@@ -35,6 +35,7 @@ import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.path.PathExecutor;
 import si.ladja.npcbaritone.core.utils.PathingCommandContext;
+import si.ladja.npcbaritone.core.world.ChunkSnapshot;
 import si.ladja.npcbaritone.core.utils.pathing.Favoring;
 import net.minecraft.util.math.BlockPos;
 
@@ -179,6 +180,7 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                     }
                     // we aren't calculating
                     queuePathEvent(PathEvent.CALC_STARTED);
+                    context = newSearchContext(expectedSegmentStart, goal);
                     findPathInNewThread(expectedSegmentStart, true, context);
                 }
                 return;
@@ -218,6 +220,7 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                     // if we actually included current, it wouldn't start planning ahead until the last movement was done, if the last movement took more than 7.5 seconds on its own
                     logDebug("Path almost over. Planning ahead...");
                     queuePathEvent(PathEvent.NEXT_SEGMENT_CALC_STARTED);
+                    context = newSearchContext(current.getPath().getDest(), goal);
                     findPathInNewThread(current.getPath().getDest(), false, context);
                 }
             }
@@ -230,11 +233,10 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
 
     public boolean secretInternalSetGoalAndPath(PathingCommand command) {
         secretInternalSetGoal(command.goal);
-        if (command instanceof PathingCommandContext) {
-            context = ((PathingCommandContext) command).desiredCalcContext;
-        } else {
-            context = new CalculationContext(baritone, true);
-        }
+        // NPC Baritone (D-013): kontekst (posnetek chunkov) se naredi šele, ko se iskanje res
+        // začne. Baritone ga je delal vsak tick, ko je proces vrnil SET_GOAL_AND_PATH —
+        // na strežniku s 100+ NPC-ji je to 100+ kopij mape chunkov na tick.
+        CalculationContext desired = command instanceof PathingCommandContext ? ((PathingCommandContext) command).desiredCalcContext : null;
         if (goal == null) {
             return false;
         }
@@ -249,6 +251,7 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                 if (inProgress != null) {
                     return false;
                 }
+                context = desired != null ? desired : newSearchContext(expectedSegmentStart, goal);
                 queuePathEvent(PathEvent.CALC_STARTED);
                 findPathInNewThread(expectedSegmentStart, true, context);
                 return true;
@@ -534,6 +537,23 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                 }
             }
         }
+    }
+
+    /**
+     * D-013: svež kontekst z omejenim posnetkom chunkov okoli začetka in cilja
+     * (rob {@code npcSnapshotMarginChunks}). Cilji brez položaja dobijo celoten posnetek.
+     */
+    private CalculationContext newSearchContext(BlockPos start, Goal goal) {
+        int margin = baritone.getSettings().npcSnapshotMarginChunks.value;
+        ChunkSnapshot.Bounds bounds = ChunkSnapshot.Bounds.ALL;
+        if (goal instanceof IGoalRenderPos) {
+            BlockPos g = ((IGoalRenderPos) goal).getGoalPos();
+            bounds = ChunkSnapshot.Bounds.around(start.getX(), start.getZ(), g.getX(), g.getZ(), margin);
+        } else if (goal instanceof GoalXZ) {
+            GoalXZ g = (GoalXZ) goal;
+            bounds = ChunkSnapshot.Bounds.around(start.getX(), start.getZ(), g.getX(), g.getZ(), margin);
+        }
+        return new CalculationContext(baritone, bounds);
     }
 
     private static AbstractNodeCostSearch createPathfinder(BlockPos start, Goal goal, IPath previous, CalculationContext context) {

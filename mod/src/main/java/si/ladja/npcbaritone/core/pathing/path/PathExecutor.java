@@ -350,8 +350,9 @@ public class PathExecutor implements IPathExecutor, Helper {
         // we'll take it from here, no need for minecraft to see we're holding down control and sprint for us
         behavior.baritone.getInputOverrideHandler().setInputForceState(Input.SPRINT, false);
 
-        // first and foremost, if allowSprint is off, or if we don't have enough hunger, don't try and sprint
-        if (!new CalculationContext(behavior.baritone, false).canSprint) {
+        // first and foremost, if allowSprint is off, don't try and sprint
+        // (NPC Baritone: mobi nimajo lakote; brez novega CalculationContext vsak tick)
+        if (!behavior.baritone.getSettings().allowSprint.value) {
             return false;
         }
         IMovement current = path.movements().get(pathPosition);
