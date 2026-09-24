@@ -18,6 +18,8 @@
 
 package si.ladja.npcbaritone.core.behavior;
 
+import net.minecraft.entity.EntityLiving;
+import net.minecraft.util.math.MathHelper;
 import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.behavior.ILookBehavior;
 import si.ladja.npcbaritone.core.api.event.events.PlayerUpdateEvent;
@@ -27,9 +29,8 @@ import java.util.Optional;
 
 /**
  * NPC Baritone (D-011): premik v ticku nastavi ciljno rotacijo; pred premikom entitete
- * (PRE) se yaw in pitch entitete nastavita nanjo, po premiku (POST) se cilj pozabi.
- * Omejitev hitrosti obračanja (≤ {@code movement.maxTurnDegrees}/tick) doda M2 v
- * {@code BaritoneMoveHelper}; glava ostane vanilla ({@code EntityLookHelper}).
+ * (PRE) se telo obrne proti njej za največ {@code npcMaxTurnDegrees}, po premiku (POST)
+ * se cilj pozabi. Glava ostane vanilla ({@code EntityLookHelper}).
  *
  * @author Brady
  * @since 8/1/2018
@@ -65,9 +66,19 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
         }
         switch (event.getState()) {
             case PRE: {
-                Rotation actual = this.target.clamp();
-                ctx.entity().rotationYaw = actual.getYaw();
-                ctx.entity().rotationPitch = actual.getPitch();
+                // D-011: telo (rotationYaw, ki ga bere travel, in renderYawOffset) se obrne proti
+                // cilju za največ npcMaxTurnDegrees na tick; glava in pitch ostaneta vanilla.
+                EntityLiving entity = ctx.entity();
+                float max = baritone.getSettings().npcMaxTurnDegrees.value;
+                float delta = MathHelper.wrapDegrees(this.target.getYaw() - entity.rotationYaw);
+                if (delta > max) {
+                    delta = max;
+                } else if (delta < -max) {
+                    delta = -max;
+                }
+                float yaw = entity.rotationYaw + delta;
+                entity.rotationYaw = yaw;
+                entity.renderYawOffset = yaw;
                 break;
             }
             case POST: {

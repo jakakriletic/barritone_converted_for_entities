@@ -71,6 +71,8 @@ public class Baritone implements IBaritone {
 
     private int tickCount;
 
+    private boolean postTickPending;
+
     Baritone(EntityLiving entity) {
         this(entity, BaritoneAPI.getSettings());
     }
@@ -100,6 +102,11 @@ public class Baritone implements IBaritone {
      * D-009): obdelava poti, izbira premika, vhodi in ciljni yaw.
      */
     public void tick() {
+        if (this.postTickPending) {
+            // POST prejšnjega ticka: entiteta nima kljuke po travel(), zato ga sprožimo tu
+            postTick();
+        }
+        this.postTickPending = true;
         TickEvent event = new TickEvent(EventState.PRE, TickEvent.Type.IN, this.tickCount++);
         this.gameEventHandler.onTick(event);
         this.gameEventHandler.onPlayerUpdate(new PlayerUpdateEvent(EventState.PRE));
@@ -109,6 +116,7 @@ public class Baritone implements IBaritone {
      * Po premiku entitete v istem ticku.
      */
     public void postTick() {
+        this.postTickPending = false;
         this.gameEventHandler.onPlayerUpdate(new PlayerUpdateEvent(EventState.POST));
         this.gameEventHandler.onPostTick(new TickEvent(EventState.POST, TickEvent.Type.IN, this.tickCount - 1));
     }

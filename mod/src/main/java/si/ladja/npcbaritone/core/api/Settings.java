@@ -413,6 +413,12 @@ public final class Settings {
     public final Setting<Integer> npcSnapshotMarginChunks = new Setting<>(8);
 
     /**
+     * NPC Baritone (D-011): največji obrat telesa v stopinjah na tick (180 = takoj, kot igralec).
+     * Forge plast ga nastavi iz {@code movement.maxTurnDegrees}.
+     */
+    public final Setting<Float> npcMaxTurnDegrees = new Setting<>(30.0f);
+
+    /**
      * Set to 1.0 to effectively disable this feature
      *
      * @see <a href="https://github.com/cabaletta/baritone/issues/18">Issue #18</a>
