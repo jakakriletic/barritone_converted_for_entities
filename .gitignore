@@ -1,0 +1,28 @@
+# Gradle / ForgeGradle
+.gradle/
+build/
+out/
+run/
+mod/run/
+mod/build/
+mod/.gradle/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+bin/
+
+# Lokalna orodja in predpomnilniki
+.tools/
+tools/cache/
+logs/
+docs/build-logs/
+
+# OS
+Thumbs.db
+.DS_Store

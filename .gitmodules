@@ -1,0 +1,6 @@
+[submodule "references/baritone-1.12.2"]
+	path = references/baritone-1.12.2
+	url = https://github.com/cabaletta/baritone.git
+[submodule "references/automatone"]
+	path = references/automatone
+	url = https://github.com/Ladysnake/Automatone.git
