@@ -1,10 +1,9 @@
 // NPC Baritone — Forge 1.12.2 knjižnica (D-007: okolje enako CustomNPC rework).
 //
 // Izvorne mape:
-//   src/main/java      naša koda (prevaja se)
-//   src/upstream/java  nespremenjen Baritone v1.2.19 (D-026) — NI v sourceSets;
-//                      M1 ga z mehanskim commitom premakne v src/main/java (core).
-//   src/test/java      headless JUnit (D-022)
+//   src/main/java      si.ladja.npcbaritone.core (port Baritona, LGPL) + forge
+//                      (nespremenjen uvoz je commit 3a4ea58, relokacija d99d792 — D-026)
+//   src/test/java      headless JUnit: harness, golden testi, lint (D-022)
 buildscript {
     repositories {
         maven { url = 'https://maven.minecraftforge.net' }

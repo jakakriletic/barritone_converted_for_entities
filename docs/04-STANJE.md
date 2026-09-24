@@ -4,6 +4,38 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-24 (4) — M1: jedro na strežniku (veja `m1-jedro`)
+
+**Namen seje:** M1 do točke, ko jedro dela headless in ostane samo Windows build.
+
+**Narejeno (preverjeno v oblaku, 38/38 JUnit)**
+
+| # | Commit | Kaj |
+|---|---|---|
+| M1.1 | `d99d792`, `1b674dc` | mehanska relokacija `baritone.*` → `si.ladja.npcbaritone.core.*` (+ popravek za korenski paket); preverjeno z obratno zamenjavo |
+| M1.2 | `b121b5c` | izrez DROP 179, CLIENT 4, **LATER 7** (`tools/portmap_cut.py`) — LATER je izrezan zato, da ne rabi prenosa že zdaj; vrne se iz `3a4ea58` v M10 |
+| M1.3 | `20b912c` | MCP preimenovanja + Forge `isSideSolid`; `tools/mark_modified.py` (D-004) |
+| M1.4a | `fe3d2bd` | mehansko: `IPlayerContext` → `IEntityContext`, `player()` → `entity()` … |
+| M1.4–M1.11 | `a811786` | jedro se prevede (304 → 0 napak) nad `EntityLiving`; BSI nad `id2ChunkMap`, bere `ExtendedBlockStorage`; vitka instanca; register po entiteti; log4j; `SearchExecutor` |
+| M1.6, M1.12, M1.13 | `ba606ca` | golden testi G1–G12, lint D-012/D-024/meje/elytra |
+| M1.8 | `5b1290f` | nastavitve na instanco; statični `Baritone.settings()` odstranjen |
+| M1.5 | `cc630a4` | omejen posnetek ob začetku iskanja; brez konteksta na tick |
+
+Odstopanja od načrta (zapisana, ne tiho):
+- **M1.7:** `WorldData`/`WorldProvider` sta **izbrisana**, ne minimalizirana — po izrezu predpomnilnika ju nič ne rabi.
+- **M1.8:** profil instance nosi `BlockStateInterface` (`bsi.settings`), ker ga skoraj vse statične funkcije `MovementHelper` že dobijo; Automatone je namesto tega dodal parameter v ~90 datotek. Globalno ostanejo samo hevristika ciljev (`costHeuristic`, `axisHeight`), `chatDebug` in `censorCoordinates`.
+- **M1.10:** `InputOverrideHandler` je ohranil ime (samo stanje vhodov, D-010); preimenovanje v `InputState` je lahko mehanski commit v M2.
+
+Ugotovitve → RAZISKAVA §4b (V1: 4,7 % predelave v `pathing/**`; kontekst vsak tick; rob posnetka).
+
+**Prevedeno, čaka na zagon (Windows):** `.\dev.ps1 build --offline` na veji `m1-jedro` (A1 Windows, A2 golden v Gradlu), `.\smoke-server.ps1` (A5).
+
+**Odprto v M1:** nič vsebinskega; M1 se zapre z Windows buildom in smoke testom, nato merge `m1-jedro` → `main` (`--no-ff`, commiti ostanejo ločeni, A6).
+
+**Naslednji korak:** uporabnik: `git checkout m1-jedro; .\dev.ps1 build --offline; .\smoke-server.ps1`. Nato M2 (noge: `BaritoneMoveHelper`, `/npcb attach`).
+
+---
+
 ## 2026-09-24 (3) — M0 zaključen
 
 Uporabnik je na Windowsu pognal build, server smoke in klient. Vsa merila M0 zelena:
