@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +21,7 @@ package si.ladja.npcbaritone.core.utils.pathing;
 import si.ladja.npcbaritone.core.api.pathing.calc.IPath;
 import si.ladja.npcbaritone.core.api.utils.BetterBlockPos;
 import si.ladja.npcbaritone.core.api.utils.Helper;
-import si.ladja.npcbaritone.core.api.utils.IPlayerContext;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
@@ -28,7 +29,7 @@ public final class Favoring {
 
     private final Long2DoubleOpenHashMap favorings;
 
-    public Favoring(IPlayerContext ctx, IPath previous, CalculationContext context) {
+    public Favoring(IEntityContext ctx, IPath previous, CalculationContext context) {
         this(previous, context);
         for (Avoidance avoid : Avoidance.create(ctx)) {
             avoid.applySpherical(favorings);

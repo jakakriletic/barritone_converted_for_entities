@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -169,30 +170,30 @@ public class MovementPillar extends Movement {
             return state;
         }
 
-        if (ctx.playerFeet().y < src.y) {
+        if (ctx.feetPos().y < src.y) {
             return state.setStatus(MovementStatus.UNREACHABLE);
         }
 
         IBlockState fromDown = BlockStateInterface.get(ctx, src);
         if (MovementHelper.isWater(fromDown.getBlock()) && MovementHelper.isWater(ctx, dest)) {
             // stay centered while swimming up a water column
-            state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.playerHead(), VecUtils.getBlockPosCenter(dest), ctx.playerRotations()), false));
+            state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.getBlockPosCenter(dest), ctx.entityRotations()), false));
             Vec3d destCenter = VecUtils.getBlockPosCenter(dest);
-            if (Math.abs(ctx.player().posX - destCenter.x) > 0.2 || Math.abs(ctx.player().posZ - destCenter.z) > 0.2) {
+            if (Math.abs(ctx.entity().posX - destCenter.x) > 0.2 || Math.abs(ctx.entity().posZ - destCenter.z) > 0.2) {
                 state.setInput(Input.MOVE_FORWARD, true);
             }
-            if (ctx.playerFeet().equals(dest)) {
+            if (ctx.feetPos().equals(dest)) {
                 return state.setStatus(MovementStatus.SUCCESS);
             }
             return state;
         }
         boolean ladder = fromDown.getBlock() == Blocks.LADDER || fromDown.getBlock() == Blocks.VINE;
         boolean vine = fromDown.getBlock() == Blocks.VINE;
-        Rotation rotation = RotationUtils.calcRotationFromVec3d(ctx.playerHead(),
+        Rotation rotation = RotationUtils.calcRotationFromVec3d(ctx.headPos(),
                 VecUtils.getBlockPosCenter(positionToPlace),
-                ctx.playerRotations());
+                ctx.entityRotations());
         if (!ladder) {
-            state.setTarget(new MovementState.MovementTarget(ctx.playerRotations().withPitch(rotation.getPitch()), true));
+            state.setTarget(new MovementState.MovementTarget(ctx.entityRotations().withPitch(rotation.getPitch()), true));
         }
 
         boolean blockIsThere = MovementHelper.canWalkOn(ctx, src) || ladder;
@@ -203,7 +204,7 @@ public class MovementPillar extends Movement {
                 return state.setStatus(MovementStatus.UNREACHABLE);
             }
 
-            if (ctx.playerFeet().equals(against.up()) || ctx.playerFeet().equals(dest)) {
+            if (ctx.feetPos().equals(against.up()) || ctx.feetPos().equals(dest)) {
                 return state.setStatus(MovementStatus.SUCCESS);
             }
             if (MovementHelper.isBottomSlab(BlockStateInterface.get(ctx, src.down()))) {
@@ -224,13 +225,13 @@ public class MovementPillar extends Movement {
             }
 
 
-            state.setInput(Input.SNEAK, ctx.player().posY > dest.getY() || ctx.player().posY < src.getY() + 0.2D); // delay placement by 1 tick for ncp compatibility
+            state.setInput(Input.SNEAK, ctx.entity().posY > dest.getY() || ctx.entity().posY < src.getY() + 0.2D); // delay placement by 1 tick for ncp compatibility
             // since (lower down) we only right click once player.isSneaking, and that happens the tick after we request to sneak
 
-            double diffX = ctx.player().posX - (dest.getX() + 0.5);
-            double diffZ = ctx.player().posZ - (dest.getZ() + 0.5);
+            double diffX = ctx.entity().posX - (dest.getX() + 0.5);
+            double diffZ = ctx.entity().posZ - (dest.getZ() + 0.5);
             double dist = Math.sqrt(diffX * diffX + diffZ * diffZ);
-            double flatMotion = Math.sqrt(ctx.player().motionX * ctx.player().motionX + ctx.player().motionZ * ctx.player().motionZ);
+            double flatMotion = Math.sqrt(ctx.entity().motionX * ctx.entity().motionX + ctx.entity().motionZ * ctx.entity().motionZ);
             if (dist > 0.17) {//why 0.17? because it seemed like a good number, that's why
                 //[explanation added after baritone port lol] also because it needs to be less than 0.2 because of the 0.3 sneak limit
                 //and 0.17 is reasonably less than 0.2
@@ -242,7 +243,7 @@ public class MovementPillar extends Movement {
                 state.setTarget(new MovementState.MovementTarget(rotation, true));
             } else if (flatMotion < 0.05) {
                 // If our Y coordinate is above our goal, stop jumping
-                state.setInput(Input.JUMP, ctx.player().posY < dest.getY());
+                state.setInput(Input.JUMP, ctx.entity().posY < dest.getY());
             }
 
 
@@ -257,14 +258,14 @@ public class MovementPillar extends Movement {
                     state.setInput(Input.JUMP, false); // breaking is like 5x slower when you're jumping
                     state.setInput(Input.CLICK_LEFT, true);
                     blockIsThere = false;
-                } else if (ctx.player().isSneaking() && (Objects.equals(src.down(), ctx.objectMouseOver().getBlockPos()) || Objects.equals(src, ctx.objectMouseOver().getBlockPos())) && ctx.player().posY > dest.getY() + 0.1) {
+                } else if (ctx.entity().isSneaking() && (Objects.equals(src.down(), ctx.objectMouseOver().getBlockPos()) || Objects.equals(src, ctx.objectMouseOver().getBlockPos())) && ctx.entity().posY > dest.getY() + 0.1) {
                     state.setInput(Input.CLICK_RIGHT, true);
                 }
             }
         }
 
         // If we are at our goal and the block below us is placed
-        if (ctx.playerFeet().equals(dest) && blockIsThere) {
+        if (ctx.feetPos().equals(dest) && blockIsThere) {
             return state.setStatus(MovementStatus.SUCCESS);
         }
 
@@ -273,7 +274,7 @@ public class MovementPillar extends Movement {
 
     @Override
     protected boolean prepared(MovementState state) {
-        if (ctx.playerFeet().equals(src) || ctx.playerFeet().equals(src.down())) {
+        if (ctx.feetPos().equals(src) || ctx.feetPos().equals(src.down())) {
             Block block = BlockStateInterface.getBlock(ctx, src.down());
             if (block == Blocks.LADDER || block == Blocks.VINE) {
                 state.setInput(Input.SNEAK, true);

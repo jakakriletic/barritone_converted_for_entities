@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +20,7 @@ package si.ladja.npcbaritone.core.behavior;
 
 import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.behavior.IBehavior;
-import si.ladja.npcbaritone.core.api.utils.IPlayerContext;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 
 /**
  * A type of game event listener that is given {@link Baritone} instance context.
@@ -30,10 +31,10 @@ import si.ladja.npcbaritone.core.api.utils.IPlayerContext;
 public class Behavior implements IBehavior {
 
     public final Baritone baritone;
-    public final IPlayerContext ctx;
+    public final IEntityContext ctx;
 
     protected Behavior(Baritone baritone) {
         this.baritone = baritone;
-        this.ctx = baritone.getPlayerContext();
+        this.ctx = baritone.getEntityContext();
     }
 }

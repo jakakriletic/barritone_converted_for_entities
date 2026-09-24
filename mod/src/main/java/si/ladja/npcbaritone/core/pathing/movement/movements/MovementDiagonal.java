@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -60,14 +61,14 @@ public class MovementDiagonal extends Movement {
     @Override
     protected boolean safeToCancel(MovementState state) {
         //too simple. backfill does not work after cornering with this
-        //return context.precomputedData.canWalkOn(ctx, ctx.playerFeet().down());
-        EntityPlayerSP player = ctx.player();
+        //return context.precomputedData.canWalkOn(ctx, ctx.feetPos().down());
+        EntityPlayerSP player = ctx.entity();
         double offset = 0.25;
         double x = player.posX;
         double y = player.posY - 1;
         double z = player.posZ;
         //standard
-        if (ctx.playerFeet().equals(src)) {
+        if (ctx.feetPos().equals(src)) {
             return true;
         }
         //both corners are walkable
@@ -76,8 +77,8 @@ public class MovementDiagonal extends Movement {
             return true;
         }
         //we are in a likely unwalkable corner, check for a supporting block
-        if (ctx.playerFeet().equals(new BetterBlockPos(src.x, src.y, dest.z))
-                || ctx.playerFeet().equals(new BetterBlockPos(dest.x, src.y, src.z))) {
+        if (ctx.feetPos().equals(new BetterBlockPos(src.x, src.y, dest.z))
+                || ctx.feetPos().equals(new BetterBlockPos(dest.x, src.y, src.z))) {
             return (MovementHelper.canWalkOn(ctx, new BetterBlockPos(x + offset, y, z + offset))
                     || MovementHelper.canWalkOn(ctx, new BetterBlockPos(x + offset, y, z - offset))
                     || MovementHelper.canWalkOn(ctx, new BetterBlockPos(x - offset, y, z + offset))
@@ -259,12 +260,12 @@ public class MovementDiagonal extends Movement {
             return state;
         }
 
-        if (ctx.playerFeet().equals(dest)) {
+        if (ctx.feetPos().equals(dest)) {
             return state.setStatus(MovementStatus.SUCCESS);
-        } else if (!playerInValidPosition() && !(MovementHelper.isLiquid(ctx, src) && getValidPositions().contains(ctx.playerFeet().up()))) {
+        } else if (!playerInValidPosition() && !(MovementHelper.isLiquid(ctx, src) && getValidPositions().contains(ctx.feetPos().up()))) {
             return state.setStatus(MovementStatus.UNREACHABLE);
         }
-        if (dest.y > src.y && ctx.player().posY < src.y + 0.1 && ctx.player().collidedHorizontally) {
+        if (dest.y > src.y && ctx.entity().posY < src.y + 0.1 && ctx.entity().collidedHorizontally) {
             state.setInput(Input.JUMP, true);
         }
         if (sprint()) {
@@ -275,7 +276,7 @@ public class MovementDiagonal extends Movement {
     }
 
     private boolean sprint() {
-        if (MovementHelper.isLiquid(ctx, ctx.playerFeet()) && !Baritone.settings().sprintInWater.value) {
+        if (MovementHelper.isLiquid(ctx, ctx.feetPos()) && !Baritone.settings().sprintInWater.value) {
             return false;
         }
         for (int i = 0; i < 4; i++) {

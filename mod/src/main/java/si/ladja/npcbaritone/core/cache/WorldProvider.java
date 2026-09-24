@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +20,7 @@ package si.ladja.npcbaritone.core.cache;
 
 import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.cache.IWorldProvider;
-import si.ladja.npcbaritone.core.api.utils.IPlayerContext;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 import si.ladja.npcbaritone.core.utils.accessor.IAnvilChunkLoader;
 import si.ladja.npcbaritone.core.utils.accessor.IChunkProviderServer;
 import net.minecraft.client.multiplayer.ServerData;
@@ -45,7 +46,7 @@ public class WorldProvider implements IWorldProvider {
     private static final Map<Path, WorldData> worldCache = new HashMap<>();
 
     private final Baritone baritone;
-    private final IPlayerContext ctx;
+    private final IEntityContext ctx;
     private WorldData currentWorld;
 
     /**
@@ -56,7 +57,7 @@ public class WorldProvider implements IWorldProvider {
 
     public WorldProvider(Baritone baritone) {
         this.baritone = baritone;
-        this.ctx = baritone.getPlayerContext();
+        this.ctx = baritone.getEntityContext();
     }
 
     @Override

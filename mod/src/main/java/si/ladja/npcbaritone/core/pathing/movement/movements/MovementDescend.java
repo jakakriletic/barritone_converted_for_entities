@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -231,33 +232,33 @@ public class MovementDescend extends Movement {
             return state;
         }
 
-        BlockPos playerFeet = ctx.playerFeet();
+        BlockPos feetPos = ctx.feetPos();
         BlockPos fakeDest = new BlockPos(dest.getX() * 2 - src.getX(), dest.getY(), dest.getZ() * 2 - src.getZ());
-        if ((playerFeet.equals(dest) || playerFeet.equals(fakeDest)) && (MovementHelper.isLiquid(ctx, dest) || ctx.player().posY - dest.getY() < 0.5)) { // lilypads
+        if ((feetPos.equals(dest) || feetPos.equals(fakeDest)) && (MovementHelper.isLiquid(ctx, dest) || ctx.entity().posY - dest.getY() < 0.5)) { // lilypads
             // Wait until we're actually on the ground before saying we're done because sometimes we continue to fall if the next action starts immediately
             return state.setStatus(MovementStatus.SUCCESS);
             /* else {
-                // System.out.println(player().posY + " " + playerFeet.getY() + " " + (player().posY - playerFeet.getY()));
+                // System.out.println(entity().posY + " " + feetPos.getY() + " " + (entity().posY - feetPos.getY()));
             }*/
         }
         if (safeMode()) {
             double destX = (src.getX() + 0.5) * 0.17 + (dest.getX() + 0.5) * 0.83;
             double destZ = (src.getZ() + 0.5) * 0.17 + (dest.getZ() + 0.5) * 0.83;
             state.setTarget(new MovementState.MovementTarget(
-                    RotationUtils.calcRotationFromVec3d(ctx.playerHead(),
+                    RotationUtils.calcRotationFromVec3d(ctx.headPos(),
                             new Vec3d(destX, dest.getY(), destZ),
-                            ctx.playerRotations()).withPitch(ctx.playerRotations().getPitch()),
+                            ctx.entityRotations()).withPitch(ctx.entityRotations().getPitch()),
                     false
             )).setInput(Input.MOVE_FORWARD, true);
             return state;
         }
-        double diffX = ctx.player().posX - (dest.getX() + 0.5);
-        double diffZ = ctx.player().posZ - (dest.getZ() + 0.5);
+        double diffX = ctx.entity().posX - (dest.getX() + 0.5);
+        double diffZ = ctx.entity().posZ - (dest.getZ() + 0.5);
         double ab = Math.sqrt(diffX * diffX + diffZ * diffZ);
-        double x = ctx.player().posX - (src.getX() + 0.5);
-        double z = ctx.player().posZ - (src.getZ() + 0.5);
+        double x = ctx.entity().posX - (src.getX() + 0.5);
+        double z = ctx.entity().posZ - (src.getZ() + 0.5);
         double fromStart = Math.sqrt(x * x + z * z);
-        if (!playerFeet.equals(dest) || ab > 0.25) {
+        if (!feetPos.equals(dest) || ab > 0.25) {
             if (numTicks++ < 20 && fromStart < 1.25) {
                 MovementHelper.moveTowards(ctx, state, fakeDest);
             } else {

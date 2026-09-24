@@ -158,7 +158,7 @@ public class MovementAscend extends Movement {
 
     @Override
     public MovementState updateState(MovementState state) {
-        if (ctx.playerFeet().y < src.y) {
+        if (ctx.feetPos().y < src.y) {
             // this check should run even when in preparing state (breaking blocks)
             return state.setStatus(MovementStatus.UNREACHABLE);
         }
@@ -169,7 +169,7 @@ public class MovementAscend extends Movement {
             return state;
         }
 
-        if (ctx.playerFeet().equals(dest) || ctx.playerFeet().equals(dest.add(getDirection().down()))) {
+        if (ctx.feetPos().equals(dest) || ctx.feetPos().equals(dest.add(getDirection().down()))) {
             return state.setStatus(MovementStatus.SUCCESS);
         }
 
@@ -178,7 +178,7 @@ public class MovementAscend extends Movement {
             ticksWithoutPlacement++;
             if (MovementHelper.attemptToPlaceABlock(state, baritone, dest.down(), false, true) == PlaceResult.READY_TO_PLACE) {
                 state.setInput(Input.SNEAK, true);
-                if (ctx.player().isSneaking()) {
+                if (ctx.entity().isSneaking()) {
                     state.setInput(Input.CLICK_RIGHT, true);
                 }
             }
@@ -194,17 +194,17 @@ public class MovementAscend extends Movement {
             return state; // don't jump while walking from a non double slab into a bottom slab
         }
 
-        if (Baritone.settings().assumeStep.value || ctx.playerFeet().equals(src.up())) {
+        if (Baritone.settings().assumeStep.value || ctx.feetPos().equals(src.up())) {
             // no need to hit space if we're already jumping
             return state;
         }
 
         int xAxis = Math.abs(src.getX() - dest.getX()); // either 0 or 1
         int zAxis = Math.abs(src.getZ() - dest.getZ()); // either 0 or 1
-        double flatDistToNext = xAxis * Math.abs((dest.getX() + 0.5D) - ctx.player().posX) + zAxis * Math.abs((dest.getZ() + 0.5D) - ctx.player().posZ);
-        double sideDist = zAxis * Math.abs((dest.getX() + 0.5D) - ctx.player().posX) + xAxis * Math.abs((dest.getZ() + 0.5D) - ctx.player().posZ);
+        double flatDistToNext = xAxis * Math.abs((dest.getX() + 0.5D) - ctx.entity().posX) + zAxis * Math.abs((dest.getZ() + 0.5D) - ctx.entity().posZ);
+        double sideDist = zAxis * Math.abs((dest.getX() + 0.5D) - ctx.entity().posX) + xAxis * Math.abs((dest.getZ() + 0.5D) - ctx.entity().posZ);
 
-        double lateralMotion = xAxis * ctx.player().motionZ + zAxis * ctx.player().motionX;
+        double lateralMotion = xAxis * ctx.entity().motionZ + zAxis * ctx.entity().motionX;
         if (Math.abs(lateralMotion) > 0.1) {
             return state;
         }

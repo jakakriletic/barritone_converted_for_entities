@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +25,7 @@ import si.ladja.npcbaritone.core.api.behavior.IBehavior;
 import si.ladja.npcbaritone.core.api.event.listener.IEventBus;
 import si.ladja.npcbaritone.core.api.process.IBaritoneProcess;
 import si.ladja.npcbaritone.core.api.process.IElytraProcess;
-import si.ladja.npcbaritone.core.api.utils.IPlayerContext;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 import si.ladja.npcbaritone.core.behavior.*;
 import si.ladja.npcbaritone.core.cache.WorldProvider;
 import si.ladja.npcbaritone.core.command.manager.CommandManager;
@@ -35,7 +36,7 @@ import si.ladja.npcbaritone.core.utils.BlockStateInterface;
 import si.ladja.npcbaritone.core.utils.GuiClick;
 import si.ladja.npcbaritone.core.utils.InputOverrideHandler;
 import si.ladja.npcbaritone.core.utils.PathingControlManager;
-import si.ladja.npcbaritone.core.utils.player.BaritonePlayerContext;
+import si.ladja.npcbaritone.core.utils.player.EntityContext;
 import net.minecraft.client.Minecraft;
 
 import java.io.IOException;
@@ -85,7 +86,7 @@ public class Baritone implements IBaritone {
     private final SelectionManager selectionManager;
     private final CommandManager commandManager;
 
-    private final IPlayerContext playerContext;
+    private final IEntityContext playerContext;
     private final WorldProvider worldProvider;
 
     public BlockStateInterface bsi;
@@ -102,7 +103,7 @@ public class Baritone implements IBaritone {
         }
 
         // Define this before behaviors try and get it, or else it will be null and the builds will fail!
-        this.playerContext = new BaritonePlayerContext(this, mc);
+        this.playerContext = new EntityContext(this, mc);
 
         {
             this.lookBehavior         = this.registerBehavior(LookBehavior::new);
@@ -168,7 +169,7 @@ public class Baritone implements IBaritone {
     }
 
     @Override
-    public IPlayerContext getPlayerContext() {
+    public IEntityContext getEntityContext() {
         return this.playerContext;
     }
 

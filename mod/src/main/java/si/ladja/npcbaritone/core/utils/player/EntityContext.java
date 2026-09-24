@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,18 +29,18 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 /**
- * Implementation of {@link IPlayerContext} that provides information about the primary player.
+ * Implementation of {@link IEntityContext} that provides information about the primary player.
  *
  * @author Brady
  * @since 11/12/2018
  */
-public final class BaritonePlayerContext implements IPlayerContext {
+public final class EntityContext implements IEntityContext {
 
     private final Baritone baritone;
     private final Minecraft mc;
     private final IPlayerController playerController;
 
-    public BaritonePlayerContext(Baritone baritone, Minecraft mc) {
+    public EntityContext(Baritone baritone, Minecraft mc) {
         this.baritone = baritone;
         this.mc = mc;
         this.playerController = new BaritonePlayerController(mc);
@@ -51,7 +52,7 @@ public final class BaritonePlayerContext implements IPlayerContext {
     }
 
     @Override
-    public EntityPlayerSP player() {
+    public EntityPlayerSP entity() {
         return this.mc.player;
     }
 
@@ -73,16 +74,16 @@ public final class BaritonePlayerContext implements IPlayerContext {
     @Override
     public BetterBlockPos viewerPos() {
         final Entity entity = this.mc.getRenderViewEntity();
-        return entity == null ? this.playerFeet() : BetterBlockPos.from(new BlockPos(entity));
+        return entity == null ? this.feetPos() : BetterBlockPos.from(new BlockPos(entity));
     }
 
     @Override
-    public Rotation playerRotations() {
-        return this.baritone.getLookBehavior().getEffectiveRotation().orElseGet(IPlayerContext.super::playerRotations);
+    public Rotation entityRotations() {
+        return this.baritone.getLookBehavior().getEffectiveRotation().orElseGet(IEntityContext.super::entityRotations);
     }
 
     @Override
     public RayTraceResult objectMouseOver() {
-        return RayTraceUtils.rayTraceTowards(player(), playerRotations(), playerController().getBlockReachDistance());
+        return RayTraceUtils.rayTraceTowards(entity(), entityRotations(), playerController().getBlockReachDistance());
     }
 }

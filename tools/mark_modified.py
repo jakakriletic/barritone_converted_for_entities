@@ -10,7 +10,7 @@ import subprocess, sys, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CORE = 'mod/src/main/java/si/ladja/npcbaritone/core/'
 ref = sys.argv[1] if len(sys.argv) > 1 else 'HEAD'
-names = subprocess.run(['git', 'diff', '--name-only', '--diff-filter=M', ref, '--', CORE],
+names = subprocess.run(['git', 'diff', '--name-only', '-M', '--diff-filter=MR', '--cached', ref, '--', CORE],
                        cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
 MARK = ' * Modified for NPC Baritone.'
 ANCHOR = ' * This file is part of Baritone.'

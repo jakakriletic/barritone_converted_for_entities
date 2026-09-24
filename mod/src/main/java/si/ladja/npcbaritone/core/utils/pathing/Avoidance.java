@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +20,7 @@ package si.ladja.npcbaritone.core.utils.pathing;
 
 import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.utils.BetterBlockPos;
-import si.ladja.npcbaritone.core.api.utils.IPlayerContext;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import net.minecraft.entity.monster.EntityEnderman;
 import net.minecraft.entity.monster.EntityMob;
@@ -60,7 +61,7 @@ public class Avoidance {
         return xDiff * xDiff + yDiff * yDiff + zDiff * zDiff <= radiusSq ? coefficient : 1.0D;
     }
 
-    public static List<Avoidance> create(IPlayerContext ctx) {
+    public static List<Avoidance> create(IEntityContext ctx) {
         if (!Baritone.settings().avoidance.value) {
             return Collections.emptyList();
         }
@@ -68,13 +69,13 @@ public class Avoidance {
         double mobSpawnerCoeff = Baritone.settings().mobSpawnerAvoidanceCoefficient.value;
         double mobCoeff = Baritone.settings().mobAvoidanceCoefficient.value;
         if (mobSpawnerCoeff != 1.0D) {
-            ctx.worldData().getCachedWorld().getLocationsOf("mob_spawner", 1, ctx.playerFeet().x, ctx.playerFeet().z, 2)
+            ctx.worldData().getCachedWorld().getLocationsOf("mob_spawner", 1, ctx.feetPos().x, ctx.feetPos().z, 2)
                     .forEach(mobspawner -> res.add(new Avoidance(mobspawner, mobSpawnerCoeff, Baritone.settings().mobSpawnerAvoidanceRadius.value)));
         }
         if (mobCoeff != 1.0D) {
             ctx.world().loadedEntityList.stream()
                     .filter(entity -> entity instanceof EntityMob)
-                    .filter(entity -> (!(entity instanceof EntitySpider)) || ctx.player().getBrightness() < 0.5)
+                    .filter(entity -> (!(entity instanceof EntitySpider)) || ctx.entity().getBrightness() < 0.5)
                     .filter(entity -> !(entity instanceof EntityPigZombie) || ((EntityPigZombie) entity).isAngry())
                     .filter(entity -> !(entity instanceof EntityEnderman) || ((EntityEnderman) entity).isScreaming())
                     .forEach(entity -> res.add(new Avoidance(new BlockPos(entity), mobCoeff, Baritone.settings().mobAvoidanceRadius.value)));

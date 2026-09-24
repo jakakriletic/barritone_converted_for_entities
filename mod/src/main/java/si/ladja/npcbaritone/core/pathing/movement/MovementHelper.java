@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -93,7 +94,7 @@ public interface MovementHelper extends ActionCosts, Helper {
         return false;
     }
 
-    static boolean canWalkThrough(IPlayerContext ctx, BetterBlockPos pos) {
+    static boolean canWalkThrough(IEntityContext ctx, BetterBlockPos pos) {
         return canWalkThrough(new BlockStateInterface(ctx), pos.x, pos.y, pos.z);
     }
 
@@ -257,7 +258,7 @@ public interface MovementHelper extends ActionCosts, Helper {
         return context.precomputedData.fullyPassable(context.bsi, x, y, z, state);
     }
 
-    static boolean fullyPassable(IPlayerContext ctx, BlockPos pos) {
+    static boolean fullyPassable(IEntityContext ctx, BlockPos pos) {
         IBlockState state = ctx.world().getBlockState(pos);
         Ternary fullyPassable = fullyPassableBlockState(state);
         if (fullyPassable == YES) {
@@ -308,7 +309,7 @@ public interface MovementHelper extends ActionCosts, Helper {
         return isReplaceable(x, y, z, state, bsi);
     }
 
-    static boolean isDoorPassable(IPlayerContext ctx, BlockPos doorPos, BlockPos playerPos) {
+    static boolean isDoorPassable(IEntityContext ctx, BlockPos doorPos, BlockPos playerPos) {
         if (playerPos.equals(doorPos)) {
             return false;
         }
@@ -321,7 +322,7 @@ public interface MovementHelper extends ActionCosts, Helper {
         return isHorizontalBlockPassable(doorPos, state, playerPos, BlockDoor.OPEN);
     }
 
-    static boolean isGatePassable(IPlayerContext ctx, BlockPos gatePos, BlockPos playerPos) {
+    static boolean isGatePassable(IEntityContext ctx, BlockPos gatePos, BlockPos playerPos) {
         if (playerPos.equals(gatePos)) {
             return false;
         }
@@ -462,15 +463,15 @@ public interface MovementHelper extends ActionCosts, Helper {
         return canWalkOn(context, x, y, z, context.get(x, y, z));
     }
 
-    static boolean canWalkOn(IPlayerContext ctx, BetterBlockPos pos, IBlockState state) {
+    static boolean canWalkOn(IEntityContext ctx, BetterBlockPos pos, IBlockState state) {
         return canWalkOn(new BlockStateInterface(ctx), pos.x, pos.y, pos.z, state);
     }
 
-    static boolean canWalkOn(IPlayerContext ctx, BlockPos pos) {
+    static boolean canWalkOn(IEntityContext ctx, BlockPos pos) {
         return canWalkOn(new BlockStateInterface(ctx), pos.getX(), pos.getY(), pos.getZ());
     }
 
-    static boolean canWalkOn(IPlayerContext ctx, BetterBlockPos pos) {
+    static boolean canWalkOn(IEntityContext ctx, BetterBlockPos pos) {
         return canWalkOn(new BlockStateInterface(ctx), pos.x, pos.y, pos.z);
     }
 
@@ -484,9 +485,9 @@ public interface MovementHelper extends ActionCosts, Helper {
                 && ((Integer) state.getValue(BlockLiquid.LEVEL)) == 0;
     }
 
-    static boolean canUseFrostWalker(IPlayerContext ctx, BlockPos pos) {
+    static boolean canUseFrostWalker(IEntityContext ctx, BlockPos pos) {
         IBlockState state = BlockStateInterface.get(ctx, pos);
-        return EnchantmentHelper.hasFrostWalkerEnchantment(ctx.player())
+        return EnchantmentHelper.hasFrostWalkerEnchantment(ctx.entity())
                 && (state.getBlock() == Blocks.WATER || state.getBlock() == Blocks.FLOWING_WATER)
                 && ((Integer) state.getValue(BlockLiquid.LEVEL)) == 0;
     }
@@ -519,7 +520,7 @@ public interface MovementHelper extends ActionCosts, Helper {
         return canPlaceAgainst(bsi, pos.getX(), pos.getY(), pos.getZ());
     }
 
-    static boolean canPlaceAgainst(IPlayerContext ctx, BlockPos pos) {
+    static boolean canPlaceAgainst(IEntityContext ctx, BlockPos pos) {
         return canPlaceAgainst(new BlockStateInterface(ctx), pos);
     }
 
@@ -580,8 +581,8 @@ public interface MovementHelper extends ActionCosts, Helper {
      * @param ctx The player context
      * @param b   the blockstate to mine
      */
-    static void switchToBestToolFor(IPlayerContext ctx, IBlockState b) {
-        switchToBestToolFor(ctx, b, new ToolSet(ctx.player()), BaritoneAPI.getSettings().preferSilkTouch.value);
+    static void switchToBestToolFor(IEntityContext ctx, IBlockState b) {
+        switchToBestToolFor(ctx, b, new ToolSet(ctx.entity()), BaritoneAPI.getSettings().preferSilkTouch.value);
     }
 
     /**
@@ -591,17 +592,17 @@ public interface MovementHelper extends ActionCosts, Helper {
      * @param b   the blockstate to mine
      * @param ts  previously calculated ToolSet
      */
-    static void switchToBestToolFor(IPlayerContext ctx, IBlockState b, ToolSet ts, boolean preferSilkTouch) {
+    static void switchToBestToolFor(IEntityContext ctx, IBlockState b, ToolSet ts, boolean preferSilkTouch) {
         if (Baritone.settings().autoTool.value && !Baritone.settings().assumeExternalAutoTool.value) {
-            ctx.player().inventory.currentItem = ts.getBestSlot(b.getBlock(), preferSilkTouch);
+            ctx.entity().inventory.currentItem = ts.getBestSlot(b.getBlock(), preferSilkTouch);
         }
     }
 
-    static void moveTowards(IPlayerContext ctx, MovementState state, BlockPos pos) {
+    static void moveTowards(IEntityContext ctx, MovementState state, BlockPos pos) {
         state.setTarget(new MovementTarget(
-                RotationUtils.calcRotationFromVec3d(ctx.playerHead(),
+                RotationUtils.calcRotationFromVec3d(ctx.headPos(),
                         VecUtils.getBlockPosCenter(pos),
-                        ctx.playerRotations()).withPitch(ctx.playerRotations().getPitch()),
+                        ctx.entityRotations()).withPitch(ctx.entityRotations().getPitch()),
                 false
         )).setInput(Input.MOVE_FORWARD, true);
     }
@@ -625,7 +626,7 @@ public interface MovementHelper extends ActionCosts, Helper {
      * @param bp  The block pos
      * @return Whether or not the block is water
      */
-    static boolean isWater(IPlayerContext ctx, BlockPos bp) {
+    static boolean isWater(IEntityContext ctx, BlockPos bp) {
         return isWater(BlockStateInterface.getBlock(ctx, bp));
     }
 
@@ -640,7 +641,7 @@ public interface MovementHelper extends ActionCosts, Helper {
      * @param p   The pos
      * @return Whether or not the block is a liquid
      */
-    static boolean isLiquid(IPlayerContext ctx, BlockPos p) {
+    static boolean isLiquid(IEntityContext ctx, BlockPos p) {
         return BlockStateInterface.getBlock(ctx, p) instanceof BlockLiquid;
     }
 
@@ -665,7 +666,7 @@ public interface MovementHelper extends ActionCosts, Helper {
 
 
     static PlaceResult attemptToPlaceABlock(MovementState state, IBaritone baritone, BlockPos placeAt, boolean preferDown, boolean wouldSneak) {
-        IPlayerContext ctx = baritone.getPlayerContext();
+        IEntityContext ctx = baritone.getEntityContext();
         Optional<Rotation> direct = RotationUtils.reachable(ctx, placeAt, wouldSneak); // we assume that if there is a block there, it must be replacable
         boolean found = false;
         if (direct.isPresent()) {
@@ -683,9 +684,9 @@ public interface MovementHelper extends ActionCosts, Helper {
                 double faceX = (placeAt.getX() + against1.getX() + 1.0D) * 0.5D;
                 double faceY = (placeAt.getY() + against1.getY() + 0.5D) * 0.5D;
                 double faceZ = (placeAt.getZ() + against1.getZ() + 1.0D) * 0.5D;
-                Rotation place = RotationUtils.calcRotationFromVec3d(wouldSneak ? RayTraceUtils.inferSneakingEyePosition(ctx.player()) : ctx.playerHead(), new Vec3d(faceX, faceY, faceZ), ctx.playerRotations());
+                Rotation place = RotationUtils.calcRotationFromVec3d(wouldSneak ? RayTraceUtils.inferSneakingEyePosition(ctx.entity()) : ctx.headPos(), new Vec3d(faceX, faceY, faceZ), ctx.entityRotations());
                 Rotation actual = baritone.getLookBehavior().getAimProcessor().peekRotation(place);
-                RayTraceResult res = RayTraceUtils.rayTraceTowards(ctx.player(), actual, ctx.playerController().getBlockReachDistance(), wouldSneak);
+                RayTraceResult res = RayTraceUtils.rayTraceTowards(ctx.entity(), actual, ctx.playerController().getBlockReachDistance(), wouldSneak);
                 if (res != null && res.typeOfHit == RayTraceResult.Type.BLOCK && res.getBlockPos().equals(against1) && res.getBlockPos().offset(res.sideHit).equals(placeAt)) {
                     state.setTarget(new MovementState.MovementTarget(place, true));
                     found = true;

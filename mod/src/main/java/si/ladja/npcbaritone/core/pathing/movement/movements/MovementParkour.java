@@ -256,7 +256,7 @@ public class MovementParkour extends Movement {
         if (state.getStatus() != MovementStatus.RUNNING) {
             return state;
         }
-        if (ctx.playerFeet().y < src.y) {
+        if (ctx.feetPos().y < src.y) {
             // we have fallen
             logDebug("sorry");
             return state.setStatus(MovementStatus.UNREACHABLE);
@@ -265,22 +265,22 @@ public class MovementParkour extends Movement {
             state.setInput(Input.SPRINT, true);
         }
         MovementHelper.moveTowards(ctx, state, dest);
-        if (ctx.playerFeet().equals(dest)) {
+        if (ctx.feetPos().equals(dest)) {
             Block d = BlockStateInterface.getBlock(ctx, dest);
             if (d == Blocks.VINE || d == Blocks.LADDER) {
                 // it physically hurt me to add support for parkour jumping onto a vine
                 // but i did it anyway
                 return state.setStatus(MovementStatus.SUCCESS);
             }
-            if (ctx.player().posY - ctx.playerFeet().getY() < 0.094) { // lilypads
+            if (ctx.entity().posY - ctx.feetPos().getY() < 0.094) { // lilypads
                 state.setStatus(MovementStatus.SUCCESS);
             }
-        } else if (!ctx.playerFeet().equals(src)) {
-            if (ctx.playerFeet().equals(src.offset(direction)) || ctx.player().posY - src.y > 0.0001) {
+        } else if (!ctx.feetPos().equals(src)) {
+            if (ctx.feetPos().equals(src.offset(direction)) || ctx.entity().posY - src.y > 0.0001) {
                 if (Baritone.settings().allowPlace.value // see PR #3775
                         && ((Baritone) baritone).getInventoryBehavior().hasGenericThrowaway()
                         && !MovementHelper.canWalkOn(ctx, dest.down())
-                        && !ctx.player().onGround
+                        && !ctx.entity().onGround
                         && MovementHelper.attemptToPlaceABlock(state, baritone, dest.down(), true, false) == PlaceResult.READY_TO_PLACE
                 ) {
                     // go in the opposite order to check DOWN before all horizontals -- down is preferable because you don't have to look to the side while in midair, which could mess up the trajectory
@@ -288,8 +288,8 @@ public class MovementParkour extends Movement {
                 }
                 // prevent jumping too late by checking for ascend
                 if (dist == 3 && !ascend) { // this is a 2 block gap, dest = src + direction * 3
-                    double xDiff = (src.x + 0.5) - ctx.player().posX;
-                    double zDiff = (src.z + 0.5) - ctx.player().posZ;
+                    double xDiff = (src.x + 0.5) - ctx.entity().posX;
+                    double zDiff = (src.z + 0.5) - ctx.entity().posZ;
                     double distFromStart = Math.max(Math.abs(xDiff), Math.abs(zDiff));
                     if (distFromStart < 0.7) {
                         return state;
@@ -297,9 +297,9 @@ public class MovementParkour extends Movement {
                 }
 
                 state.setInput(Input.JUMP, true);
-            } else if (!ctx.playerFeet().equals(dest.offset(direction, -1))) {
+            } else if (!ctx.feetPos().equals(dest.offset(direction, -1))) {
                 state.setInput(Input.SPRINT, false);
-                if (ctx.playerFeet().equals(src.offset(direction, -1))) {
+                if (ctx.feetPos().equals(src.offset(direction, -1))) {
                     MovementHelper.moveTowards(ctx, state, src);
                 } else {
                     MovementHelper.moveTowards(ctx, state, src.offset(direction, -1));

@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,8 +49,8 @@ public final class InputOverrideHandler extends Behavior implements IInputOverri
 
     public InputOverrideHandler(Baritone baritone) {
         super(baritone);
-        this.blockBreakHelper = new BlockBreakHelper(baritone.getPlayerContext());
-        this.blockPlaceHelper = new BlockPlaceHelper(baritone.getPlayerContext());
+        this.blockBreakHelper = new BlockBreakHelper(baritone.getEntityContext());
+        this.blockPlaceHelper = new BlockPlaceHelper(baritone.getEntityContext());
     }
 
     /**
@@ -94,12 +95,12 @@ public final class InputOverrideHandler extends Behavior implements IInputOverri
         blockPlaceHelper.tick(isInputForcedDown(Input.CLICK_RIGHT));
 
         if (inControl()) {
-            if (ctx.player().movementInput.getClass() != PlayerMovementInput.class) {
-                ctx.player().movementInput = new PlayerMovementInput(this);
+            if (ctx.entity().movementInput.getClass() != PlayerMovementInput.class) {
+                ctx.entity().movementInput = new PlayerMovementInput(this);
             }
         } else {
-            if (ctx.player().movementInput.getClass() == PlayerMovementInput.class) { // allow other movement inputs that aren't this one, e.g. for a freecam
-                ctx.player().movementInput = new MovementInputFromOptions(ctx.minecraft().gameSettings);
+            if (ctx.entity().movementInput.getClass() == PlayerMovementInput.class) { // allow other movement inputs that aren't this one, e.g. for a freecam
+                ctx.entity().movementInput = new MovementInputFromOptions(ctx.minecraft().gameSettings);
             }
         }
         // only set it if it was previously incorrect

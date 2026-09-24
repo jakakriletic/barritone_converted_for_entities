@@ -61,6 +61,6 @@ public final class RayTraceUtils {
     }
 
     public static Vec3d inferSneakingEyePosition(Entity entity) {
-        return new Vec3d(entity.posX, entity.posY + IPlayerContext.eyeHeight(true), entity.posZ);
+        return new Vec3d(entity.posX, entity.posY + IEntityContext.eyeHeight(true), entity.posZ);
     }
 }

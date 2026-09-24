@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +24,7 @@ import si.ladja.npcbaritone.core.api.behavior.ILookBehavior;
 import si.ladja.npcbaritone.core.api.behavior.look.IAimProcessor;
 import si.ladja.npcbaritone.core.api.behavior.look.ITickableAimProcessor;
 import si.ladja.npcbaritone.core.api.event.events.*;
-import si.ladja.npcbaritone.core.api.utils.IPlayerContext;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 import si.ladja.npcbaritone.core.api.utils.Rotation;
 import si.ladja.npcbaritone.core.behavior.look.ForkableRandom;
 import net.minecraft.network.play.client.CPacketPlayer;
@@ -40,7 +41,7 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
     private Target target;
 
     /**
-     * The rotation known to the server. Returned by {@link #getEffectiveRotation()} for use in {@link IPlayerContext}.
+     * The rotation known to the server. Returned by {@link #getEffectiveRotation()} for use in {@link IEntityContext}.
      */
     private Rotation serverRotation;
 
@@ -58,7 +59,7 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
 
     public LookBehavior(Baritone baritone) {
         super(baritone);
-        this.processor = new AimProcessor(baritone.getPlayerContext());
+        this.processor = new AimProcessor(baritone.getEntityContext());
         this.smoothYawBuffer = new ArrayDeque<>();
         this.smoothPitchBuffer = new ArrayDeque<>();
     }
@@ -92,10 +93,10 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
                     return;
                 }
 
-                this.prevRotation = new Rotation(ctx.player().rotationYaw, ctx.player().rotationPitch);
+                this.prevRotation = new Rotation(ctx.entity().rotationYaw, ctx.entity().rotationPitch);
                 final Rotation actual = this.processor.peekRotation(this.target.rotation);
-                ctx.player().rotationYaw = actual.getYaw();
-                ctx.player().rotationPitch = actual.getPitch();
+                ctx.entity().rotationYaw = actual.getYaw();
+                ctx.entity().rotationPitch = actual.getPitch();
                 break;
             }
             case POST: {
@@ -110,12 +111,12 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
                         this.smoothPitchBuffer.removeFirst();
                     }
                     if (this.target.mode == Target.Mode.SERVER) {
-                        ctx.player().rotationYaw = this.prevRotation.getYaw();
-                        ctx.player().rotationPitch = this.prevRotation.getPitch();
-                    } else if (ctx.player().isElytraFlying() ? Baritone.settings().elytraSmoothLook.value : Baritone.settings().smoothLook.value) {
-                        ctx.player().rotationYaw = (float) this.smoothYawBuffer.stream().mapToDouble(d -> d).average().orElse(this.prevRotation.getYaw());
-                        if (ctx.player().isElytraFlying()) {
-                            ctx.player().rotationPitch = (float) this.smoothPitchBuffer.stream().mapToDouble(d -> d).average().orElse(this.prevRotation.getPitch());
+                        ctx.entity().rotationYaw = this.prevRotation.getYaw();
+                        ctx.entity().rotationPitch = this.prevRotation.getPitch();
+                    } else if (ctx.entity().isElytraFlying() ? Baritone.settings().elytraSmoothLook.value : Baritone.settings().smoothLook.value) {
+                        ctx.entity().rotationYaw = (float) this.smoothYawBuffer.stream().mapToDouble(d -> d).average().orElse(this.prevRotation.getYaw());
+                        if (ctx.entity().isElytraFlying()) {
+                            ctx.entity().rotationPitch = (float) this.smoothPitchBuffer.stream().mapToDouble(d -> d).average().orElse(this.prevRotation.getPitch());
                         }
                     }
 
@@ -151,7 +152,7 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
     public void pig() {
         if (this.target != null) {
             final Rotation actual = this.processor.peekRotation(this.target.rotation);
-            ctx.player().rotationYaw = actual.getYaw();
+            ctx.entity().rotationYaw = actual.getYaw();
         }
     }
 
@@ -174,25 +175,25 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
 
     private static final class AimProcessor extends AbstractAimProcessor {
 
-        public AimProcessor(final IPlayerContext ctx) {
+        public AimProcessor(final IEntityContext ctx) {
             super(ctx);
         }
 
         @Override
         protected Rotation getPrevRotation() {
             // Implementation will use LookBehavior.serverRotation
-            return ctx.playerRotations();
+            return ctx.entityRotations();
         }
     }
 
     private static abstract class AbstractAimProcessor implements ITickableAimProcessor {
 
-        protected final IPlayerContext ctx;
+        protected final IEntityContext ctx;
         private final ForkableRandom rand;
         private double randomYawOffset;
         private double randomPitchOffset;
 
-        public AbstractAimProcessor(IPlayerContext ctx) {
+        public AbstractAimProcessor(IEntityContext ctx) {
             this.ctx = ctx;
             this.rand = new ForkableRandom();
         }
@@ -211,7 +212,7 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
             float desiredYaw = rotation.getYaw();
             float desiredPitch = rotation.getPitch();
 
-            // In other words, the target doesn't care about the pitch, so it used playerRotations().getPitch()
+            // In other words, the target doesn't care about the pitch, so it used entityRotations().getPitch()
             // and it's safe to adjust it to a normal level
             if (desiredPitch == prev.getPitch()) {
                 desiredPitch = nudgeToLevel(desiredPitch);
@@ -321,12 +322,12 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
              */
             NONE;
 
-            static Mode resolve(IPlayerContext ctx, boolean blockInteract) {
+            static Mode resolve(IEntityContext ctx, boolean blockInteract) {
                 final Settings settings = Baritone.settings();
                 final boolean antiCheat = settings.antiCheatCompatibility.value;
                 final boolean blockFreeLook = settings.blockFreeLook.value;
 
-                if (ctx.player().isElytraFlying()) {
+                if (ctx.entity().isElytraFlying()) {
                     // always need to set angles while flying
                     return settings.elytraFreeLook.value ? SERVER : CLIENT;
                 } else if (settings.freeLook.value) {

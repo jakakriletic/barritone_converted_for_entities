@@ -142,13 +142,13 @@ public final class RotationUtils {
      * @param ctx Context for the viewing entity
      * @param pos The target block position
      * @return The optional rotation
-     * @see #reachable(IPlayerContext, BlockPos, double)
+     * @see #reachable(IEntityContext, BlockPos, double)
      */
-    public static Optional<Rotation> reachable(IPlayerContext ctx, BlockPos pos) {
+    public static Optional<Rotation> reachable(IEntityContext ctx, BlockPos pos) {
         return reachable(ctx, pos, false);
     }
 
-    public static Optional<Rotation> reachable(IPlayerContext ctx, BlockPos pos, boolean wouldSneak) {
+    public static Optional<Rotation> reachable(IEntityContext ctx, BlockPos pos, boolean wouldSneak) {
         return reachable(ctx, pos, ctx.playerController().getBlockReachDistance(), wouldSneak);
     }
 
@@ -164,11 +164,11 @@ public final class RotationUtils {
      * @param blockReachDistance The block reach distance of the entity
      * @return The optional rotation
      */
-    public static Optional<Rotation> reachable(IPlayerContext ctx, BlockPos pos, double blockReachDistance) {
+    public static Optional<Rotation> reachable(IEntityContext ctx, BlockPos pos, double blockReachDistance) {
         return reachable(ctx, pos, blockReachDistance, false);
     }
 
-    public static Optional<Rotation> reachable(IPlayerContext ctx, BlockPos pos, double blockReachDistance, boolean wouldSneak) {
+    public static Optional<Rotation> reachable(IEntityContext ctx, BlockPos pos, double blockReachDistance, boolean wouldSneak) {
         if (BaritoneAPI.getSettings().remainWithExistingLookDirection.value && ctx.isLookingAt(pos)) {
             /*
              * why add 0.0001?
@@ -180,10 +180,10 @@ public final class RotationUtils {
              *
              * or if you're a normal person literally all this does it ensure that we don't nudge the pitch to a normal level
              */
-            Rotation hypothetical = ctx.playerRotations().add(new Rotation(0, 0.0001F));
+            Rotation hypothetical = ctx.entityRotations().add(new Rotation(0, 0.0001F));
             if (wouldSneak) {
                 // the concern here is: what if we're looking at it now, but as soon as we start sneaking we no longer are
-                RayTraceResult result = RayTraceUtils.rayTraceTowards(ctx.player(), hypothetical, blockReachDistance, true);
+                RayTraceResult result = RayTraceUtils.rayTraceTowards(ctx.entity(), hypothetical, blockReachDistance, true);
                 if (result != null && result.typeOfHit == RayTraceResult.Type.BLOCK && result.getBlockPos().equals(pos)) {
                     return Optional.of(hypothetical); // yes, if we sneaked we would still be looking at the block
                 }
@@ -222,11 +222,11 @@ public final class RotationUtils {
      * @param blockReachDistance The block reach distance of the entity
      * @return The optional rotation
      */
-    public static Optional<Rotation> reachableOffset(IPlayerContext ctx, BlockPos pos, Vec3d offsetPos, double blockReachDistance, boolean wouldSneak) {
-        Vec3d eyes = wouldSneak ? RayTraceUtils.inferSneakingEyePosition(ctx.player()) : ctx.player().getPositionEyes(1.0F);
-        Rotation rotation = calcRotationFromVec3d(eyes, offsetPos, ctx.playerRotations());
-        Rotation actualRotation = BaritoneAPI.getProvider().getBaritoneForPlayer(ctx.player()).getLookBehavior().getAimProcessor().peekRotation(rotation);
-        RayTraceResult result = RayTraceUtils.rayTraceTowards(ctx.player(), actualRotation, blockReachDistance, wouldSneak);
+    public static Optional<Rotation> reachableOffset(IEntityContext ctx, BlockPos pos, Vec3d offsetPos, double blockReachDistance, boolean wouldSneak) {
+        Vec3d eyes = wouldSneak ? RayTraceUtils.inferSneakingEyePosition(ctx.entity()) : ctx.entity().getPositionEyes(1.0F);
+        Rotation rotation = calcRotationFromVec3d(eyes, offsetPos, ctx.entityRotations());
+        Rotation actualRotation = BaritoneAPI.getProvider().getBaritoneForPlayer(ctx.entity()).getLookBehavior().getAimProcessor().peekRotation(rotation);
+        RayTraceResult result = RayTraceUtils.rayTraceTowards(ctx.entity(), actualRotation, blockReachDistance, wouldSneak);
         //System.out.println(result);
         if (result != null && result.typeOfHit == RayTraceResult.Type.BLOCK) {
             if (result.getBlockPos().equals(pos)) {
@@ -248,7 +248,7 @@ public final class RotationUtils {
      * @param blockReachDistance The block reach distance of the entity
      * @return The optional rotation
      */
-    public static Optional<Rotation> reachableCenter(IPlayerContext ctx, BlockPos pos, double blockReachDistance, boolean wouldSneak) {
+    public static Optional<Rotation> reachableCenter(IEntityContext ctx, BlockPos pos, double blockReachDistance, boolean wouldSneak) {
         return reachableOffset(ctx, pos, VecUtils.calculateBlockCenter(ctx.world(), pos), blockReachDistance, wouldSneak);
     }
 
@@ -260,7 +260,7 @@ public final class RotationUtils {
     @Deprecated
     public static Optional<Rotation> reachable(EntityPlayerSP entity, BlockPos pos, double blockReachDistance, boolean wouldSneak) {
         IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer(entity);
-        IPlayerContext ctx = baritone.getPlayerContext();
+        IEntityContext ctx = baritone.getEntityContext();
         return reachable(ctx, pos, blockReachDistance, wouldSneak);
     }
 

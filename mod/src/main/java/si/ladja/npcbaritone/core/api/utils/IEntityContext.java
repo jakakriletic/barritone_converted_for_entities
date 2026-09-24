@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,11 +33,11 @@ import java.util.Optional;
  * @author Brady
  * @since 11/12/2018
  */
-public interface IPlayerContext {
+public interface IEntityContext {
 
     Minecraft minecraft();
 
-    EntityPlayerSP player();
+    EntityPlayerSP entity();
 
     IPlayerController playerController();
 
@@ -46,9 +47,9 @@ public interface IPlayerContext {
 
     RayTraceResult objectMouseOver();
 
-    default BetterBlockPos playerFeet() {
+    default BetterBlockPos feetPos() {
         // TODO find a better way to deal with soul sand!!!!!
-        BetterBlockPos feet = new BetterBlockPos(player().posX, player().posY + 0.1251, player().posZ);
+        BetterBlockPos feet = new BetterBlockPos(entity().posX, entity().posY + 0.1251, entity().posZ);
 
         // sometimes when calling this from another thread or while world is null, it'll throw a NullPointerException
         // that causes the game to immediately crash
@@ -67,22 +68,22 @@ public interface IPlayerContext {
         return feet;
     }
 
-    default Vec3d playerFeetAsVec() {
-        return new Vec3d(player().posX, player().posY, player().posZ);
+    default Vec3d feetPosAsVec() {
+        return new Vec3d(entity().posX, entity().posY, entity().posZ);
     }
 
-    default Vec3d playerHead() {
-        return new Vec3d(player().posX, player().posY + player().getEyeHeight(), player().posZ);
+    default Vec3d headPos() {
+        return new Vec3d(entity().posX, entity().posY + entity().getEyeHeight(), entity().posZ);
     }
 
     default Vec3d playerMotion() {
-        return new Vec3d(player().motionX, player().motionY, player().motionZ);
+        return new Vec3d(entity().motionX, entity().motionY, entity().motionZ);
     }
 
     BetterBlockPos viewerPos();
 
-    default Rotation playerRotations() {
-        return new Rotation(player().rotationYaw, player().rotationPitch);
+    default Rotation entityRotations() {
+        return new Rotation(entity().rotationYaw, entity().rotationPitch);
     }
 
     static double eyeHeight(boolean ifSneaking) {

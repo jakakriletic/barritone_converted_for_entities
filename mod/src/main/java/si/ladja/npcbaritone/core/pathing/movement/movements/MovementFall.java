@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -88,18 +89,18 @@ public class MovementFall extends Movement {
             return state;
         }
 
-        BlockPos playerFeet = ctx.playerFeet();
-        Rotation toDest = RotationUtils.calcRotationFromVec3d(ctx.playerHead(), VecUtils.getBlockPosCenter(dest), ctx.playerRotations());
+        BlockPos feetPos = ctx.feetPos();
+        Rotation toDest = RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.getBlockPosCenter(dest), ctx.entityRotations());
         Rotation targetRotation = null;
         Block destBlock = ctx.world().getBlockState(dest).getBlock();
         boolean isWater = destBlock == Blocks.WATER || destBlock == Blocks.FLOWING_WATER;
-        if (!isWater && willPlaceBucket() && !playerFeet.equals(dest)) {
-            if (!InventoryPlayer.isHotbar(ctx.player().inventory.getSlotFor(STACK_BUCKET_WATER)) || ctx.world().provider.isNether()) {
+        if (!isWater && willPlaceBucket() && !feetPos.equals(dest)) {
+            if (!InventoryPlayer.isHotbar(ctx.entity().inventory.getSlotFor(STACK_BUCKET_WATER)) || ctx.world().provider.isNether()) {
                 return state.setStatus(MovementStatus.UNREACHABLE);
             }
 
-            if (ctx.player().posY - dest.getY() < ctx.playerController().getBlockReachDistance() && !ctx.player().onGround) {
-                ctx.player().inventory.currentItem = ctx.player().inventory.getSlotFor(STACK_BUCKET_WATER);
+            if (ctx.entity().posY - dest.getY() < ctx.playerController().getBlockReachDistance() && !ctx.entity().onGround) {
+                ctx.entity().inventory.currentItem = ctx.entity().inventory.getSlotFor(STACK_BUCKET_WATER);
 
                 targetRotation = new Rotation(toDest.getYaw(), 90.0F);
 
@@ -113,17 +114,17 @@ public class MovementFall extends Movement {
         } else {
             state.setTarget(new MovementTarget(toDest, false));
         }
-        if (playerFeet.equals(dest) && (ctx.player().posY - playerFeet.getY() < 0.094 || isWater)) { // 0.094 because lilypads
+        if (feetPos.equals(dest) && (ctx.entity().posY - feetPos.getY() < 0.094 || isWater)) { // 0.094 because lilypads
             if (isWater) { // only match water, not flowing water (which we cannot pick up with a bucket)
-                if (InventoryPlayer.isHotbar(ctx.player().inventory.getSlotFor(STACK_BUCKET_EMPTY))) {
-                    ctx.player().inventory.currentItem = ctx.player().inventory.getSlotFor(STACK_BUCKET_EMPTY);
-                    if (ctx.player().motionY >= 0) {
+                if (InventoryPlayer.isHotbar(ctx.entity().inventory.getSlotFor(STACK_BUCKET_EMPTY))) {
+                    ctx.entity().inventory.currentItem = ctx.entity().inventory.getSlotFor(STACK_BUCKET_EMPTY);
+                    if (ctx.entity().motionY >= 0) {
                         return state.setInput(Input.CLICK_RIGHT, true);
                     } else {
                         return state;
                     }
                 } else {
-                    if (ctx.player().motionY >= 0) {
+                    if (ctx.entity().motionY >= 0) {
                         return state.setStatus(MovementStatus.SUCCESS);
                     } // don't else return state; we need to stay centered because this water might be flowing under the surface
                 }
@@ -132,8 +133,8 @@ public class MovementFall extends Movement {
             }
         }
         Vec3d destCenter = VecUtils.getBlockPosCenter(dest); // we are moving to the 0.5 center not the edge (like if we were falling on a ladder)
-        if (Math.abs(ctx.player().posX + ctx.player().motionX - destCenter.x) > 0.1 || Math.abs(ctx.player().posZ + ctx.player().motionZ - destCenter.z) > 0.1) {
-            if (!ctx.player().onGround && Math.abs(ctx.player().motionY) > 0.4) {
+        if (Math.abs(ctx.entity().posX + ctx.entity().motionX - destCenter.x) > 0.1 || Math.abs(ctx.entity().posZ + ctx.entity().motionZ - destCenter.z) > 0.1) {
+            if (!ctx.entity().onGround && Math.abs(ctx.entity().motionY) > 0.4) {
                 state.setInput(Input.SNEAK, true);
             }
             state.setInput(Input.MOVE_FORWARD, true);
@@ -142,23 +143,23 @@ public class MovementFall extends Movement {
         if (avoid == null) {
             avoid = src.subtract(dest);
         } else {
-            double dist = Math.abs(avoid.getX() * (destCenter.x - avoid.getX() / 2.0 - ctx.player().posX)) + Math.abs(avoid.getZ() * (destCenter.z - avoid.getZ() / 2.0 - ctx.player().posZ));
+            double dist = Math.abs(avoid.getX() * (destCenter.x - avoid.getX() / 2.0 - ctx.entity().posX)) + Math.abs(avoid.getZ() * (destCenter.z - avoid.getZ() / 2.0 - ctx.entity().posZ));
             if (dist < 0.6) {
                 state.setInput(Input.MOVE_FORWARD, true);
-            } else if (!ctx.player().onGround) {
+            } else if (!ctx.entity().onGround) {
                 state.setInput(Input.SNEAK, false);
             }
         }
         if (targetRotation == null) {
             Vec3d destCenterOffset = new Vec3d(destCenter.x + 0.125 * avoid.getX(), destCenter.y, destCenter.z + 0.125 * avoid.getZ());
-            state.setTarget(new MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.playerHead(), destCenterOffset, ctx.playerRotations()), false));
+            state.setTarget(new MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), destCenterOffset, ctx.entityRotations()), false));
         }
         return state;
     }
 
     private EnumFacing avoid() {
         for (int i = 0; i < 15; i++) {
-            IBlockState state = ctx.world().getBlockState(ctx.playerFeet().down(i));
+            IBlockState state = ctx.world().getBlockState(ctx.feetPos().down(i));
             if (state.getBlock() == Blocks.LADDER) {
                 return state.getValue(BlockLadder.FACING);
             }
@@ -170,7 +171,7 @@ public class MovementFall extends Movement {
     public boolean safeToCancel(MovementState state) {
         // if we haven't started walking off the edge yet, or if we're in the process of breaking blocks before doing the fall
         // then it's safe to cancel this
-        return ctx.playerFeet().equals(src) || state.getStatus() != MovementStatus.RUNNING;
+        return ctx.feetPos().equals(src) || state.getStatus() != MovementStatus.RUNNING;
     }
 
     private static BetterBlockPos[] buildPositionsToBreak(BetterBlockPos src, BetterBlockPos dest) {

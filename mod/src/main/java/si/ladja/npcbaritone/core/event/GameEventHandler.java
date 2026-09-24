@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -53,7 +54,7 @@ public final class GameEventHandler implements IEventBus, Helper {
     public final void onTick(TickEvent event) {
         if (event.getType() == TickEvent.Type.IN) {
             try {
-                baritone.bsi = new BlockStateInterface(baritone.getPlayerContext(), true);
+                baritone.bsi = new BlockStateInterface(baritone.getEntityContext(), true);
             } catch (Exception ex) {
                 baritone.bsi = null;
             }
@@ -88,7 +89,7 @@ public final class GameEventHandler implements IEventBus, Helper {
         EventState state = event.getState();
         ChunkEvent.Type type = event.getType();
 
-        World world = baritone.getPlayerContext().world();
+        World world = baritone.getEntityContext().world();
 
         // Whenever the server sends us to another dimension, chunks are unloaded
         // technically after the new world has been loaded, so we perform a check
@@ -117,7 +118,7 @@ public final class GameEventHandler implements IEventBus, Helper {
 
             if (keepingTrackOf) {
                 baritone.getWorldProvider().ifWorldLoaded(worldData -> {
-                    final World world = baritone.getPlayerContext().world();
+                    final World world = baritone.getEntityContext().world();
                     ChunkPos pos = event.getChunkPos();
                     worldData.getCachedWorld().queueForPacking(world.getChunk(pos.x, pos.z));
                 });

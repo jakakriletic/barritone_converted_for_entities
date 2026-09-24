@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,7 +44,7 @@ public interface Helper {
 
     /**
      * The main game instance returned by {@link Minecraft#getMinecraft()}.
-     * Deprecated since {@link IPlayerContext#minecraft()} should be used instead (In the majority of cases).
+     * Deprecated since {@link IEntityContext#minecraft()} should be used instead (In the majority of cases).
      */
     @Deprecated
     Minecraft mc = Minecraft.getMinecraft();

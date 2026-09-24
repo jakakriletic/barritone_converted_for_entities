@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,16 +21,16 @@ package si.ladja.npcbaritone.core.utils;
 import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.process.IBaritoneProcess;
 import si.ladja.npcbaritone.core.api.utils.Helper;
-import si.ladja.npcbaritone.core.api.utils.IPlayerContext;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 
 public abstract class BaritoneProcessHelper implements IBaritoneProcess, Helper {
 
     protected final Baritone baritone;
-    protected final IPlayerContext ctx;
+    protected final IEntityContext ctx;
 
     public BaritoneProcessHelper(Baritone baritone) {
         this.baritone = baritone;
-        this.ctx = baritone.getPlayerContext();
+        this.ctx = baritone.getEntityContext();
     }
 
     @Override

@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,7 +27,7 @@ import si.ladja.npcbaritone.core.api.pathing.calc.IPathingControlManager;
 import si.ladja.npcbaritone.core.api.process.*;
 import si.ladja.npcbaritone.core.api.selection.ISelectionManager;
 import si.ladja.npcbaritone.core.api.utils.IInputOverrideHandler;
-import si.ladja.npcbaritone.core.api.utils.IPlayerContext;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 
 /**
  * @author Brady
@@ -116,10 +117,10 @@ public interface IBaritone {
     IInputOverrideHandler getInputOverrideHandler();
 
     /**
-     * @return The {@link IPlayerContext} instance
-     * @see IPlayerContext
+     * @return The {@link IEntityContext} instance
+     * @see IEntityContext
      */
-    IPlayerContext getPlayerContext();
+    IEntityContext getEntityContext();
 
     /**
      * @return The {@link IEventBus} instance

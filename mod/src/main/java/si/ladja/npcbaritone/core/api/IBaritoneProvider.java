@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -61,7 +62,7 @@ public interface IBaritoneProvider {
      */
     default IBaritone getBaritoneForPlayer(EntityPlayerSP player) {
         for (IBaritone baritone : this.getAllBaritones()) {
-            if (Objects.equals(player, baritone.getPlayerContext().player())) {
+            if (Objects.equals(player, baritone.getEntityContext().entity())) {
                 return baritone;
             }
         }
@@ -76,7 +77,7 @@ public interface IBaritoneProvider {
      */
     default IBaritone getBaritoneForMinecraft(Minecraft minecraft) {
         for (IBaritone baritone : this.getAllBaritones()) {
-            if (Objects.equals(minecraft, baritone.getPlayerContext().minecraft())) {
+            if (Objects.equals(minecraft, baritone.getEntityContext().minecraft())) {
                 return baritone;
             }
         }
@@ -91,7 +92,7 @@ public interface IBaritoneProvider {
      */
     default IBaritone getBaritoneForConnection(NetHandlerPlayClient connection) {
         for (IBaritone baritone : this.getAllBaritones()) {
-            final EntityPlayerSP player = baritone.getPlayerContext().player();
+            final EntityPlayerSP player = baritone.getEntityContext().entity();
             if (player != null && player.connection == connection) {
                 return baritone;
             }

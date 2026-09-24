@@ -1,5 +1,6 @@
 /*
  * This file is part of Baritone.
+ * Modified for NPC Baritone.
  *
  * Baritone is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +19,7 @@
 package si.ladja.npcbaritone.core.utils;
 
 import si.ladja.npcbaritone.core.Baritone;
-import si.ladja.npcbaritone.core.api.utils.IPlayerContext;
+import si.ladja.npcbaritone.core.api.utils.IEntityContext;
 import si.ladja.npcbaritone.core.cache.CachedRegion;
 import si.ladja.npcbaritone.core.cache.WorldData;
 import si.ladja.npcbaritone.core.utils.accessor.IChunkProviderClient;
@@ -54,11 +55,11 @@ public class BlockStateInterface {
 
     private static final IBlockState AIR = Blocks.AIR.getDefaultState();
 
-    public BlockStateInterface(IPlayerContext ctx) {
+    public BlockStateInterface(IEntityContext ctx) {
         this(ctx, false);
     }
 
-    public BlockStateInterface(IPlayerContext ctx, boolean copyLoadedChunks) {
+    public BlockStateInterface(IEntityContext ctx, boolean copyLoadedChunks) {
         final World world = ctx.world();
         this.worldBorder = new BetterWorldBorder(world.getWorldBorder());
         this.worldData = (WorldData) ctx.worldData();
@@ -80,11 +81,11 @@ public class BlockStateInterface {
         return loadedChunks.containsKey(ChunkPos.asLong(blockX >> 4, blockZ >> 4));
     }
 
-    public static Block getBlock(IPlayerContext ctx, BlockPos pos) { // won't be called from the pathing thread because the pathing thread doesn't make a single blockpos pog
+    public static Block getBlock(IEntityContext ctx, BlockPos pos) { // won't be called from the pathing thread because the pathing thread doesn't make a single blockpos pog
         return get(ctx, pos).getBlock();
     }
 
-    public static IBlockState get(IPlayerContext ctx, BlockPos pos) {
+    public static IBlockState get(IEntityContext ctx, BlockPos pos) {
         return new BlockStateInterface(ctx).get0(pos.getX(), pos.getY(), pos.getZ()); // immense iq
         // can't just do world().get because that doesn't work for out of bounds
         // and toBreak and stuff fails when the movement is instantiated out of load range but it's not able to BlockStateInterface.get what it's going to walk on
