@@ -52,8 +52,8 @@ import java.util.Locale;
  * /npcb trace on [entity] | off | dump
  * /npcb speedtest &lt;entity&gt; [walk|sprint]
  * /npcb chunks [reset]
- * /npcb course t1 build [x y z]
- * /npcb course t1 run &lt;entity&gt; [x y z]
+ * /npcb course &lt;t1|t2&gt; build [x y z]
+ * /npcb course &lt;t1|t2&gt; run &lt;entity&gt; [x y z]
  * /npcb course stop
  * </pre>
  * Brez koordinat je izhodišče tečaja pošiljateljev položaj.
@@ -249,20 +249,21 @@ public class NpcbCommand extends CommandBase {
                 break;
             }
             case "course": {
-                String usage = "/npcb course t1 build [x y z] | /npcb course t1 run <entity> [x y z] | /npcb course stop";
+                String usage = "/npcb course <t1|t2> build [x y z] | /npcb course <t1|t2> run <entity> [x y z] | /npcb course stop";
                 need(args, 2, usage);
                 if ("stop".equalsIgnoreCase(args[1])) {
                     CourseRunner.INSTANCE.abort();
                     break;
                 }
                 need(args, 3, usage);
-                if (!"t1".equalsIgnoreCase(args[1])) {
+                Course course = course(args[1]);
+                if (course == null) {
                     throw new WrongUsageException(usage);
                 }
                 if ("build".equalsIgnoreCase(args[2])) {
                     BlockPos origin = args.length >= 6 ? parseBlockPos(sender, args, 3, false) : sender.getPosition();
-                    int n = CourseT1.build(sender.getEntityWorld(), origin);
-                    reply(sender, "T1 postavljen pri " + origin + " (" + n + " blokov)");
+                    int n = course.build(sender.getEntityWorld(), origin);
+                    reply(sender, course.id() + " postavljen pri " + origin + " (" + n + " blokov)");
                 } else if ("run".equalsIgnoreCase(args[2])) {
                     need(args, 4, usage);
                     EntityLiving e = getEntity(server, sender, args[3], EntityLiving.class);
@@ -270,14 +271,14 @@ public class NpcbCommand extends CommandBase {
                     if (CourseRunner.INSTANCE.isRunning()) {
                         throw new CommandException("Tečaj že teče (/npcb course stop)");
                     }
-                    int n = CourseT1.build(e.world, origin);
+                    int n = course.build(e.world, origin);
                     Baritone b = Attach.get(e);
                     if (b == null) {
                         b = Attach.attach(e, true, NpcBaritoneMod.config());
                     }
                     Telemetry.INSTANCE.resetChunkLoads();
-                    CourseRunner.INSTANCE.start(e, b, sender, origin);
-                    reply(sender, "T1 teče pri " + origin + " (postavljenih " + n + " blokov)");
+                    CourseRunner.INSTANCE.start(e, b, sender, course, origin);
+                    reply(sender, course.id() + " teče pri " + origin + " (postavljenih " + n + " blokov)");
                 } else {
                     throw new WrongUsageException(usage);
                 }
@@ -311,7 +312,7 @@ public class NpcbCommand extends CommandBase {
             return getListOfStringsMatchingLastWord(args, "on", "off", "dump");
         }
         if (args.length == 2 && "course".equalsIgnoreCase(args[0])) {
-            return getListOfStringsMatchingLastWord(args, "t1", "stop");
+            return getListOfStringsMatchingLastWord(args, "t1", "t2", "stop");
         }
         if (args.length == 3 && "course".equalsIgnoreCase(args[0])) {
             return getListOfStringsMatchingLastWord(args, "build", "run");
@@ -355,6 +356,17 @@ public class NpcbCommand extends CommandBase {
             throw new CommandException("Entiteta ni pripeta; najprej /npcb attach");
         }
         return b;
+    }
+
+    static Course course(String id) {
+        switch (id.toLowerCase(Locale.ROOT)) {
+            case "t1":
+                return CourseT1.INSTANCE;
+            case "t2":
+                return CourseT2.INSTANCE;
+            default:
+                return null;
+        }
     }
 
     static List<String> statusDetail(EntityLiving e) {

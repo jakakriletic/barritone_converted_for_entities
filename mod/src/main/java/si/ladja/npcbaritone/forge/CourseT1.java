@@ -22,7 +22,6 @@ import net.minecraft.block.BlockStoneSlab;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,7 +35,30 @@ import java.util.List;
  *
  * <p>Razlaga odsekov, kjer načrt ni enoznačen, je zapisana pri odseku.
  */
-public final class CourseT1 {
+public final class CourseT1 implements Course {
+
+    public static final CourseT1 INSTANCE = new CourseT1();
+
+    @Override
+    public String id() {
+        return "T1";
+    }
+
+    @Override
+    public List<Course.Segment> segments(BlockPos origin) {
+        return segmentsAt(origin);
+    }
+
+    @Override
+    public int build(Course.Sink sink, BlockPos origin) {
+        return buildAt(sink, origin);
+    }
+
+    @Override
+    public BlockPos[] bounds(BlockPos o) {
+        return new BlockPos[]{o.add(-6, -1, -5), o.add(46, 6, 9 * LANE_SPACING + 5)};
+    }
+
 
     public static final int LANE_SPACING = 12;
 
@@ -54,7 +76,7 @@ public final class CourseT1 {
         return origin.add(0, 0, i * LANE_SPACING);
     }
 
-    public static List<Course.Segment> segments(BlockPos o) {
+    public static List<Course.Segment> segmentsAt(BlockPos o) {
         List<Course.Segment> s = new ArrayList<>();
         BlockPos l;
         l = lane(o, 0);
@@ -80,23 +102,8 @@ public final class CourseT1 {
         return Collections.unmodifiableList(s);
     }
 
-    /** Postavi vse proge v svet (flag 2: brez posodobitev sosedov). */
-    public static int build(World w, BlockPos o) {
-        return build(new Course.Sink() {
-            @Override
-            public IBlockState get(BlockPos pos) {
-                return w.getBlockState(pos);
-            }
-
-            @Override
-            public void set(BlockPos pos, IBlockState state) {
-                w.setBlockState(pos, state, 2);
-            }
-        }, o);
-    }
-
     /** Postavi vse proge. Vrne število spremenjenih blokov. */
-    public static int build(Course.Sink w, BlockPos o) {
+    public static int buildAt(Course.Sink w, BlockPos o) {
         Course.Builder b = new Course.Builder(w);
         for (int i = 0; i < 10; i++) {
             BlockPos l = lane(o, i);

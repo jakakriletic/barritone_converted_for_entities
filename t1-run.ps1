@@ -133,6 +133,9 @@ if ($trace) {
 } else {
     Check 'M3 A3 sled T1 obstaja' $false
 }
+# M4 A2 (M4.9): tečaj T1 ne spremeni nobenega bloka
+$t1changed = [regex]::Match($log, 'NPCB-COURSE-DONE course=T1 .*?blocks_changed=(\d+)')
+Check "M4 A2 spremenjenih blokov v T1: $($t1changed.Groups[1].Value) (= 0)" ($t1changed.Success -and $t1changed.Groups[1].Value -eq '0')
 # M3 A4: brez /npcb debug on se ne pošlje noben paket
 $dbg = [regex]::Match($log, 'debug paketov: (\d+)')
 Check "M3 A4 debug paketov brez prejemnikov: $($dbg.Groups[1].Value) (= 0)" ($dbg.Success -and $dbg.Groups[1].Value -eq '0')

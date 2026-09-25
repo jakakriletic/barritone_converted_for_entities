@@ -68,7 +68,7 @@ public class CourseT1PathTest {
         BootstrapOnce.ensure();
         // x -6..46, z 0..108 (+-5): chunki -1..3 x -1..7; tla pod progami postavi build
         world = SyntheticWorld.create().ensureChunks(-2, -2, 4, 8);
-        int n = CourseT1.build(new Course.Sink() {
+        int n = CourseT1.buildAt(new Course.Sink() {
             @Override
             public IBlockState get(BlockPos pos) {
                 IBlockState s = world.get(pos);
@@ -98,7 +98,7 @@ public class CourseT1PathTest {
 
     @Test
     public void everySegmentBehavesAsExpected() {
-        List<Course.Segment> segs = CourseT1.segments(ORIGIN);
+        List<Course.Segment> segs = CourseT1.segmentsAt(ORIGIN);
         assertEquals(10, segs.size());
         for (Course.Segment s : segs) {
             PathCalculationResult r = search(s);
@@ -123,7 +123,7 @@ public class CourseT1PathTest {
 
     @Test
     public void segment4PlatformIsReallyFourHigh() {
-        Course.Segment s = CourseT1.segments(ORIGIN).get(3);
+        Course.Segment s = CourseT1.segmentsAt(ORIGIN).get(3);
         assertEquals(Blocks.STONE, world.get(s.start.down()).getBlock());
         assertEquals(Blocks.AIR, world.get(s.start).getBlock());
         assertEquals(Blocks.STONE, world.get(s.start.down(4)).getBlock());

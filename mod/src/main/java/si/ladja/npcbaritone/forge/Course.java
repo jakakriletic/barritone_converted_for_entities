@@ -19,9 +19,40 @@ package si.ladja.npcbaritone.forge;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /** Skupni tipi tečajev (T1, T2, …): odsek, pričakovan izid, cilj postavljanja, postavljalec. */
 public interface Course {
+
+    /** Ime v ukazu in CSV ({@code T1}, {@code T2}). */
+    String id();
+
+    List<Segment> segments(BlockPos origin);
+
+    /** Postavi tečaj; vrne število spremenjenih blokov. */
+    int build(Sink sink, BlockPos origin);
+
+    /** Najmanjši in največji kot območja, ki ga tečaj postavi (za podpis blokov, M4.9). */
+    BlockPos[] bounds(BlockPos origin);
+
+    /** Postavi v svet (flag 2: brez posodobitev sosedov). */
+    default int build(World w, BlockPos origin) {
+        return build(new Sink() {
+            @Override
+            public IBlockState get(BlockPos pos) {
+                return w.getBlockState(pos);
+            }
+
+            @Override
+            public void set(BlockPos pos, IBlockState state) {
+                w.setBlockState(pos, state, 2);
+            }
+        }, origin);
+    }
 
     enum Expect { REACH, FAIL }
 
@@ -37,6 +68,8 @@ public interface Course {
         public final BlockPos forbiddenColumn;
         /** Začetni yaw (−90 = proti +X). */
         public final float startYaw;
+        /** Vrata/ograjna vrata (spodnja polovica), ki morajo biti po odseku zaprta (M4 A4). */
+        public final List<BlockPos> openables;
 
         public Segment(int index, String name, BlockPos start, BlockPos goal, Expect expect, double maxFall, BlockPos forbiddenColumn, float startYaw) {
             this.index = index;
@@ -47,6 +80,23 @@ public interface Course {
             this.maxFall = maxFall;
             this.forbiddenColumn = forbiddenColumn;
             this.startYaw = startYaw;
+            this.openables = Collections.emptyList();
+        }
+
+        private Segment(Segment s, List<BlockPos> openables) {
+            this.index = s.index;
+            this.name = s.name;
+            this.start = s.start;
+            this.goal = s.goal;
+            this.expect = s.expect;
+            this.maxFall = s.maxFall;
+            this.forbiddenColumn = s.forbiddenColumn;
+            this.startYaw = s.startYaw;
+            this.openables = Collections.unmodifiableList(openables);
+        }
+
+        public Segment withOpenables(BlockPos... positions) {
+            return new Segment(this, Arrays.asList(positions));
         }
     }
 

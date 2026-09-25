@@ -18,11 +18,17 @@
 package si.ladja.npcbaritone.forge;
 
 import net.minecraft.command.ICommandSender;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockDoor;
+import net.minecraft.block.BlockFenceGate;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -69,7 +75,12 @@ public final class CourseRunner {
         final EntityLiving entity;
         final Baritone baritone;
         final ICommandSender sender;
+        final Course course;
+        final BlockPos origin;
         final List<Course.Segment> segments;
+        /** M4.9: stanja blokov območja tečaja ob začetku (vrata normalizirana na zaprta). */
+        final int[] signature;
+        double damage;
         final List<String> csv = new ArrayList<>();
         int index = -1;
         int ticks;
@@ -81,20 +92,23 @@ public final class CourseRunner {
         int passed;
         final float[] yaw = new float[TIMEOUT_TICKS + 1];
 
-        Run(EntityLiving entity, Baritone baritone, ICommandSender sender, List<Course.Segment> segments) {
+        Run(EntityLiving entity, Baritone baritone, ICommandSender sender, Course course, BlockPos origin) {
             this.entity = entity;
             this.baritone = baritone;
             this.sender = sender;
-            this.segments = segments;
-            csv.add("course,segment,name,expect,result,pass,ticks,meters,max_fall,chunk_loads,yaw_jitter,forbidden_entered");
+            this.course = course;
+            this.origin = origin;
+            this.segments = course.segments(origin);
+            this.signature = signature(entity.world, course.bounds(origin));
+            csv.add("course,segment,name,expect,result,pass,ticks,meters,max_fall,chunk_loads,yaw_jitter,forbidden_entered,damage,openables_closed");
         }
     }
 
-    public void start(EntityLiving entity, Baritone baritone, ICommandSender sender, BlockPos origin) {
+    public void start(EntityLiving entity, Baritone baritone, ICommandSender sender, Course course, BlockPos origin) {
         if (run != null) {
             throw new IllegalStateException("course already running");
         }
-        run = new Run(entity, baritone, sender, CourseT1.segments(origin));
+        run = new Run(entity, baritone, sender, course, origin);
         // M3.4 (A3): en tek T1 = ena datoteka sledi poleg CSV izidov
         PathTrace.INSTANCE.start(java.util.Collections.singletonList(entity));
         next();
@@ -125,7 +139,7 @@ public final class CourseRunner {
             return;
         }
         Course.Segment s = r.segments.get(r.index);
-        PathTrace.INSTANCE.setTag("T1/" + s.index);
+        PathTrace.INSTANCE.setTag(r.course.id() + "/" + s.index);
         r.baritone.getPathingBehavior().cancelEverything();
         r.entity.setPositionAndUpdate(s.start.getX() + 0.5, s.start.getY(), s.start.getZ() + 0.5);
         r.entity.rotationYaw = s.startYaw;
@@ -137,6 +151,17 @@ public final class CourseRunner {
         r.meters = 0;
         r.maxFall = 0;
         r.enteredForbidden = false;
+        r.damage = 0;
+    }
+
+    /** M4 A3: škoda, ki jo entiteta tečaja dobi med odsekom (padec, utopitev, lava, kaktus). */
+    @SubscribeEvent
+    public void onHurt(LivingHurtEvent event) {
+        Run r = run;
+        if (r != null && event.getEntity() == r.entity && r.started) {
+            r.damage += event.getAmount();
+            NpcBaritoneMod.LOG.info("{} {}: škoda {} ({})", r.course.id(), r.index + 1, event.getAmount(), event.getSource().getDamageType());
+        }
     }
 
     @SubscribeEvent
@@ -230,22 +255,30 @@ public final class CourseRunner {
         }
         boolean expected = s.expect == Course.Expect.REACH ? "REACHED".equals(result) : "FAILED".equals(result);
         boolean fallOk = Double.isNaN(s.maxFall) || r.maxFall <= s.maxFall;
-        boolean pass = expected && fallOk && !r.enteredForbidden;
+        boolean closedOk = true;
+        for (BlockPos p : s.openables) {
+            closedOk &= !isOpen(r.entity.world.getBlockState(p));
+        }
+        boolean pass = expected && fallOk && !r.enteredForbidden && r.damage == 0 && closedOk;
         if (pass) {
             r.passed++;
         }
         r.baritone.getPathingBehavior().cancelEverything();
-        r.csv.add(String.format(Locale.ROOT, "T1,%d,\"%s\",%s,%s,%s,%d,%.2f,%.2f,%d,%d,%s",
-                s.index, s.name.replace("\"", "\"\""), s.expect, result, pass, r.ticks, r.meters, r.maxFall, loads, jitter, r.enteredForbidden));
-        say(r, String.format(Locale.ROOT, "T1 %d/10 %-28s %-8s %s  %d t  %.1f m  padec %.1f  chunki %d",
-                s.index, s.name, result, pass ? "OK" : "NAPAKA", r.ticks, r.meters, r.maxFall, loads));
+        r.csv.add(String.format(Locale.ROOT, "%s,%d,\"%s\",%s,%s,%s,%d,%.2f,%.2f,%d,%d,%s,%.1f,%s",
+                r.course.id(), s.index, s.name.replace("\"", "\"\""), s.expect, result, pass, r.ticks, r.meters, r.maxFall, loads, jitter,
+                r.enteredForbidden, r.damage, s.openables.isEmpty() ? "" : String.valueOf(closedOk)));
+        say(r, String.format(Locale.ROOT, "%s %d/%d %-28s %-8s %s  %d t  %.1f m  padec %.1f  chunki %d  škoda %.1f%s",
+                r.course.id(), s.index, r.segments.size(), s.name, result, pass ? "OK" : "NAPAKA", r.ticks, r.meters, r.maxFall, loads,
+                r.damage, s.openables.isEmpty() ? "" : (closedOk ? "  vrata zaprta" : "  VRATA ODPRTA")));
     }
 
     private void finish(Run r) {
         String stamp = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(new Date());
         File dir = new File("npcbaritone/runs");
-        File out = new File(dir, "t1-" + stamp + ".csv");
-        File trace = new File(dir, "t1-" + stamp + "-trace.csv");
+        String prefix = r.course.id().toLowerCase(Locale.ROOT) + "-" + stamp;
+        File out = new File(dir, prefix + ".csv");
+        File trace = new File(dir, prefix + "-trace.csv");
+        List<BlockPos> changed = diff(r.entity.world, r.course.bounds(r.origin), r.signature);
         PathTrace.INSTANCE.stop();
         int traceRows = -1;
         try {
@@ -255,11 +288,56 @@ public final class CourseRunner {
         } catch (IOException e) {
             NpcBaritoneMod.LOG.error("cannot write {} / {}", out, trace, e);
         }
-        say(r, "T1 končan: " + r.passed + "/" + r.segments.size() + " odsekov OK; CSV " + out.getPath()
-                + ", sled " + trace.getPath() + " (" + traceRows + " vrstic)");
-        NpcBaritoneMod.LOG.info("NPCB-COURSE-DONE course=T1 passed={} total={} csv={} trace={} trace_rows={}",
-                r.passed, r.segments.size(), out.getAbsolutePath(), trace.getAbsolutePath(), traceRows);
+        say(r, r.course.id() + " končan: " + r.passed + "/" + r.segments.size() + " odsekov OK; CSV " + out.getPath()
+                + ", sled " + trace.getPath() + " (" + traceRows + " vrstic); spremenjenih blokov " + changed.size()
+                + (changed.isEmpty() ? "" : " npr. " + changed.subList(0, Math.min(3, changed.size()))));
+        NpcBaritoneMod.LOG.info("NPCB-COURSE-DONE course={} passed={} total={} blocks_changed={} csv={} trace={} trace_rows={}",
+                r.course.id(), r.passed, r.segments.size(), changed.size(), out.getAbsolutePath(), trace.getAbsolutePath(), traceRows);
         run = null;
+    }
+
+    // ------------------------------------------------------------------ M4.9 podpis blokov
+
+    /** Odprta vrata/ograjna vrata (spodnja polovica). */
+    static boolean isOpen(IBlockState s) {
+        if (s.getBlock() instanceof BlockDoor) {
+            return s.getPropertyKeys().contains(BlockDoor.OPEN) && s.getValue(BlockDoor.OPEN);
+        }
+        return s.getBlock() instanceof BlockFenceGate && s.getValue(BlockFenceGate.OPEN);
+    }
+
+    /** Stanje za primerjavo: odpiranje/zapiranje vrat ni sprememba (D-015 ga dovoli). */
+    static int normalized(IBlockState s) {
+        if (s.getBlock() instanceof BlockDoor) {
+            s = s.withProperty(BlockDoor.OPEN, false).withProperty(BlockDoor.POWERED, false);
+        } else if (s.getBlock() instanceof BlockFenceGate) {
+            s = s.withProperty(BlockFenceGate.OPEN, false).withProperty(BlockFenceGate.POWERED, false);
+        }
+        return Block.getStateId(s);
+    }
+
+    static int[] signature(World w, BlockPos[] bounds) {
+        List<Integer> ids = new ArrayList<>();
+        for (BlockPos p : BlockPos.getAllInBoxMutable(bounds[0], bounds[1])) {
+            ids.add(normalized(w.getBlockState(p)));
+        }
+        int[] out = new int[ids.size()];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = ids.get(i);
+        }
+        return out;
+    }
+
+    static List<BlockPos> diff(World w, BlockPos[] bounds, int[] before) {
+        List<BlockPos> changed = new ArrayList<>();
+        int i = 0;
+        for (BlockPos p : BlockPos.getAllInBoxMutable(bounds[0], bounds[1])) {
+            if (i < before.length && normalized(w.getBlockState(p)) != before[i]) {
+                changed.add(p.toImmutable());
+            }
+            i++;
+        }
+        return changed;
     }
 
     private static void say(Run r, String msg) {
