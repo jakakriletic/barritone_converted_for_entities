@@ -29,6 +29,7 @@ import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.behavior.PathingBehavior;
 import si.ladja.npcbaritone.core.pathing.calc.AbstractNodeCostSearch;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.movements.*;
@@ -354,6 +355,11 @@ public class PathExecutor implements IPathExecutor, Helper {
         // (NPC Baritone: mobi nimajo lakote; brez novega CalculationContext vsak tick)
         if (!behavior.baritone.getSettings().allowSprint.value) {
             return false;
+        }
+        if (!EntitySize.isStandard(ctx.entity().width, ctx.entity().height)) {
+            // M8: bližnjice spodaj (preskok na ascend, sprint iz descend, podaljšan padec)
+            // preverjajo prostor za entiteto 1x2; druge velikosti tečejo samo, ko premik to zahteva
+            return requested;
         }
         IMovement current = path.movements().get(pathPosition);
 

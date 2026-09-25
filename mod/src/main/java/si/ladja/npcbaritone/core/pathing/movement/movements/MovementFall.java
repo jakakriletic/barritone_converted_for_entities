@@ -26,6 +26,7 @@ import si.ladja.npcbaritone.core.api.utils.RotationUtils;
 import si.ladja.npcbaritone.core.api.utils.VecUtils;
 import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.MovementState;
@@ -53,8 +54,31 @@ public class MovementFall extends Movement {
     private static final ItemStack STACK_BUCKET_WATER = new ItemStack(Items.WATER_BUCKET);
     private static final ItemStack STACK_BUCKET_EMPTY = new ItemStack(Items.BUCKET);
 
-    public MovementFall(IBaritone baritone, BetterBlockPos src, BetterBlockPos dest) {
-        super(baritone, src, dest, MovementFall.buildPositionsToBreak(src, dest));
+    public MovementFall(IBaritone baritone, BetterBlockPos src, BetterBlockPos dest, EntitySize size) {
+        super(baritone, src, dest,
+                size.isStandard() ? MovementFall.buildPositionsToBreak(src, dest) : MovementFall.buildPositionsToBreak(size, src, dest),
+                null, size);
+    }
+
+    /**
+     * M8: okvir padca — stolpci kot pri {@link MovementDescend#buildPositionsToBreak}, od vrha
+     * entitete na izhodiščni višini do ciljne višine.
+     */
+    private static BetterBlockPos[] buildPositionsToBreak(EntitySize size, BetterBlockPos src, BetterBlockPos dest) {
+        int dx = Integer.signum(dest.x - src.x);
+        int dz = Integer.signum(dest.z - src.z);
+        int s = size.sideSpace;
+        int f = MovementDescend.forwardColumns(size);
+        int top = src.y + size.heightBlocks - 1;
+        java.util.List<BetterBlockPos> list = new java.util.ArrayList<>();
+        for (int y = top; y >= dest.y; y--) {
+            for (int k = 0; k <= f; k++) {
+                for (int b = -s; b <= s; b++) {
+                    list.add(new BetterBlockPos(dest.x + dx * k + dz * b, y, dest.z + dz * k + dx * b));
+                }
+            }
+        }
+        return list.toArray(new BetterBlockPos[0]);
     }
 
     @Override
@@ -172,6 +196,15 @@ public class MovementFall extends Movement {
     @Override
     protected boolean prepared(MovementState state) {
         if (state.getStatus() == MovementStatus.WAITING) {
+            return true;
+        }
+        if (!size.isStandard()) {
+            // M8: vse razen ciljne vrste (tam je lahko voda)
+            for (BetterBlockPos p : positionsToBreak) {
+                if (p.y > dest.y && !MovementHelper.canWalkThrough(ctx, p)) {
+                    return super.prepared(state);
+                }
+            }
             return true;
         }
         // only break if one of the first three needs to be broken

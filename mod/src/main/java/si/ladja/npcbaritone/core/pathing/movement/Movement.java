@@ -67,7 +67,15 @@ public abstract class Movement implements IMovement, MovementHelper {
 
     private Boolean calculatedWhileLoaded;
 
+    /** M8: velikost entitete, za katero je bil premik izračunan. */
+    protected final EntitySize size;
+
     protected Movement(IBaritone baritone, BetterBlockPos src, BetterBlockPos dest, BetterBlockPos[] toBreak, BetterBlockPos toPlace) {
+        this(baritone, src, dest, toBreak, toPlace, EntitySize.STANDARD);
+    }
+
+    protected Movement(IBaritone baritone, BetterBlockPos src, BetterBlockPos dest, BetterBlockPos[] toBreak, BetterBlockPos toPlace, EntitySize size) {
+        this.size = size;
         this.baritone = baritone;
         this.ctx = baritone == null ? null : baritone.getEntityContext(); // headless iskanje nima instance
         this.src = src;

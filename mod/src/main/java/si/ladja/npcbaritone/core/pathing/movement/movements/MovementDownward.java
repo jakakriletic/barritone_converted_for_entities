@@ -22,6 +22,7 @@ import si.ladja.npcbaritone.core.api.IBaritone;
 import si.ladja.npcbaritone.core.api.pathing.movement.MovementStatus;
 import si.ladja.npcbaritone.core.api.utils.BetterBlockPos;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.MovementState;
@@ -36,8 +37,24 @@ public class MovementDownward extends Movement {
 
     private int numTicks = 0;
 
-    public MovementDownward(IBaritone baritone, BetterBlockPos start, BetterBlockPos end) {
-        super(baritone, start, end, new BetterBlockPos[]{end});
+    public MovementDownward(IBaritone baritone, BetterBlockPos start, BetterBlockPos end, EntitySize size) {
+        super(baritone, start, end, buildPositionsToBreak(size, end), null, size);
+    }
+
+    /** M8.6 (Automatone {@code 0a6399f9}): bloki pod celim okvirom; za standardno velikost {end}. */
+    private static BetterBlockPos[] buildPositionsToBreak(EntitySize size, BetterBlockPos end) {
+        int s = size.sideSpace;
+        BetterBlockPos[] ret = new BetterBlockPos[(2 * s + 1) * (2 * s + 1)];
+        ret[0] = end;
+        int i = 1;
+        for (int dx = -s; dx <= s; dx++) {
+            for (int dz = -s; dz <= s; dz++) {
+                if (dx != 0 || dz != 0) {
+                    ret[i++] = new BetterBlockPos(end.x + dx, end.y, end.z + dz);
+                }
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -66,7 +83,20 @@ public class MovementDownward extends Movement {
         IBlockState down = context.get(x, y - 1, z);
         Block downBlock = down.getBlock();
         if (downBlock == Blocks.LADDER || downBlock == Blocks.VINE) {
-            return LADDER_DOWN_ONE_COST;
+            // M8.6: široke entitete lestev ne morejo uporabiti
+            return context.requiredSideSpace == 0 ? LADDER_DOWN_ONE_COST : COST_INF;
+        } else if (context.requiredSideSpace > 0) {
+            double total = 0;
+            int s = context.requiredSideSpace;
+            for (int dx = -s; dx <= s; dx++) {
+                for (int dz = -s; dz <= s; dz++) {
+                    total += MovementHelper.getMiningDurationTicks(context, x + dx, y - 1, z + dz, false);
+                    if (total >= COST_INF) {
+                        return COST_INF;
+                    }
+                }
+            }
+            return FALL_N_BLOCKS_COST[1] + total;
         } else {
             // we're standing on it, while it might be block falling, it'll be air by the time we get here in the movement
             return FALL_N_BLOCKS_COST[1] + MovementHelper.getMiningDurationTicks(context, x, y - 1, z, down, false);
@@ -92,7 +122,7 @@ public class MovementDownward extends Movement {
         if (numTicks++ < 10 && ab < 0.2) {
             return state;
         }
-        MovementHelper.moveTowards(ctx, state, positionsToBreak[0]);
+        MovementHelper.moveTowards(ctx, state, dest);
         return state;
     }
 }

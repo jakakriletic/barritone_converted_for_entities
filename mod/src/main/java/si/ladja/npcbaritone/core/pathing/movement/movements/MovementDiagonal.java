@@ -24,6 +24,7 @@ import si.ladja.npcbaritone.core.api.pathing.movement.MovementStatus;
 import si.ladja.npcbaritone.core.api.utils.BetterBlockPos;
 import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.MovementState;
@@ -45,17 +46,38 @@ public class MovementDiagonal extends Movement {
 
     private static final double SQRT_2 = Math.sqrt(2);
 
-    public MovementDiagonal(IBaritone baritone, BetterBlockPos start, EnumFacing dir1, EnumFacing dir2, int dy) {
-        this(baritone, start, start.offset(dir1), start.offset(dir2), dir2, dy);
+    public MovementDiagonal(IBaritone baritone, BetterBlockPos start, EnumFacing dir1, EnumFacing dir2, int dy, EntitySize size) {
+        this(baritone, start, start.offset(dir1), start.offset(dir2), dir2, dy, size);
         // super(start, start.offset(dir1).offset(dir2), new BlockPos[]{start.offset(dir1), start.offset(dir1).up(), start.offset(dir2), start.offset(dir2).up(), start.offset(dir1).offset(dir2), start.offset(dir1).offset(dir2).up()}, new BlockPos[]{start.offset(dir1).offset(dir2).down()});
     }
 
-    private MovementDiagonal(IBaritone baritone, BetterBlockPos start, BetterBlockPos dir1, BetterBlockPos dir2, EnumFacing drr2, int dy) {
-        this(baritone, start, dir1.offset(drr2).up(dy), dir1, dir2);
+    private MovementDiagonal(IBaritone baritone, BetterBlockPos start, BetterBlockPos dir1, BetterBlockPos dir2, EnumFacing drr2, int dy, EntitySize size) {
+        this(baritone, start, dir1.offset(drr2).up(dy), dir1, dir2, size);
     }
 
-    private MovementDiagonal(IBaritone baritone, BetterBlockPos start, BetterBlockPos end, BetterBlockPos dir1, BetterBlockPos dir2) {
-        super(baritone, start, end, new BetterBlockPos[]{dir1, dir1.up(), dir2, dir2.up(), end, end.up()});
+    private MovementDiagonal(IBaritone baritone, BetterBlockPos start, BetterBlockPos end, BetterBlockPos dir1, BetterBlockPos dir2, EntitySize size) {
+        super(baritone, start, end, buildPositionsToBreak(size, end, dir1, dir2), null, size);
+    }
+
+    /**
+     * M8.3 (Automatone {@code f3b5b24a}): oba vogala in cilj po višini entitete. Prvih
+     * {@link #corners()} mest sta vogala (za {@code toWalkInto}), nato cilj. Za standardno
+     * velikost {dir1, dir1.up(), dir2, dir2.up(), end, end.up()}.
+     */
+    private static BetterBlockPos[] buildPositionsToBreak(EntitySize size, BetterBlockPos end, BetterBlockPos dir1, BetterBlockPos dir2) {
+        int h = size.heightBlocks;
+        BetterBlockPos[] ret = new BetterBlockPos[3 * h];
+        for (int dy = 0; dy < h; dy++) {
+            ret[dy] = dir1.up(dy);
+            ret[h + dy] = dir2.up(dy);
+            ret[2 * h + dy] = end.up(dy);
+        }
+        return ret;
+    }
+
+    /** Število mest vogalov na začetku {@code positionsToBreak} (4 za standardno velikost). */
+    private int corners() {
+        return 2 * size.heightBlocks;
     }
 
     @Override
@@ -111,6 +133,10 @@ public class MovementDiagonal extends Movement {
     }
 
     public static void cost(CalculationContext context, int x, int y, int z, int destX, int destZ, MutableMoveResult res) {
+        if (context.sizeAware) {
+            costSized(context, x, y, z, destX, destZ, res);
+            return;
+        }
         if (!MovementHelper.canWalkThrough(context, destX, y + 1, destZ)) {
             return;
         }
@@ -253,6 +279,158 @@ public class MovementDiagonal extends Movement {
         res.z = destZ;
     }
 
+    /** Vsi bloki stolpca od {@code y0} do {@code y1} (vključno) so prehodni. */
+    private static boolean columnPassable(CalculationContext context, int x, int y0, int y1, int z) {
+        for (int y = y0; y <= y1; y++) {
+            if (!MovementHelper.canWalkThrough(context, x, y, z)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Katerikoli blok stolpca od {@code y0} do {@code y1} je nevaren za vstop. */
+    private static boolean columnAvoid(CalculationContext context, int x, int y0, int y1, int z) {
+        for (int y = y0; y <= y1; y++) {
+            if (MovementHelper.avoidWalkingInto(context.getBlock(x, y, z))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * M8.3: {@link #cost} za poljubno višino (Automatone {@code f3b5b24a}); širokim entitetam
+     * (sideSpace &gt; 0) diagonala ni dovoljena, gredo po osi. Za standardno velikost enako kot
+     * upstream veja ({@code SizeAwareEquivalenceTest}).
+     */
+    static void costSized(CalculationContext context, int x, int y, int z, int destX, int destZ, MutableMoveResult res) {
+        if (context.requiredSideSpace > 0) {
+            return;
+        }
+        int h = context.height;
+        if (!columnPassable(context, destX, y + 1, y + h - 1, destZ)) {
+            return;
+        }
+        IBlockState destInto = context.get(destX, y, destZ);
+        IBlockState fromDown;
+        boolean ascend = false;
+        IBlockState destWalkOn;
+        boolean descend = false;
+        boolean frostWalker = false;
+        if (!MovementHelper.canWalkThrough(context, destX, y, destZ, destInto)) {
+            ascend = true;
+            if (!context.allowDiagonalAscend || !MovementHelper.canWalkThrough(context, x, y + h, z) || !MovementHelper.canWalkOn(context, destX, y, destZ, destInto) || !MovementHelper.canWalkThrough(context, destX, y + h, destZ)) {
+                return;
+            }
+            destWalkOn = destInto;
+            fromDown = context.get(x, y - 1, z);
+        } else {
+            destWalkOn = context.get(destX, y - 1, destZ);
+            fromDown = context.get(x, y - 1, z);
+            boolean standingOnABlock = MovementHelper.mustBeSolidToWalkOn(context, x, y - 1, z, fromDown);
+            frostWalker = standingOnABlock && MovementHelper.canUseFrostWalker(context, destWalkOn);
+            if (!frostWalker && !MovementHelper.canWalkOn(context, destX, y - 1, destZ, destWalkOn)) {
+                descend = true;
+                if (!context.allowDiagonalDescend || !MovementHelper.canWalkOn(context, destX, y - 2, destZ) || !MovementHelper.canWalkThrough(context, destX, y - 1, destZ, destWalkOn)) {
+                    return;
+                }
+            }
+            frostWalker &= !context.assumeWalkOnWater;
+        }
+        double multiplier = WALK_ONE_BLOCK_COST;
+        if (destWalkOn.getBlock() == Blocks.SOUL_SAND) {
+            multiplier += (WALK_ONE_OVER_SOUL_SAND_COST - WALK_ONE_BLOCK_COST) / 2;
+        } else if (frostWalker) {
+            // frostwalker lets us walk on water without the penalty
+        } else if (destWalkOn.getBlock() == Blocks.WATER) {
+            multiplier += context.walkOnWaterOnePenalty * SQRT_2;
+        }
+        Block fromDownBlock = fromDown.getBlock();
+        if (fromDownBlock == Blocks.LADDER || fromDownBlock == Blocks.VINE) {
+            return;
+        }
+        if (fromDownBlock == Blocks.SOUL_SAND) {
+            multiplier += (WALK_ONE_OVER_SOUL_SAND_COST - WALK_ONE_BLOCK_COST) / 2;
+        }
+        Block cuttingOver1 = context.get(x, y - 1, destZ).getBlock();
+        if (cuttingOver1 == Blocks.MAGMA || MovementHelper.isLava(cuttingOver1)) {
+            return;
+        }
+        Block cuttingOver2 = context.get(destX, y - 1, z).getBlock();
+        if (cuttingOver2 == Blocks.MAGMA || MovementHelper.isLava(cuttingOver2)) {
+            return;
+        }
+        Block startIn = context.getBlock(x, y, z);
+        boolean water = false;
+        if (MovementHelper.isWater(startIn) || MovementHelper.isWater(destInto.getBlock())) {
+            if (ascend) {
+                return;
+            }
+            multiplier = context.waterWalkSpeed;
+            water = true;
+        }
+        IBlockState pb0 = context.get(x, y, destZ);
+        IBlockState pb2 = context.get(destX, y, z);
+        if (ascend) {
+            boolean ATop = MovementHelper.canWalkThrough(context, x, y + h, destZ);
+            boolean AMid = columnPassable(context, x, y + 1, y + h - 1, destZ);
+            boolean ALow = MovementHelper.canWalkThrough(context, x, y, destZ, pb0);
+            boolean BTop = MovementHelper.canWalkThrough(context, destX, y + h, z);
+            boolean BMid = columnPassable(context, destX, y + 1, y + h - 1, z);
+            boolean BLow = MovementHelper.canWalkThrough(context, destX, y, z, pb2);
+            if ((!(ATop && AMid && ALow) && !(BTop && BMid && BLow)) // no option
+                    || MovementHelper.avoidWalkingInto(pb0.getBlock()) // bad
+                    || MovementHelper.avoidWalkingInto(pb2.getBlock()) // bad
+                    || (ATop && AMid && MovementHelper.canWalkOn(context, x, y, destZ, pb0)) // we could just ascend
+                    || (BTop && BMid && MovementHelper.canWalkOn(context, destX, y, z, pb2)) // we could just ascend
+                    || (!ATop && AMid && ALow) // head bonk A
+                    || (!BTop && BMid && BLow)) { // head bonk B
+                return;
+            }
+            res.cost = multiplier * SQRT_2 + JUMP_ONE_BLOCK_COST;
+            res.x = destX;
+            res.z = destZ;
+            res.y = y + 1;
+            return;
+        }
+        double optionA = 0;
+        double optionB = 0;
+        for (int dy = 0; dy < h; dy++) {
+            // only the uppermost block includes falling blocks above it
+            optionA += MovementHelper.getMiningDurationTicks(context, x, y + dy, destZ, dy == h - 1);
+            optionB += MovementHelper.getMiningDurationTicks(context, destX, y + dy, z, dy == h - 1);
+        }
+        if (optionA != 0 && optionB != 0) {
+            return;
+        }
+        if (optionA == 0 && ((MovementHelper.avoidWalkingInto(pb2.getBlock()) && pb2.getBlock() != Blocks.WATER) || columnAvoid(context, destX, y + 1, y + h - 1, z))) {
+            return;
+        }
+        if (optionB == 0 && ((MovementHelper.avoidWalkingInto(pb0.getBlock()) && pb0.getBlock() != Blocks.WATER) || columnAvoid(context, x, y + 1, y + h - 1, destZ))) {
+            return;
+        }
+        if (optionA != 0 || optionB != 0) {
+            multiplier *= SQRT_2 - 0.001; // TODO tune
+            if (startIn == Blocks.LADDER || startIn == Blocks.VINE) {
+                return;
+            }
+        } else {
+            if (context.canSprint && !water) {
+                multiplier *= SPRINT_MULTIPLIER;
+            }
+        }
+        res.cost = multiplier * SQRT_2;
+        if (descend) {
+            res.cost += Math.max(FALL_N_BLOCKS_COST[1], CENTER_AFTER_FALL_COST);
+            res.y = y - 1;
+        } else {
+            res.y = y;
+        }
+        res.x = destX;
+        res.z = destZ;
+    }
+
     @Override
     public MovementState updateState(MovementState state) {
         super.updateState(state);
@@ -279,7 +457,7 @@ public class MovementDiagonal extends Movement {
         if (MovementHelper.isLiquid(ctx, ctx.feetPos()) && !baritone.getSettings().sprintInWater.value) {
             return false;
         }
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < corners(); i++) {
             if (!MovementHelper.canWalkThrough(ctx, positionsToBreak[i])) {
                 return false;
             }
@@ -298,7 +476,7 @@ public class MovementDiagonal extends Movement {
             return toBreakCached;
         }
         List<BlockPos> result = new ArrayList<>();
-        for (int i = 4; i < 6; i++) {
+        for (int i = corners(); i < positionsToBreak.length; i++) {
             if (!MovementHelper.canWalkThrough(bsi, positionsToBreak[i].x, positionsToBreak[i].y, positionsToBreak[i].z)) {
                 result.add(positionsToBreak[i]);
             }
@@ -313,7 +491,7 @@ public class MovementDiagonal extends Movement {
             toWalkIntoCached = new ArrayList<>();
         }
         List<BlockPos> result = new ArrayList<>();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < corners(); i++) {
             if (!MovementHelper.canWalkThrough(bsi, positionsToBreak[i].x, positionsToBreak[i].y, positionsToBreak[i].z)) {
                 result.add(positionsToBreak[i]);
             }

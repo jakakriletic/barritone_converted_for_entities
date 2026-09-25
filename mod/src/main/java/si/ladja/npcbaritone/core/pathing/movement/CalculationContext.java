@@ -78,6 +78,18 @@ public class CalculationContext {
 
     public final PrecomputedData precomputedData;
 
+    /** M8.1: velikost entitete, za katero se išče pot (Automatone {@code 324bd259}). */
+    public final EntitySize size;
+    /** Dodatni stolpci na vsako stran (0 za širino ≤ 1). */
+    public final int requiredSideSpace;
+    /** Višina v blokih. */
+    public final int height;
+    /**
+     * Premiki uporabijo splošno (size-aware) vejo. Za standardno velikost je false in premiki
+     * računajo kot upstream; testi ga lahko vsilijo, da dokažejo enakost obeh vej.
+     */
+    public final boolean sizeAware;
+
     public CalculationContext(IBaritone baritone) {
         this(baritone, false);
     }
@@ -100,14 +112,35 @@ public class CalculationContext {
      * premikov iz take poti ni mogoče izvajati.
      */
     public static CalculationContext headless(BlockStateInterface bsi) {
-        return new CalculationContext(null, null, bsi, true);
+        return headless(bsi, EntitySize.STANDARD);
+    }
+
+    /** Headless za dano velikost entitete (M8.8 golden testi). */
+    public static CalculationContext headless(BlockStateInterface bsi, EntitySize size) {
+        return new CalculationContext(null, null, bsi, true, size, false);
+    }
+
+    /**
+     * Headless s splošno vejo premikov tudi za standardno velikost (test enakosti vej, M8).
+     */
+    public static CalculationContext headlessSizeAware(BlockStateInterface bsi, EntitySize size) {
+        return new CalculationContext(null, null, bsi, true, size, true);
     }
 
     /**
      * @param entity lahko null (headless): brez orodja, očarov in učinkov
      */
     public CalculationContext(IBaritone baritone, EntityLivingBase entity, BlockStateInterface bsi, boolean forUseOnAnotherThread) {
+        this(baritone, entity, bsi, forUseOnAnotherThread, EntitySize.of(entity), false);
+    }
+
+    private CalculationContext(IBaritone baritone, EntityLivingBase entity, BlockStateInterface bsi, boolean forUseOnAnotherThread,
+                               EntitySize size, boolean forceSizeAware) {
         Settings settings = bsi.settings;
+        this.size = size;
+        this.requiredSideSpace = size.sideSpace;
+        this.height = size.heightBlocks;
+        this.sizeAware = forceSizeAware || !size.isStandard();
         this.precomputedData = new PrecomputedData(settings);
         this.safeForThreadedUse = forUseOnAnotherThread;
         this.baritone = baritone;
