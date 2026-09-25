@@ -26,6 +26,7 @@ import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.BaritoneAPI;
 import si.ladja.npcbaritone.core.api.NpcProfile;
 import si.ladja.npcbaritone.core.api.Settings;
+import si.ladja.npcbaritone.core.api.utils.SettingsUtil;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -62,14 +63,18 @@ public final class Attach {
         final boolean puppet;
         final Baritone baritone;
         final BaritoneMoveHelper ourMove;
+        final NavStatus status;
+        String profile;
 
-        Saved(EntityLiving e, boolean puppet, Baritone baritone, BaritoneMoveHelper ourMove) {
+        Saved(EntityLiving e, boolean puppet, Baritone baritone, BaritoneMoveHelper ourMove, String profile) {
             this.navigator = e.getNavigator();
             this.moveHelper = e.getMoveHelper();
             this.jumpHelper = e.getJumpHelper();
             this.puppet = puppet;
             this.baritone = baritone;
             this.ourMove = ourMove;
+            this.status = NavStatus.install(baritone);
+            this.profile = profile;
         }
     }
 
@@ -83,7 +88,17 @@ public final class Attach {
      *
      * @param puppet odstrani AI taske (in jih ob {@link #detach} vrne)
      */
-    public static synchronized Baritone attach(EntityLiving entity, boolean puppet, NpcbConfig config) {
+    public static Baritone attach(EntityLiving entity, boolean puppet, NpcbConfig config) {
+        return attach(entity, puppet, config, NpcbConfig.DEFAULT_PROFILE);
+    }
+
+    /**
+     * Kot {@link #attach(EntityLiving, boolean, NpcbConfig)} s poimenovanim profilom (D-016, M3.1).
+     * Pri že pripeti entiteti se profil ne spremeni (za to je {@link #setProfile}).
+     *
+     * @throws IllegalArgumentException neznan profil ali neveljaven prepis v configu
+     */
+    public static synchronized Baritone attach(EntityLiving entity, boolean puppet, NpcbConfig config, String profile) {
         if (entity.world.isRemote) {
             throw new IllegalStateException("attach on the server only (D-024)");
         }
@@ -91,10 +106,11 @@ public final class Attach {
         if (existing != null) {
             return existing.baritone;
         }
+        Settings settings = profileFor(config, profile);
         Baritone baritone = (Baritone) BaritoneAPI.getProvider().createBaritone(entity);
-        baritone.setSettings(profileFor(config));
+        baritone.setSettings(settings);
         BaritoneMoveHelper move = new BaritoneMoveHelper(entity, baritone, config.speedMode);
-        Saved saved = new Saved(entity, puppet, baritone, move);
+        Saved saved = new Saved(entity, puppet, baritone, move, profile.toLowerCase(java.util.Locale.ROOT));
         if (puppet) {
             saved.tasks.addAll(entity.tasks.taskEntries);
             saved.targetTasks.addAll(entity.targetTasks.taskEntries);
@@ -134,6 +150,35 @@ public final class Attach {
         return saved == null ? null : saved.baritone;
     }
 
+    public static synchronized NavStatus status(EntityLiving entity) {
+        Saved saved = ATTACHED.get(entity);
+        return saved == null ? null : saved.status;
+    }
+
+    public static synchronized String profile(EntityLiving entity) {
+        Saved saved = ATTACHED.get(entity);
+        return saved == null ? null : saved.profile;
+    }
+
+    /**
+     * Zamenja profil pripete entitete. Tekoča pot se prekine (cene so se lahko spremenile);
+     * cilj ostane, zato se iskanje začne znova.
+     *
+     * @return false, če entiteta ni pripeta
+     * @throws IllegalArgumentException neznan profil
+     */
+    public static synchronized boolean setProfile(EntityLiving entity, NpcbConfig config, String profile) {
+        Saved saved = ATTACHED.get(entity);
+        if (saved == null) {
+            return false;
+        }
+        Settings settings = profileFor(config, profile);
+        saved.baritone.getPathingBehavior().softCancelIfSafe();
+        saved.baritone.setSettings(settings);
+        saved.profile = profile.toLowerCase(java.util.Locale.ROOT);
+        return true;
+    }
+
     public static synchronized boolean isPuppet(EntityLiving entity) {
         Saved saved = ATTACHED.get(entity);
         return saved != null && saved.puppet;
@@ -146,6 +191,33 @@ public final class Attach {
     /** Nov profil instance: NPC privzete vrednosti + strežniški config (D-016). */
     static Settings profileFor(NpcbConfig config) {
         return config.applyTo(NpcProfile.create());
+    }
+
+    /**
+     * Poimenovan profil: NPC privzete vrednosti + strežniški config + prepisi profila.
+     * Prepisi pridejo zadnji, razen {@code allowParkour} v načinu hitrosti {@code own}
+     * (D-010: cene skokov tam ne veljajo).
+     *
+     * @throws IllegalArgumentException neznan profil ali neveljaven prepis
+     */
+    static Settings profileFor(NpcbConfig config, String name) {
+        String key = name == null ? NpcbConfig.DEFAULT_PROFILE : name.toLowerCase(java.util.Locale.ROOT);
+        Map<String, String> overrides = config.profiles.get(key);
+        if (overrides == null) {
+            throw new IllegalArgumentException("neznan profil '" + name + "' (na voljo: " + config.profiles.keySet() + ")");
+        }
+        Settings s = profileFor(config);
+        for (Map.Entry<String, String> o : overrides.entrySet()) {
+            try {
+                SettingsUtil.parseAndApply(s, o.getKey(), o.getValue());
+            } catch (RuntimeException ex) {
+                throw new IllegalArgumentException("profil '" + key + "': " + o.getKey() + "=" + o.getValue() + ": " + ex.getMessage(), ex);
+            }
+        }
+        if (config.speedMode == NpcbConfig.SpeedMode.OWN) {
+            s.allowParkour.value = false;
+        }
+        return s;
     }
 
     private static Field field(String[] names) {

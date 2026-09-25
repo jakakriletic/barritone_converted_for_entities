@@ -21,6 +21,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.network.NetworkCheckHandler;
@@ -32,7 +33,8 @@ import si.ladja.npcbaritone.core.api.BaritoneAPI;
 import java.util.Map;
 
 /**
- * Vstopna točka moda: config, skupni NPC profil, telemetrija, ukaz {@code /npcb} (M2).
+ * Vstopna točka moda: config, skupni NPC profil, telemetrija, ukaz {@code /npcb} (M2),
+ * sled in debug prikaz poti (M3).
  *
  * <p>D-024: vse delovanje je na strežniku; {@link #acceptRemote} sprejme vsako drugo
  * stran, zato se vanilla klient poveže na strežnik z modom in obratno. Mod ne
@@ -51,6 +53,10 @@ public final class NpcBaritoneMod {
 
     public static final Logger LOG = LogManager.getLogger(MODID);
 
+    /** M3.3: klient riše poti; forge paket klientskega razreda ne uvozi (D-024). */
+    @SidedProxy(clientSide = "si.ladja.npcbaritone.client.ClientProxy", serverSide = "si.ladja.npcbaritone.forge.CommonProxy")
+    public static CommonProxy proxy = new CommonProxy();
+
     private static NpcbConfig config = NpcbConfig.defaults();
 
     public static NpcbConfig config() {
@@ -67,6 +73,10 @@ public final class NpcBaritoneMod {
                 tickets.forEach(ForgeChunkManager::releaseTicket));
         MinecraftForge.EVENT_BUS.register(Telemetry.INSTANCE);
         MinecraftForge.EVENT_BUS.register(CourseRunner.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(PathTrace.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(DebugSync.INSTANCE);
+        DebugSync.INSTANCE.register();
+        proxy.preInit();
         LOG.info("{} {} loaded (side={}, upstream={}); {}", NAME, VERSION, event.getSide(), UPSTREAM, config);
     }
 

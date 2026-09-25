@@ -5,14 +5,17 @@
 # Svež superflat svet 'm2-t1'; husk (ne gori na soncu, 0,6 x 1,95 kot zombi) se pripne kot
 # puppet in prehodi 10 odsekov T1 (/npcb course t1 run), nato 10 s hoje in 10 s sprinta
 # (/npcb speedtest). Rezultati: docs\meritve\m2\t1-*.csv, speed-*.csv; log docs\build-logs\m2-t1.log.
-# Exit code 0 = merila A1–A5 izpolnjena.
+# M3: sled teka (docs\meritve\m3\t1-*-trace.csv, merilo A3) in števec debug paketov brez
+# prejemnikov (A4 = 0).
+# Exit code 0 = merila M2 A1–A5 in M3 A3–A4 izpolnjena.
 param([int]$TimeoutSec = 900)
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $run  = Join-Path $root 'mod\run'
 $logDir = Join-Path $root 'docs\build-logs'
 $outDir = Join-Path $root 'docs\meritve\m2'
-New-Item -ItemType Directory -Force -Path $run, $logDir, $outDir | Out-Null
+$m3Dir = Join-Path $root 'docs\meritve\m3'
+New-Item -ItemType Directory -Force -Path $run, $logDir, $outDir, $m3Dir | Out-Null
 $outLog = Join-Path $logDir 'm2-t1.log'
 if (Test-Path $outLog) { Remove-Item $outLog -Force }
 
@@ -77,6 +80,8 @@ try {
     Send 'npcb speedtest @e[type=husk,c=1] sprint'
     if (-not (WaitFor 'NPCB-SPEEDTEST-DONE' 2)) { $ok = $false; Write-Output '  NAPAKA  speedtest sprint se ni končal' }
     Send 'npcb chunks'
+    Send 'npcb status'
+    [void](WaitFor 'debug paketov: \d+')
 } finally {
     if (-not $proc.HasExited) {
         Send 'stop'
@@ -92,7 +97,7 @@ function Check([string]$what, [bool]$pass) {
 }
 
 # T1 CSV
-$csv = Get-ChildItem (Join-Path $run 'npcbaritone\runs') -Filter 't1-*.csv' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
+$csv = Get-ChildItem (Join-Path $run 'npcbaritone\runs') -Filter 't1-*.csv' -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike '*-trace.csv' } | Sort-Object LastWriteTime | Select-Object -Last 1
 if ($csv) {
     Copy-Item $csv.FullName (Join-Path $outDir $csv.Name)
     $rows = Import-Csv $csv.FullName
@@ -106,6 +111,22 @@ if ($csv) {
 } else {
     Check 'T1 CSV obstaja' $false
 }
+
+# M3 A3: sled istega teka
+$trace = if ($csv) { Get-Item (Join-Path $csv.DirectoryName ($csv.BaseName + '-trace.csv')) -ErrorAction SilentlyContinue }
+if ($trace) {
+    Copy-Item $trace.FullName (Join-Path $m3Dir $trace.Name)
+    $header = (Get-Content $trace.FullName -TotalCount 1) -split ','
+    $trows = Import-Csv $trace.FullName
+    $tags = @($trows | Select-Object -ExpandProperty tag -Unique | Where-Object { $_ -like 'T1/*' })
+    Check "M3 A3 sled: $($header.Count) stolpcev (= 17), $(@($trows).Count) vrstic" (($header.Count -eq 17) -and (@($trows).Count -gt 0))
+    Check "M3 A3 sled pokrije vse odseke: $($tags.Count)/10" ($tags.Count -eq 10)
+} else {
+    Check 'M3 A3 sled T1 obstaja' $false
+}
+# M3 A4: brez /npcb debug on se ne pošlje noben paket
+$dbg = [regex]::Match($log, 'debug paketov: (\d+)')
+Check "M3 A4 debug paketov brez prejemnikov: $($dbg.Groups[1].Value) (= 0)" ($dbg.Success -and $dbg.Groups[1].Value -eq '0')
 
 # speedtest
 $speed = @([regex]::Matches($log, 'NPCB-SPEEDTEST-DONE speedtest (hoja|sprint): ([0-9.]+) m/s.*?tresenje yaw>90/5t: (\d+)') | ForEach-Object {

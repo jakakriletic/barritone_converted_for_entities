@@ -20,7 +20,10 @@ package si.ladja.npcbaritone.forge;
 import net.minecraftforge.common.config.Configuration;
 import si.ladja.npcbaritone.core.api.Settings;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * {@code config/npcbaritone.cfg} (01-ARHITEKTURA §6). Nespremenljiv posnetek vrednosti.
@@ -45,9 +48,28 @@ public final class NpcbConfig {
     public final SpeedMode speedMode;
     public final int maxTurnDegrees;
     public final boolean syncPathsToOps;
+    /**
+     * D-016, M3.1: poimenovani profili — ime → prepisi nastavitev Baritona (ključ z malimi
+     * črkami → vrednost). {@value #DEFAULT_PROFILE} je vedno prisoten in brez prepisov.
+     */
+    public final Map<String, Map<String, String>> profiles;
+
+    public static final String DEFAULT_PROFILE = "default";
+    static final String[] DEFAULT_NAMED_PROFILES = {
+            "walk: allowSprint=false",
+            "parkour: allowParkour=true",
+            "cautious: maxFallHeightNoWater=2, allowSprint=false",
+    };
 
     NpcbConfig(int searchThreads, int searchQueueLimit, int snapshotMarginChunks, int shareRadiusChunks,
                SpeedMode speedMode, int maxTurnDegrees, boolean syncPathsToOps) {
+        this(searchThreads, searchQueueLimit, snapshotMarginChunks, shareRadiusChunks, speedMode, maxTurnDegrees,
+                syncPathsToOps, parseProfiles(DEFAULT_NAMED_PROFILES));
+    }
+
+    NpcbConfig(int searchThreads, int searchQueueLimit, int snapshotMarginChunks, int shareRadiusChunks,
+               SpeedMode speedMode, int maxTurnDegrees, boolean syncPathsToOps,
+               Map<String, Map<String, String>> profiles) {
         this.searchThreads = clamp(searchThreads, 1, 8);
         this.searchQueueLimit = clamp(searchQueueLimit, 8, 1024);
         this.snapshotMarginChunks = clamp(snapshotMarginChunks, 2, 32);
@@ -55,6 +77,12 @@ public final class NpcbConfig {
         this.speedMode = speedMode == null ? SpeedMode.PLAYER : speedMode;
         this.maxTurnDegrees = clamp(maxTurnDegrees, 5, 180);
         this.syncPathsToOps = syncPathsToOps;
+        Map<String, Map<String, String>> p = new LinkedHashMap<>();
+        p.put(DEFAULT_PROFILE, Collections.emptyMap());
+        if (profiles != null) {
+            profiles.forEach((k, v) -> p.putIfAbsent(k, Collections.unmodifiableMap(new LinkedHashMap<>(v))));
+        }
+        this.profiles = Collections.unmodifiableMap(p);
     }
 
     public static NpcbConfig defaults() {
@@ -75,11 +103,13 @@ public final class NpcbConfig {
         int share = cfg.getInt("shareRadiusChunks", CAT_SEARCH, d.shareRadiusChunks, 0, 4, "Iskanje se deli, če se začetka razlikujeta za največ toliko chunkov.");
         String speed = cfg.getString("speedMode", CAT_MOVEMENT, "player", "player = kot igralec (sprint, skok), own = lastna hitrost entitete.", new String[]{"player", "own"});
         int turn = cfg.getInt("maxTurnDegrees", CAT_MOVEMENT, d.maxTurnDegrees, 5, 180, "Največji obrat telesa v stopinjah na tick.");
-        boolean sync = cfg.getBoolean("syncPathsToOps", CAT_DEBUG, d.syncPathsToOps, "Pošlji poti operaterjem z modom na klientu (debug prikaz).");
+        boolean sync = cfg.getBoolean("syncPathsToOps", CAT_DEBUG, d.syncPathsToOps, "Pošlji poti vsem operaterjem z modom na klientu (debug prikaz). Brez tega jih dobi samo, kdor vklopi /npcb debug on.");
+        String[] named = cfg.getStringList("named", CAT_PROFILE, DEFAULT_NAMED_PROFILES,
+                "Poimenovani profili: 'ime: nastavitev=vrednost, nastavitev=vrednost'. Imena nastavitev so Baritonova (Settings). Profil 'default' je vedno prisoten.");
         if (cfg.hasChanged()) {
             cfg.save();
         }
-        return new NpcbConfig(threads, queue, margin, share, parseSpeedMode(speed), turn, sync);
+        return new NpcbConfig(threads, queue, margin, share, parseSpeedMode(speed), turn, sync, parseProfiles(named));
     }
 
     /**
@@ -94,6 +124,44 @@ public final class NpcbConfig {
             settings.allowParkour.value = false;
         }
         return settings;
+    }
+
+    /**
+     * Razčleni vrstice {@code ime: kljuc=vrednost, kljuc=vrednost}. Neveljavne vrstice se
+     * preskočijo; ali ključi obstajajo v {@code Settings}, preveri {@link Attach#profileFor}.
+     */
+    static Map<String, Map<String, String>> parseProfiles(String[] lines) {
+        Map<String, Map<String, String>> out = new LinkedHashMap<>();
+        if (lines == null) {
+            return out;
+        }
+        for (String line : lines) {
+            if (line == null) {
+                continue;
+            }
+            int colon = line.indexOf(':');
+            if (colon <= 0) {
+                continue;
+            }
+            String name = line.substring(0, colon).trim().toLowerCase(Locale.ROOT);
+            if (name.isEmpty() || !name.matches("[a-z0-9_\\-]+")) {
+                continue;
+            }
+            Map<String, String> overrides = new LinkedHashMap<>();
+            for (String part : line.substring(colon + 1).split(",")) {
+                int eq = part.indexOf('=');
+                if (eq <= 0) {
+                    continue;
+                }
+                String key = part.substring(0, eq).trim().toLowerCase(Locale.ROOT);
+                String value = part.substring(eq + 1).trim();
+                if (!key.isEmpty() && !value.isEmpty()) {
+                    overrides.put(key, value);
+                }
+            }
+            out.put(name, overrides);
+        }
+        return out;
     }
 
     static SpeedMode parseSpeedMode(String value) {
@@ -112,6 +180,7 @@ public final class NpcbConfig {
         return "config{threads=" + searchThreads + ", queueLimit=" + searchQueueLimit
                 + ", snapshotMargin=" + snapshotMarginChunks + ", shareRadius=" + shareRadiusChunks
                 + ", speedMode=" + speedMode.name().toLowerCase(Locale.ROOT)
-                + ", maxTurn=" + maxTurnDegrees + ", syncPathsToOps=" + syncPathsToOps + "}";
+                + ", maxTurn=" + maxTurnDegrees + ", syncPathsToOps=" + syncPathsToOps
+                + ", profiles=" + profiles.keySet() + "}";
     }
 }

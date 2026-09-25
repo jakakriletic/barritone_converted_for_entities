@@ -95,6 +95,8 @@ public final class CourseRunner {
             throw new IllegalStateException("course already running");
         }
         run = new Run(entity, baritone, sender, CourseT1.segments(origin));
+        // M3.4 (A3): en tek T1 = ena datoteka sledi poleg CSV izidov
+        PathTrace.INSTANCE.start(java.util.Collections.singletonList(entity));
         next();
     }
 
@@ -102,6 +104,7 @@ public final class CourseRunner {
         if (run != null) {
             run.baritone.getPathingBehavior().cancelEverything();
             say(run, "tečaj prekinjen");
+            PathTrace.INSTANCE.stop();
             run = null;
         }
     }
@@ -122,6 +125,7 @@ public final class CourseRunner {
             return;
         }
         CourseT1.Segment s = r.segments.get(r.index);
+        PathTrace.INSTANCE.setTag("T1/" + s.index);
         r.baritone.getPathingBehavior().cancelEverything();
         r.entity.setPositionAndUpdate(s.start.getX() + 0.5, s.start.getY(), s.start.getZ() + 0.5);
         r.entity.rotationYaw = s.startYaw;
@@ -143,6 +147,7 @@ public final class CourseRunner {
         Run r = run;
         if (r.entity.isDead) {
             say(r, "entiteta je umrla; tečaj prekinjen");
+            PathTrace.INSTANCE.stop();
             run = null;
             return;
         }
@@ -240,14 +245,20 @@ public final class CourseRunner {
         String stamp = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(new Date());
         File dir = new File("npcbaritone/runs");
         File out = new File(dir, "t1-" + stamp + ".csv");
+        File trace = new File(dir, "t1-" + stamp + "-trace.csv");
+        PathTrace.INSTANCE.stop();
+        int traceRows = -1;
         try {
             Files.createDirectories(dir.toPath());
             Files.write(out.toPath(), r.csv, StandardCharsets.UTF_8);
+            traceRows = PathTrace.INSTANCE.dump(trace);
         } catch (IOException e) {
-            NpcBaritoneMod.LOG.error("cannot write {}", out, e);
+            NpcBaritoneMod.LOG.error("cannot write {} / {}", out, trace, e);
         }
-        say(r, "T1 končan: " + r.passed + "/" + r.segments.size() + " odsekov OK; CSV " + out.getPath());
-        NpcBaritoneMod.LOG.info("NPCB-COURSE-DONE course=T1 passed={} total={} csv={}", r.passed, r.segments.size(), out.getAbsolutePath());
+        say(r, "T1 končan: " + r.passed + "/" + r.segments.size() + " odsekov OK; CSV " + out.getPath()
+                + ", sled " + trace.getPath() + " (" + traceRows + " vrstic)");
+        NpcBaritoneMod.LOG.info("NPCB-COURSE-DONE course=T1 passed={} total={} csv={} trace={} trace_rows={}",
+                r.passed, r.segments.size(), out.getAbsolutePath(), trace.getAbsolutePath(), traceRows);
         run = null;
     }
 
