@@ -121,6 +121,15 @@ if ($trace) {
     $tags = @($trows | Select-Object -ExpandProperty tag -Unique | Where-Object { $_ -like 'T1/*' })
     Check "M3 A3 sled: $($header.Count) stolpcev (= 17), $(@($trows).Count) vrstic" (($header.Count -eq 17) -and (@($trows).Count -gt 0))
     Check "M3 A3 sled pokrije vse odseke: $($tags.Count)/10" ($tags.Count -eq 10)
+    # M3 popravki jedra: brez CANCELED v mirovanju, brez ponavljanja neuspelega načrtovanja naprej
+    $states = @($trows | Select-Object -ExpandProperty state -Unique)
+    Check "M3 stanje FAILED v sledi (stanja: $($states -join ','))" ($states -contains 'FAILED')
+    Check "M3 razlog neuspeha no_path v sledi" (@($trows | Where-Object { $_.fail_reason -eq 'no_path' }).Count -gt 0)
+    $s10 = @($trows | Where-Object { $_.tag -eq 'T1/10' })
+    $n10 = if ($s10.Count) { [int]$s10[-1].searches - [int]$s10[0].searches } else { -1 }
+    Check "M3 iskanj na nedosegljivem cilju T1/10: $n10 (<= 5)" (($n10 -ge 0) -and ($n10 -le 5))
+    $idleCancel = @($trows | Where-Object { $_.events -eq 'CANCELED' -and $_.state -ne 'MOVING' }).Count
+    Check "M3 samostojnih CANCELED dogodkov: $idleCancel (<= 20)" ($idleCancel -le 20)
 } else {
     Check 'M3 A3 sled T1 obstaja' $false
 }

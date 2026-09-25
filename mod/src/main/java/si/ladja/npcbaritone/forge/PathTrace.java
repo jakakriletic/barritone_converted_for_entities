@@ -18,6 +18,7 @@
 package si.ladja.npcbaritone.forge;
 
 import net.minecraft.entity.EntityLiving;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import si.ladja.npcbaritone.core.Baritone;
@@ -126,7 +127,8 @@ public final class PathTrace {
         return new File("npcbaritone/traces", "trace-" + stamp + ".csv");
     }
 
-    @SubscribeEvent
+    /** HIGH: vzorči pred {@link CourseRunner}, da zadnji tick odseka (npr. FAILED) ostane v sledi. */
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !recording) {
             return;
