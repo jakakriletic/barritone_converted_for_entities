@@ -529,7 +529,7 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
         inProgress = pathfinder;
         searchesStarted++;
         try {
-            Baritone.getExecutor().execute(() -> runSearch(pathfinder, start, goal, talkAboutIt, primaryTimeout, failureTimeout));
+            Baritone.submitSearch(() -> runSearch(pathfinder, start, goal, talkAboutIt, primaryTimeout, failureTimeout), searchPriority());
         } catch (RejectedExecutionException ex) {
             // M1.11: vrsta iskanj je polna; iskanje se šteje kot neuspelo, naslednji tick poskusi znova
             inProgress = null;
@@ -615,7 +615,24 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
             GoalXZ g = (GoalXZ) goal;
             bounds = ChunkSnapshot.Bounds.around(start.getX(), start.getZ(), g.getX(), g.getZ(), margin);
         }
-        return new CalculationContext(baritone, bounds);
+        long t0 = System.nanoTime();
+        CalculationContext c = new CalculationContext(baritone, bounds);
+        si.ladja.npcbaritone.core.SearchStats.SNAPSHOT_NANOS.add(System.nanoTime() - t0);
+        si.ladja.npcbaritone.core.SearchStats.SNAPSHOT_CHUNKS.add(c.bsi.loadedChunkCount());
+        return c;
+    }
+
+    /**
+     * M5.1: prednost iskanja = kvadrat razdalje do najbližjega igralca (bližji prej); brez
+     * igralcev vsi enako (FIFO).
+     */
+    private long searchPriority() {
+        net.minecraft.entity.EntityLiving e = ctx.entity();
+        double best = Double.MAX_VALUE;
+        for (net.minecraft.entity.player.EntityPlayer p : e.world.playerEntities) {
+            best = Math.min(best, p.getDistanceSq(e));
+        }
+        return best == Double.MAX_VALUE ? Long.MAX_VALUE / 2 : (long) Math.min(best, Long.MAX_VALUE / 4);
     }
 
     private static AbstractNodeCostSearch createPathfinder(BlockPos start, Goal goal, IPath previous, CalculationContext context) {

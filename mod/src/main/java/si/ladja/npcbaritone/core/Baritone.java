@@ -39,7 +39,6 @@ import si.ladja.npcbaritone.core.utils.InputOverrideHandler;
 import si.ladja.npcbaritone.core.utils.PathingControlManager;
 import si.ladja.npcbaritone.core.utils.player.EntityContext;
 
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 /**
@@ -189,7 +188,8 @@ public class Baritone implements IBaritone {
         this.settings = java.util.Objects.requireNonNull(settings);
     }
 
-    public static Executor getExecutor() {
-        return SearchExecutor.INSTANCE;
+    /** M5.1: iskanja gredo prek {@link SearchExecutor#submit} (prednost, zgornja meja). */
+    public static void submitSearch(Runnable search, long priority) {
+        SearchExecutor.submit(search, priority);
     }
 }
