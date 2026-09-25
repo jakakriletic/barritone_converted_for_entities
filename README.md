@@ -13,8 +13,8 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 | | |
 |---|---|
 | Datum zadnje posodobitve | 2026-09-25 |
-| Trenutna faza | **M5 — zmogljivost** na veji `m5-zmogljivost`: prednostni bazen, števci, stresni tečaj T4; hitri T4: 200 mobov 3,6 ms/tick p95 (stopnja B ≤ 5 ms da, A ≤ 2 ms še ne); popravljen prihod (ARRIVED); 77/77 JUnit, čaka polni `t4-run.ps1`. Meja A1 v dveh stopnjah (D-027). M4 zaključen; M2/M3 čakata ročne preverbe v klientu |
-| Naslednji korak | `.\dev.ps1 build --offline; .\t1-run.ps1; .\t4-run.ps1` (polni, ~25 min); glej [`milestones/M5-zmogljivost/README.md`](milestones/M5-zmogljivost/README.md) |
+| Trenutna faza | **M5 — zmogljivost** na veji `m5-zmogljivost`: prednostni bazen, števci, stresni tečaj T4; T4: 50 mobov 1,36 ms, 200 mobov 3,81 ms/tick p95 (stopnja B ≤ 5 ms da, A ≤ 2 ms še ne); prihod (ARRIVED) potrjen v T1; manjkata 2 ponovitvi 200 in 1 h. Meja A1 v dveh stopnjah (D-027). M4 zaključen; M2/M3 čakata ročne preverbe v klientu |
+| Naslednji korak | `.\dev.ps1 build --offline; .\t4-run.ps1 -Mobs 200` (~9 min); glej [`milestones/M5-zmogljivost/README.md`](milestones/M5-zmogljivost/README.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |

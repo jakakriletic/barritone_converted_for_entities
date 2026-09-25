@@ -4,6 +4,30 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (9) — M5: T4 3×50 in 1×200; prihod potrjen; tek se je "zataknil" v konzoli
+
+**Preverjeno (16:16–16:27):** T1 10/10 z `nav_state`: **9/9 doseženih ARRIVED, odsek 10 FAILED** — popravka iz (7) in (8) delujeta. T4 (120 s meritve, rušenje vsakih 5 s):
+
+| | 50 mobov (3 ponovitve) | 200 mobov (1 ponovitev) |
+|---|---|---|
+| glavna nit µs/tick p95 — mediana [razpon] | **1363** [1341, 1456] | **3810** |
+| glavna nit p50 / p99 | 934–978 / 1942–2052 | 3073 / 6666 |
+| MSPT p95 | 2,12–2,39 ms | 5,81 ms |
+| doseženih ciljev | 573–589 / 608–623 (94–95 %) | 2311 / 2430 (95 %) |
+| iskanj/s, µs p95 | 6,1–6,2, 14 457–17 732 | 23,4, 13 367 |
+| posnetek µs p95 (chunkov) | 72–85 (81) | 30 (83) |
+| niti ustvarjenih | 2 | 2 |
+
+**Merila:** A1 stopnja B (≤ 5 ms pri 200) **da** (3,8 ms, ena ponovitev); A1+ stopnja A (≤ 2 ms) **ne** — odprto do M7 (D-027); A2 (posnetek < 100 µs) da; A3 (0 niti izven bazena) da; izjem 0. Manjkata še 2 ponovitvi 200 in 1 h (A4).
+
+**"Zataknjen" tek:** 200/1 je meritev končal ob 16:27, `npcb perf` in `stop` pa sta prišla v strežnik šele ob 17:03 — strežnik je vmes normalno tekel (45 851 tickov). Vzrok je Windows konzola (QuickEdit: klik v okno zamrzne PowerShell skript). `t4-run.ps1` zdaj QuickEdit med tekom izklopi.
+
+**Popravek iz loga:** pri 200 NPC-jih 2422× "Pathing complete" na glavni niti in 1861 vrstic A* statistike prek `System.out` v 2 min → `notificationOnPathComplete=false` v `NpcProfile`, izpisi prek `logDebug`. Pričakovan manjši padec µs glavne niti.
+
+**Naslednji korak:** `.\dev.ps1 build --offline; .\t4-run.ps1 -Mobs 200` (3 ponovitve po popravku, ~9 min); nato 1 h (A4) in odločitev, ali gremo v M6 (stopnja B) in stopnjo A pustimo za pred M7.
+
+---
+
 ## 2026-09-25 (8) — T1 po popravku prihoda; tečaj čaka na končno stanje
 
 **Preverjeno (16:11):** T1 10/10, `blocks_changed=0`, hoja 4,317, sprint 5,612 m/s. Sled pa **še vedno brez ARRIVED**: `CourseRunner` je razglasil REACHED, ko so bile noge v ciljnem bloku, in odsek v istem ticku preklical — proces cilja prihoda ni nikoli videl. Preverba "ARRIVED v sledi" v T1 zato ni mogla potrditi popravka iz (7).
