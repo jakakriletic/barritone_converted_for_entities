@@ -150,6 +150,8 @@ $ai = [regex]::Match($log, 'NPCB-AITEST-DONE scenario=attack result=(\w+) hit_ti
 if ($ai.Success) {
     Check "M6 A1 husk (vanilla AI) napade vaščana za zidom: $($ai.Groups[1].Value) po $($ai.Groups[2].Value) tickih" ($ai.Groups[1].Value -eq 'HIT')
     Check "M6 A4 klicev navigatorja $($ai.Groups[3].Value), novih iskanj $($ai.Groups[4].Value) (<= 3)" ([int]$ai.Groups[4].Value -le 3)
+    $ctl = [regex]::Match($log, 'NPCB-AITEST-DONE .*? control=(\w+) control_hit_tick=(-?\d+)')
+    if ($ctl.Success) { Write-Output "  INFO    kontrola (vanilla navigator, isti teren): $($ctl.Groups[1].Value) po $($ctl.Groups[2].Value) tickih" }
     $aiCsv = Get-ChildItem (Join-Path $run 'npcbaritone\runs') -Filter 'ai-attack-*.csv' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
     if ($aiCsv) { New-Item -ItemType Directory -Force -Path (Join-Path $root 'docs\meritve\m6') | Out-Null; Copy-Item $aiCsv.FullName (Join-Path $root "docs\meritve\m6\$($aiCsv.Name)") }
 } else {
