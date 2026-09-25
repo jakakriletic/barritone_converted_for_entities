@@ -4,6 +4,27 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (4) — M4: interakcije (veja `m4-interakcije` iz `m3-vidnost`)
+
+**Namen seje:** M4 do točke, ko ostane tek T2 na Windowsu; voda in lestve najprej izmeriti, šele nato popravljati.
+
+**Narejeno (oblak, 68/68 JUnit)**
+
+| Commit | Kaj |
+|---|---|
+| mehansko | `Course` (Segment, Expect, Sink, Builder) iz `CourseT1` (D-026) |
+| jedro | vrata na cilju in izhodišču premika (Automatone `3216de48`, `b1899f30`); **upstream 1.12.2 je vrata pred sabo klical z zamenjanima argumentoma in jih nikoli ni odprl** |
+| M4.1 | `EntityInteractions`: `CLICK_RIGHT` → lesena/ograjna vrata ob premiku, zapiranje za NPC-jem |
+| M4.8/M4.9 | `CourseT2` (10 zaprtih prog), splošen `CourseRunner`, stolpca `damage` in `openables_closed`, `blocks_changed`; `/npcb course <t1\|t2>`; `t2-run.ps1`; `t1-run.ps1` preveri še `blocks_changed` |
+
+Headless A* na T2: vseh 10 izidov pravilnih (železna vrata = ni poti), poti gredo skozi vrata in ograjna vrata, po lestvi gor (`Pillar`) in dol (`Downward`), velik padec samo v vodo, lava in kaktus se ne dotakneta. Voda (T2/6, T2/7) gre po površini z `Descend/Ascend` — ali mob, ki v vodi tone, to zmore, bo pokazal tek.
+
+**Prevedeno, čaka na zagon:** `t2-run.ps1` (M4 A1–A4) in `t1-run.ps1` (regresija + `blocks_changed`).
+
+**Naslednji korak:** `git checkout m4-interakcije; .\dev.ps1 build --offline; .\t2-run.ps1; .\t1-run.ps1`. Padli odseki T2 določijo delo na vodi/lestvah (M4.3–M4.5).
+
+---
+
 ## 2026-09-25 (3) — M3: prvi dedicated tek in popravka jedra iz sledi
 
 **Preverjeno (Windows, veja `m3-vidnost`, `f103bc9..afa6636`):** `dev.ps1 build --offline` zelen, `t1-run.ps1` exit 0. T1 **10/10**, hoja **4,317 m/s**, sprint **5,612 m/s**, yaw tresenje 0, chunki med T1 0 — enako kot trije teki M2 (`docs/meritve/m2/*-110158*`, `speed-*-110229`). M3 A3: sled `docs/meritve/m3/t1-20260925-110158-trace.csv`, 17 stolpcev, 695 vrstic, vseh 10 odsekov. M3 A4: `debug paketov: 0` brez prejemnikov.

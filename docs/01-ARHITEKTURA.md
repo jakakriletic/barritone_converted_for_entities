@@ -41,6 +41,8 @@ si.ladja.npcbaritone
 │   ├── Attach                  refleksija za tuje entitete (D-008)
 │   ├── SearchExecutor          omejen bazen, vrsta, deljenje (D-017)
 │   ├── Telemetry               števci, speedtest (M2/M5)
+│   ├── EntityInteractions      CLICK_RIGHT → lesena/ograjna vrata, zapiranje za NPC-jem (M4.1)
+│   ├── Course, CourseT1, CourseT2, CourseRunner   tečaji, CSV, škoda, podpis blokov (M2.9, M4.8/9)
 │   ├── NavStatus               stanje IDLE/SEARCHING/MOVING/ARRIVED/FAILED iz PathEvent (M3)
 │   ├── PathTrace               sled na tick v CSV (M3.4)
 │   ├── DebugSync               pošiljanje poti OP-jem z modom, 4 Hz (M3.2)
