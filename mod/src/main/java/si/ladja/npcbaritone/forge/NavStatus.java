@@ -140,13 +140,28 @@ public final class NavStatus implements AbstractGameEventListener {
         if (p.getInProgress().isPresent()) {
             return State.SEARCHING;
         }
-        if (flags.failed) {
+        return decide(false, false, baritone.getCustomGoalProcess().isActive(), flags.failed, flags.arrived);
+    }
+
+    /**
+     * Vrstni red je pomemben (M6): aktiven proces ima prednost pred izidom prejšnjega poskusa —
+     * takoj po novem cilju zastavici še kažeta stari izid, dokler ne pride {@code CALC_STARTED};
+     * {@code noPath()} bi sicer v istem ticku vrnil {@code true} in vanilla task bi obupal.
+     */
+    static State decide(boolean moving, boolean searching, boolean processActive, boolean failed, boolean arrived) {
+        if (moving) {
+            return State.MOVING;
+        }
+        if (searching || processActive) {
+            return State.SEARCHING;
+        }
+        if (failed) {
             return State.FAILED;
         }
-        if (flags.arrived) {
+        if (arrived) {
             return State.ARRIVED;
         }
-        return baritone.getCustomGoalProcess().isActive() ? State.SEARCHING : State.IDLE;
+        return State.IDLE;
     }
 
     /** Koda razloga za {@link State#FAILED} ({@code no_path}, {@code queue_full}, ...); prazno sicer. */

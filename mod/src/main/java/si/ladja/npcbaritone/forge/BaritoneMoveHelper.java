@@ -78,7 +78,10 @@ public class BaritoneMoveHelper extends EntityMoveHelper {
         boolean sneak = in.isInputForcedDown(Input.SNEAK);
         // PathExecutor porabi in počisti vhod SPRINT, odločitev pa shrani za tekoči tick.
         PathExecutor path = baritone.getPathingBehavior().getCurrent();
-        boolean sprint = !sneak && ((path != null && path.isSprinting()) || in.isInputForcedDown(Input.SPRINT));
+        // M6.5: task s hitrostjo ≤ 1,0 (napad, tavanje) hodi; šprint samo nad 1,0 ali brez taska
+        boolean navAllows = !(entity.getNavigator() instanceof BaritonePathNavigate)
+                || ((BaritonePathNavigate) entity.getNavigator()).allowsSprint();
+        boolean sprint = !sneak && navAllows && ((path != null && path.isSprinting()) || in.isInputForcedDown(Input.SPRINT));
         float forward = axis(in.isInputForcedDown(Input.MOVE_FORWARD), in.isInputForcedDown(Input.MOVE_BACK), sneak);
         float strafe = axis(in.isInputForcedDown(Input.MOVE_LEFT), in.isInputForcedDown(Input.MOVE_RIGHT), sneak);
         entity.setSneaking(sneak);

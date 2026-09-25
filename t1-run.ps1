@@ -82,6 +82,9 @@ try {
     Start-Sleep -Seconds 1
     Send 'npcb speedtest @e[type=husk,c=1] sprint'
     if (-not (WaitFor 'NPCB-SPEEDTEST-DONE' 2)) { $ok = $false; Write-Output '  NAPAKA  speedtest sprint se ni končal' }
+    # M6 A1/A4: husk z vanilla AI (brez puppet) napade vaščana za zidom z režo
+    Send 'npcb aitest attack 0 4 150'
+    if (-not (WaitFor 'NPCB-AITEST-DONE')) { $ok = $false; Write-Output '  NAPAKA  aitest se ni končal v času' }
     Send 'npcb chunks'
     Send 'npcb status'
     [void](WaitFor 'debug paketov: \d+')
@@ -141,6 +144,16 @@ if ($trace) {
     Check "M3 samostojnih CANCELED dogodkov: $idleCancel (<= 20)" ($idleCancel -le 20)
 } else {
     Check 'M3 A3 sled T1 obstaja' $false
+}
+# M6 A1/A4: vanilla AI z Baritonovim navigatorjem
+$ai = [regex]::Match($log, 'NPCB-AITEST-DONE scenario=attack result=(\w+) hit_tick=(-?\d+) nav_requests=(\d+) nav_new_searches=(\d+)')
+if ($ai.Success) {
+    Check "M6 A1 husk (vanilla AI) napade vaščana za zidom: $($ai.Groups[1].Value) po $($ai.Groups[2].Value) tickih" ($ai.Groups[1].Value -eq 'HIT')
+    Check "M6 A4 klicev navigatorja $($ai.Groups[3].Value), novih iskanj $($ai.Groups[4].Value) (<= 3)" ([int]$ai.Groups[4].Value -le 3)
+    $aiCsv = Get-ChildItem (Join-Path $run 'npcbaritone\runs') -Filter 'ai-attack-*.csv' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
+    if ($aiCsv) { New-Item -ItemType Directory -Force -Path (Join-Path $root 'docs\meritve\m6') | Out-Null; Copy-Item $aiCsv.FullName (Join-Path $root "docs\meritve\m6\$($aiCsv.Name)") }
+} else {
+    Check 'M6 aitest izid v logu' $false
 }
 # M4 A2 (M4.9): tečaj T1 ne spremeni nobenega bloka
 $t1changed = [regex]::Match($log, 'NPCB-COURSE-DONE course=T1 .*?blocks_changed=(\d+)')

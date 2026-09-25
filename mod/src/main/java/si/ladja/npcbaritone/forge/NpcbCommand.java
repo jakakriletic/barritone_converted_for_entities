@@ -53,6 +53,7 @@ import java.util.Locale;
  * /npcb speedtest &lt;entity&gt; [walk|sprint]
  * /npcb chunks [reset]
  * /npcb perf [reset]
+ * /npcb aitest attack [x y z]
  * /npcb stress start &lt;n&gt; [polmer] [sekunde] [rušenje-s] [x y z] | stop
  * /npcb course &lt;t1|t2&gt; build [x y z]
  * /npcb course &lt;t1|t2&gt; run &lt;entity&gt; [x y z]
@@ -63,7 +64,7 @@ import java.util.Locale;
 public class NpcbCommand extends CommandBase {
 
     private static final List<String> SUB = Arrays.asList("attach", "detach", "goto", "stop", "status", "profile", "debug", "trace",
-            "speedtest", "chunks", "course", "perf", "stress");
+            "speedtest", "chunks", "course", "perf", "stress", "aitest");
 
     @Override
     public String getName() {
@@ -284,6 +285,19 @@ public class NpcbCommand extends CommandBase {
                 } else {
                     throw new WrongUsageException(usage);
                 }
+                break;
+            }
+            case "aitest": {
+                String usage = "/npcb aitest attack [x y z]";
+                need(args, 2, usage);
+                if (!"attack".equalsIgnoreCase(args[1]) || !(sender.getEntityWorld() instanceof net.minecraft.world.WorldServer)) {
+                    throw new WrongUsageException(usage);
+                }
+                if (AiTestRunner.INSTANCE.isRunning()) {
+                    throw new CommandException("aitest že teče");
+                }
+                BlockPos origin = args.length >= 5 ? parseBlockPos(sender, args, 2, false) : sender.getPosition();
+                AiTestRunner.INSTANCE.startAttack((net.minecraft.world.WorldServer) sender.getEntityWorld(), sender, origin);
                 break;
             }
             case "perf": {

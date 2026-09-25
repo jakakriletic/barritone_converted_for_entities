@@ -79,6 +79,7 @@ public final class NpcBaritoneMod {
         MinecraftForge.EVENT_BUS.register(DebugSync.INSTANCE);
         MinecraftForge.EVENT_BUS.register(PerfMeter.INSTANCE);
         MinecraftForge.EVENT_BUS.register(StressRunner.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(AiTestRunner.INSTANCE);
         DebugSync.INSTANCE.register();
         proxy.preInit();
         LOG.info("{} {} loaded (side={}, upstream={}); {}", NAME, VERSION, event.getSide(), UPSTREAM, config);

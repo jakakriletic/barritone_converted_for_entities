@@ -119,7 +119,7 @@ public final class Attach {
             saved.tasks.forEach(t -> entity.tasks.removeTask(t.action));
             saved.targetTasks.forEach(t -> entity.targetTasks.removeTask(t.action));
         }
-        set(F_NAVIGATOR, entity, new BaritonePathNavigate(entity, entity.world, baritone, saved.interactions));
+        set(F_NAVIGATOR, entity, new BaritonePathNavigate(entity, entity.world, baritone, saved.interactions, saved.status));
         set(F_MOVE_HELPER, entity, move);
         set(F_JUMP_HELPER, entity, new BaritoneJumpHelper(entity, baritone));
         ATTACHED.put(entity, saved);
