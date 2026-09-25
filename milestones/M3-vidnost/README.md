@@ -34,7 +34,7 @@ naslednji problem se razišče hitreje.
 | M3.1 | `/npcb attach <e> [puppet] [profil]`, `goto <e> <x y z \| cilj-entiteta>`, `status [e]`, `profile list \| <e> <profil>`, `debug [on\|off]`, `trace on [e] \| off \| dump`; prevedeno, JUnit zelen |
 | M3.2 | `DebugSync` + `PathSyncMessage` (format 1): samo OP 2 + mod na klientu (FML seznam modov) + `debug on` ali `syncPathsToOps`, ≤ 128 blokov, ≤ 4 Hz, keepalive 1 s; prevedeno |
 | M3.3 | `client/PathRenderer`: sivo prehojeno, rumeno trenutni premik, rdeče preostanek, magenta naslednji segment, zelen cilj (cian med iskanjem), bela črta NPC → naslednja točka; prevedeno, **ni še videno v igri** |
-| M3.4 | `PathTrace` (17 stolpcev, glej spodaj); `/npcb course t1 run` samodejno zapiše `t1-<čas>-trace.csv` poleg izidov |
+| M3.4 | `PathTrace` (17 stolpcev, glej spodaj); `/npcb course t1 run` samodejno zapiše `t1-<čas>-trace.csv` poleg izidov. **A3 in A4 zelena na dedicated** (695 vrstic, 0 paketov); sled je razkrila dve napaki jedra (glej 04-STANJE, 2026-09-25 (3)), popravka čakata ponovni tek |
 | M3.5 | čaka ročno preverbo (vanilla klient) |
 
 **Stolpci sledi:** `world_tick, entity_id, entity, tag, state, x, y, z, goal, path_len, path_pos, movement, search_us, searches, replans, fail_reason, events`.

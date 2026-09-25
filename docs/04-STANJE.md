@@ -4,6 +4,27 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (3) — M3: prvi dedicated tek in popravka jedra iz sledi
+
+**Preverjeno (Windows, veja `m3-vidnost`, `f103bc9..afa6636`):** `dev.ps1 build --offline` zelen, `t1-run.ps1` exit 0. T1 **10/10**, hoja **4,317 m/s**, sprint **5,612 m/s**, yaw tresenje 0, chunki med T1 0 — enako kot trije teki M2 (`docs/meritve/m2/*-110158*`, `speed-*-110229`). M3 A3: sled `docs/meritve/m3/t1-20260925-110158-trace.csv`, 17 stolpcev, 695 vrstic, vseh 10 odsekov. M3 A4: `debug paketov: 0` brez prejemnikov.
+
+**Sled je takoj pokazala tri stvari** (analiza iz CSV):
+
+| # | Ugotovitev | Dokaz v sledi | Ukrep |
+|---|---|---|---|
+| 1 | `CANCELED` vsak tick, ko NPC miruje (podedovano: `PathingControlManager.preTick` brez procesa vsak tick prekliče segment in upstream vedno odda dogodek) | 8–10 zaporednih `CANCELED` na začetku vsakega odseka | `PathingBehavior.segmentCancel`: dogodek samo, če je bilo kaj preklicano, ali ob izrecnem `cancelEverything` |
+| 1a | posledica #1: `NavStatus` ob `CANCELED` pobriše ARRIVED/FAILED → sled ni nikoli pokazala FAILED, `fail_reason` vedno prazen | stanja v sledi samo IDLE/SEARCHING/MOVING | odpravljeno s #1 |
+| 2 | nedosegljiv cilj: po `NEXT_CALC_FAILED` upstream poskusi načrtovanje naprej **vsak tick** z istega začetka proti istemu cilju | T1/10: 48 iskanj v 49 tickih, ~1,7 ms vsako | začetek+cilj neuspelega načrtovanja se zapomni; ponovi se šele ob spremembi (ob koncu segmenta tako ali tako teče polno iskanje) — pomembno za M5 |
+| 3 | prvo iskanje v svežem strežniku 61 ms, nato 0,5–4 ms | `search_us` T1/1 | samo zapisano (JIT/nalaganje razredov); M5 meri po ogrevanju |
+
+Poleg tega `PathTrace` posluša s prioriteto HIGH, da vzorči pred `CourseRunner` (sicer zadnji tick odseka, npr. FAILED, manjka). `t1-run.ps1` preveri še: stanje FAILED in razlog `no_path` v sledi, ≤ 5 iskanj na T1/10, ≤ 20 samostojnih `CANCELED`.
+
+**Prevedeno, čaka na zagon:** popravka #1 in #2 (JUnit 61/61; headless test ni mogoč, ker noben test ne sestavi instance z entiteto — merilo je `t1-run.ps1`).
+
+**Naslednji korak:** `.\dev.ps1 build --offline; .\t1-run.ps1` (nove vrstice M3 morajo biti OK), nato klient po `milestones/M3-vidnost/README.md` (A1, A2) in M2 A6/D-008.
+
+---
+
 ## 2026-09-25 (2) — M3: vidnost (veja `m3-vidnost`, iz `m2-noge`)
 
 **Namen seje:** M2 čaka samo ročni preverbi v klientu (A6, D-008), zato M3 do točke, ko ostanejo build na Windowsu in preverbe v igri.
