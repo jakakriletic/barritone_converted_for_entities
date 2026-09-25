@@ -75,6 +75,7 @@ public final class AiTestRunner {
         int tick;
         int hitTick = -1;
         int controlHitTick = -1;
+        final java.util.List<net.minecraftforge.common.ForgeChunkManager.Ticket> tickets = new java.util.ArrayList<>();
 
         Run(WorldServer world, ICommandSender sender, EntityHusk husk, EntityVillager villager, BaritonePathNavigate nav,
             EntityHusk controlHusk, EntityVillager controlVillager) {
@@ -92,8 +93,10 @@ public final class AiTestRunner {
         if (run != null) {
             throw new IllegalStateException("aitest already running");
         }
-        buildArena(world, o);
         BlockPos c = o.add(0, 0, CONTROL_OFFSET_Z);
+        // strežnik brez igralca razloži chunke izven spawn območja (128 blokov): obe areni prisilno naložimo
+        java.util.List<net.minecraftforge.common.ForgeChunkManager.Ticket> tickets = forceChunks(world, o.add(-2, 0, -7), c.add(32, 0, 7));
+        buildArena(world, o);
         buildArena(world, c);
         EntityVillager villager = villager(world, o);
         EntityHusk husk = husk(world, o);
@@ -102,7 +105,38 @@ public final class AiTestRunner {
         Attach.attach(husk, false, NpcBaritoneMod.config()); // vanilla AI ostane
         BaritonePathNavigate nav = (BaritonePathNavigate) husk.getNavigator();
         run = new Run(world, sender, husk, villager, nav, controlHusk, controlVillager);
-        say(run, "aitest attack: husk (vanilla AI + Baritone navigator) → vaščan za zidom z režo, 20 blokov; kontrola brez Baritona pri z+" + CONTROL_OFFSET_Z);
+        run.tickets.addAll(tickets);
+        PathTrace.INSTANCE.start(java.util.Collections.singletonList(husk));
+        PathTrace.INSTANCE.setTag("ai/attack");
+        say(run, String.format(Locale.ROOT, "aitest attack: husk (vanilla AI + Baritone navigator) → vaščan za zidom z režo, 20 blokov; kontrola brez Baritona pri z+%d; spawnano: vaščan=%s husk=%s kontrola=%s/%s",
+                CONTROL_OFFSET_Z, alive(villager), alive(husk), alive(controlVillager), alive(controlHusk)));
+    }
+
+    private static String alive(EntityLiving e) {
+        return e.addedToChunk && !e.isDead ? "da" : "NE";
+    }
+
+    static java.util.List<net.minecraftforge.common.ForgeChunkManager.Ticket> forceChunks(WorldServer w, BlockPos a, BlockPos b) {
+        java.util.List<net.minecraftforge.common.ForgeChunkManager.Ticket> out = new java.util.ArrayList<>();
+        int per = Math.max(1, net.minecraftforge.common.ForgeChunkManager.getMaxChunkDepthFor(NpcBaritoneMod.MODID));
+        net.minecraftforge.common.ForgeChunkManager.Ticket t = null;
+        int n = 0;
+        for (int cx = Math.min(a.getX(), b.getX()) >> 4; cx <= Math.max(a.getX(), b.getX()) >> 4; cx++) {
+            for (int cz = Math.min(a.getZ(), b.getZ()) >> 4; cz <= Math.max(a.getZ(), b.getZ()) >> 4; cz++) {
+                if (t == null || n >= per) {
+                    t = net.minecraftforge.common.ForgeChunkManager.requestTicket(NpcBaritoneMod.INSTANCE, w, net.minecraftforge.common.ForgeChunkManager.Type.NORMAL);
+                    if (t == null) {
+                        return out;
+                    }
+                    out.add(t);
+                    n = 0;
+                }
+                w.getChunkProvider().provideChunk(cx, cz);
+                net.minecraftforge.common.ForgeChunkManager.forceChunk(t, new net.minecraft.util.math.ChunkPos(cx, cz));
+                n++;
+            }
+        }
+        return out;
     }
 
     static final int CONTROL_OFFSET_Z = 16;
@@ -178,9 +212,17 @@ public final class AiTestRunner {
                 running.append("T:").append(t.action.getClass().getSimpleName()).append(' ');
             }
         }
-        String nav = e.getNavigator() instanceof BaritonePathNavigate
-                ? "baritone req=" + ((BaritonePathNavigate) e.getNavigator()).requests() + " new=" + ((BaritonePathNavigate) e.getNavigator()).newSearches()
-                : "vanilla";
+        String nav = "vanilla";
+        if (e.getNavigator() instanceof BaritonePathNavigate) {
+            BaritonePathNavigate b = (BaritonePathNavigate) e.getNavigator();
+            si.ladja.npcbaritone.core.pathing.path.PathExecutor cur = b.baritone().getPathingBehavior().getCurrent();
+            nav = "baritone req=" + b.requests() + " new=" + b.newSearches() + " state=" + b.status().state()
+                    + (b.status().failReason().isEmpty() ? "" : "(" + b.status().failReason() + ")")
+                    + " goal=" + b.status().goal()
+                    + " path=" + (cur == null ? "-" : cur.getPosition() + "/" + cur.getPath().length())
+                    + " inControl=" + b.baritone().getInputOverrideHandler().isInControl()
+                    + " moveHelper=" + e.getMoveHelper().getClass().getSimpleName();
+        }
         return String.format(Locale.ROOT, "pos=%.1f,%.1f,%.1f ground=%s dead=%s target=%s tasks=[%s] noPath=%s nav=%s",
                 e.posX, e.posY, e.posZ, e.onGround, e.isDead,
                 e.getAttackTarget() == null ? "-" : e.getAttackTarget().getName(), running.toString().trim(),
@@ -188,6 +230,7 @@ public final class AiTestRunner {
     }
 
     private void finish(Run r) {
+        PathTrace.INSTANCE.stop();
         String result = r.hitTick >= 0 ? "HIT" : (r.husk.isDead ? "DEAD" : "TIMEOUT");
         long searches = r.nav.baritone().getPathingBehavior().searchesStarted();
         String control = r.controlHitTick >= 0 ? "HIT" : "TIMEOUT";
@@ -196,6 +239,11 @@ public final class AiTestRunner {
                 r.husk.getDistance(r.villager), control, r.controlHitTick);
         String stamp = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(new Date());
         File out = new File("npcbaritone/runs", "ai-attack-" + stamp + ".csv");
+        try {
+            PathTrace.INSTANCE.dump(new File("npcbaritone/runs", "ai-attack-" + stamp + "-trace.csv"));
+        } catch (IOException e) {
+            NpcBaritoneMod.LOG.error("aitest trace", e);
+        }
         try {
             Files.createDirectories(out.getAbsoluteFile().getParentFile().toPath());
             Files.write(out.toPath(), Arrays.asList("scenario,result,hit_tick,nav_requests,nav_new_searches,searches,final_distance,control_result,control_hit_tick", row),
@@ -212,6 +260,9 @@ public final class AiTestRunner {
         r.villager.setDead();
         r.controlHusk.setDead();
         r.controlVillager.setDead();
+        for (net.minecraftforge.common.ForgeChunkManager.Ticket t : r.tickets) {
+            net.minecraftforge.common.ForgeChunkManager.releaseTicket(t);
+        }
     }
 
     /** Zaprta proga x -1..31, z -6..6; tla y-1; zid x=10 z režo 1×2 na z=+3. */

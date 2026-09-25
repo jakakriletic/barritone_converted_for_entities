@@ -83,7 +83,7 @@ try {
     Send 'npcb speedtest @e[type=husk,c=1] sprint'
     if (-not (WaitFor 'NPCB-SPEEDTEST-DONE' 2)) { $ok = $false; Write-Output '  NAPAKA  speedtest sprint se ni končal' }
     # M6 A1/A4: husk z vanilla AI (brez puppet) napade vaščana za zidom z režo
-    Send 'npcb aitest attack 0 4 150'
+    Send 'npcb aitest attack -60 4 40'
     if (-not (WaitFor 'NPCB-AITEST-DONE')) { $ok = $false; Write-Output '  NAPAKA  aitest se ni končal v času' }
     Send 'npcb chunks'
     Send 'npcb status'
