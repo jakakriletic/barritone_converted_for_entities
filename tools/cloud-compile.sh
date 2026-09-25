@@ -59,4 +59,4 @@ else
 fi
 CLASSES=("${CLASSES[@]//\//.}")
 echo "testi: ${CLASSES[*]}"
-java -Xmx1G -Dnpcb.reportDir="$OUT/reports/npcb" -cp "$OUT/test:$OUT/main:$CP" org.junit.runner.JUnitCore "${CLASSES[@]}"
+java -Xmx1G ${NPCB_JAVA_OPTS:-} -Dnpcb.reportDir="$OUT/reports/npcb" -cp "$OUT/test:$OUT/main:$CP" org.junit.runner.JUnitCore "${CLASSES[@]}"
