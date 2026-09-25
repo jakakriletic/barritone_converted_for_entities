@@ -76,6 +76,11 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
 
     private final LinkedBlockingQueue<PathEvent> toDispatch = new LinkedBlockingQueue<>();
 
+    // M3.4: telemetrija zadnjega iskanja (pišejo iskalne niti, bere strežniška nit)
+    private volatile long lastSearchMicros = -1;
+    private volatile String lastSearchResult = "none";
+    private volatile long searchesStarted;
+
     public PathingBehavior(Baritone baritone) {
         super(baritone);
     }
@@ -313,6 +318,24 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
         return doIt;
     }
 
+    /** M3.4: trajanje zadnjega končanega iskanja v µs (-1 = še nobenega). */
+    public long lastSearchMicros() {
+        return lastSearchMicros;
+    }
+
+    /**
+     * M3.4: izid zadnjega iskanja: {@code none}, {@code success_to_goal}, {@code success_segment},
+     * {@code failure}, {@code cancellation}, {@code exception} ali {@code queue_full}.
+     */
+    public String lastSearchResult() {
+        return lastSearchResult;
+    }
+
+    /** M3.4: število začetih iskanj (vključno z načrtovanjem naprej). */
+    public long searchesStarted() {
+        return searchesStarted;
+    }
+
     public boolean calcFailedLastTick() { // NOT exposed on public api
         return calcFailedLastTick;
     }
@@ -473,11 +496,14 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
             logDebug("Simplifying " + goal.getClass() + " to GoalXZ due to distance");
         }
         inProgress = pathfinder;
+        searchesStarted++;
         try {
             Baritone.getExecutor().execute(() -> runSearch(pathfinder, start, goal, talkAboutIt, primaryTimeout, failureTimeout));
         } catch (RejectedExecutionException ex) {
             // M1.11: vrsta iskanj je polna; iskanje se šteje kot neuspelo, naslednji tick poskusi znova
             inProgress = null;
+            lastSearchMicros = 0;
+            lastSearchResult = "queue_full";
             queuePathEvent(PathEvent.CALC_FAILED);
             logDebug("Search queue full, path calculation rejected");
         }
@@ -489,7 +515,10 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                 logDebug("Starting to search for path from " + start + " to " + goal);
             }
 
+            long t0 = System.nanoTime();
             PathCalculationResult calcResult = pathfinder.calculate(primaryTimeout, failureTimeout);
+            lastSearchMicros = (System.nanoTime() - t0) / 1000L;
+            lastSearchResult = calcResult.getType().name().toLowerCase(java.util.Locale.ROOT);
             synchronized (pathPlanLock) {
                 Optional<PathExecutor> executor = calcResult.getPath().map(p -> new PathExecutor(PathingBehavior.this, p));
                 if (current == null) {
