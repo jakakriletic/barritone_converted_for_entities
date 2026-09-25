@@ -76,6 +76,15 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
 
     private final LinkedBlockingQueue<PathEvent> toDispatch = new LinkedBlockingQueue<>();
 
+    /**
+     * M3: začetek in cilj zadnjega neuspelega načrtovanja naprej. Upstream po
+     * {@code NEXT_CALC_FAILED} poskusi znova naslednji tick z istega začetka proti istemu cilju
+     * (izmerjeno: 48 iskanj v 49 tickih na nedosegljivem cilju T1/10). Ponovi se šele, ko se
+     * začetek ali cilj spremeni; ko se trenutni segment konča, se tako ali tako začne polno iskanje.
+     */
+    private BlockPos planAheadFailedFrom;
+    private Goal planAheadFailedGoal;
+
     // M3.4: telemetrija zadnjega iskanja (pišejo iskalne niti, bere strežniška nit)
     private volatile long lastSearchMicros = -1;
     private volatile String lastSearchResult = "none";
@@ -219,6 +228,10 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                     // and this path doesn't get us all the way there
                     return;
                 }
+                if (current.getPath().getDest().equals(planAheadFailedFrom) && Objects.equals(goal, planAheadFailedGoal)) {
+                    // enako načrtovanje je že spodletelo (M3)
+                    return;
+                }
                 if (ticksRemainingInSegment(false).get() < baritone.getSettings().planningTickLookahead.value) {
                     // and this path has 7.5 seconds or less left
                     // don't include the current movement so a very long last movement (e.g. descend) doesn't trip it up
@@ -312,7 +325,7 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
     public boolean cancelEverything() {
         boolean doIt = isSafeToCancel();
         if (doIt) {
-            secretInternalSegmentCancel();
+            segmentCancel(true);
         }
         baritone.getPathingControlManager().cancelEverything(); // regardless of if we can stop the current segment, we can still stop the processes
         return doIt;
@@ -355,14 +368,32 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
 
     // just cancel the current path
     public void secretInternalSegmentCancel() {
-        queuePathEvent(PathEvent.CANCELED);
+        segmentCancel(false);
+    }
+
+    /**
+     * M3: {@code PathingControlManager.preTick} brez procesa vsak tick prekliče segment. Upstream
+     * je vsakič oddal {@code CANCELED}, tudi ko ni bilo ničesar za preklicati — pri mirujočem NPC-ju
+     * to pomeni dogodek na tick in izgubljeno stanje "prispel/neuspel" v poslušalcih. Dogodek se
+     * zdaj odda samo, če je bila pot, naslednji segment ali iskanje, ali ob izrecnem preklicu
+     * ({@link #cancelEverything()}).
+     */
+    private void segmentCancel(boolean explicit) {
+        boolean hadSomething;
         synchronized (pathPlanLock) {
-            getInProgress().ifPresent(AbstractNodeCostSearch::cancel);
+            AbstractNodeCostSearch search = inProgress;
+            hadSomething = current != null || next != null || search != null;
+            if (search != null) {
+                search.cancel();
+            }
             if (current != null) {
                 current = null;
                 next = null;
                 baritone.getInputOverrideHandler().clearAllKeys();
             }
+        }
+        if (hadSomething || explicit) {
+            queuePathEvent(PathEvent.CANCELED);
         }
     }
 
@@ -546,6 +577,8 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                                 logDebug("Warning: discarding orphan next segment with incorrect start");
                             }
                         } else {
+                            planAheadFailedFrom = start;
+                            planAheadFailedGoal = goal;
                             queuePathEvent(PathEvent.NEXT_CALC_FAILED);
                         }
                     } else {
