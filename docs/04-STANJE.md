@@ -4,6 +4,16 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (12) — M6: prvi aitest spodletel (AI napada ni začel)
+
+**Preverjeno (17:42):** T1 10/10, `blocks_changed=0`, hitrosti nespremenjene — adapter ne pokvari tečaja. **`aitest attack`: TIMEOUT v 30 s, 0 klicev navigatorja** — husk z vanilla AI sploh ni začel napada (brez `setPath`/`tryMoveToEntityLiving`), zato navigator ni dobil ukaza. Vzrok iz loga ni razviden (tarča? `EntityAIAttackMelee.shouldExecute`? okolje brez igralca?).
+
+**Ukrep:** test ima zdaj kontrolni husk **brez** Baritona v sosednji areni (isti teren, isti vaščan z `NoAI`) in vsako sekundo `NPCB-AITEST-DBG` (tarča, aktivni taski, položaj, tla, `noPath`, klici navigatorja). Če tudi kontrola ne napade, je problem v okolju testa, ne v adapterju.
+
+**Naslednji korak:** `.\dev.ps1 build --offline; .\t1-run.ps1`.
+
+---
+
 ## 2026-09-25 (11) — M6: PathNavigate adapter (veja `m6-navigator`)
 
 **Narejeno (oblak, 85/85 JUnit):** navigator po D-018/D-019 (debounce, pavza po `clearPath`, zavrnitev po neuspehu, sledenje, `setPath`/`getPath`/`setSpeed`, vanilla za prevelike entitete) in samodejni test vanilla AI `/npcb aitest attack` (A1, A4) v `t1-run.ps1`. Popravljen vrstni red stanj v `NavStatus`: takoj po novem cilju je SEARCHING, ne stari FAILED/ARRIVED (sicer bi `noPath()` vanilla task takoj ustavil).
