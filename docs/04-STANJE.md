@@ -4,6 +4,20 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (15) — M6: peti aitest; A1 na ročno preverbo, začetek M8
+
+**Preverjeno (20:26):** T1 10/10 (`docs/meritve/m2/t1-20260925-202615.csv`, hitrosti `speed-20260925-202719.csv`).
+`aitest attack`: tarča nastavljena, vanilla `getPathToEntityLiving` vrne pot dolžine 27 — a
+`EntityAIZombieAttack` se **ne začne ne pri husku z Baritonom ne pri kontroli brez njega**
+(`docs/meritve/m6/ai-attack-20260925-202714.csv`: `TIMEOUT` pri obeh). Ker kontrola brez Baritona
+ravna enako, je vzrok okolje brezglavega strežnika, ne adapter.
+
+**Odločitev (uporabnik, "nadaljuj"):** M6 A1–A3 (napad, vaščan domov, volk) se preverijo ročno v
+klientu skupaj z M2 A6 in M3 A1/A2; `aitest` ostane kot diagnostika. M7 čaka na stopnjo A (D-027),
+zato naprej **M8 (velikosti entitet)** na veji `m8-velikosti`.
+
+---
+
 ## 2026-09-25 (14) — M6: tretji aitest, javni API in apiJar
 
 **Preverjeno (19:52, po popravku `extractNatives` v `build.gradle`):** build in T1 10/10. `aitest`: arena pri `-60 4 40` s prisilno naloženimi chunki, **vsi štirje spawnani** — pa **nobeden od huskov (tudi kontrola brez Baritona) ne izbere vaščana** z `EntityAINearestAttackableTarget` v 30 s. Koda 1.12.2 (javap) pogoja, ki bi to preprečil, ne kaže; ker velja tudi brez Baritona, ni naša napaka in ni predmet M6. **Ukrep:** test tarčo nastavi neposredno (`setAttackTarget`), `EntityAIZombieAttack` ostane vanilla.

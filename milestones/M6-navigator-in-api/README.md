@@ -66,3 +66,7 @@ if (NpcBaritone.available() && NpcBaritone.supports(npc)) {
 Obnašanje, ki se razlikuje od vanilla: cilj, do katerega ni poti (npr. vanilla tavanje izbere
 točko za zaprto steno), konča s `FAILED` in `noPath() = true`; vanilla bi naredil nekaj korakov
 proti njej. Ponovni isti cilj je 20 tickov zavrnjen.
+
+**A1–A3 (20:26):** v brezglavem testu vanilla `EntityAIZombieAttack` ne začne niti pri kontroli brez
+Baritona (pot do tarče obstaja) → A1–A3 so **ročna preverba v klientu** (`/npcb attach` na zombija ponoči
+ob igralcu; vaščan domov; ukročen volk sledi). `aitest` ostane kot diagnostika.
