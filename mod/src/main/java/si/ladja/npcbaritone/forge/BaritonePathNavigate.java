@@ -25,6 +25,7 @@ import net.minecraft.pathfinding.PathPoint;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import si.ladja.npcbaritone.core.Baritone;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.api.pathing.goals.Goal;
 import si.ladja.npcbaritone.core.api.pathing.goals.GoalBlock;
 import si.ladja.npcbaritone.core.api.pathing.goals.GoalNear;
@@ -51,8 +52,9 @@ import java.util.List;
  *     <li>{@code setSpeed(s)}: {@code s > 1,0} dovoli sprint, {@code 0 < s ≤ 1,0} samo hoja;
  *     {@code s ≤ 0} (ukazi, API {@link #goTo}) sprint po profilu. Hitrost sama ostane "kot
  *     igralec" (D-010) — množitelj taska se ne uporablja.</li>
- *     <li>D-019: entiteta širša od 1,0 ali višja od 2,0 dobi vanilla navigacijo (vse metode
- *     gredo na {@code super}), dokler je ne podpre M8.</li>
+ *     <li>D-019/D-028: entiteta širša od 1,0 ali višja od 2,0 dobi vanilla navigacijo (vse
+ *     metode gredo na {@code super}), razen če je v configu vklopljen {@code largeEntities}
+ *     (M8); takrat Baritone vodi do širine 3,0 in višine 4,0.</li>
  * </ul>
  */
 public class BaritonePathNavigate extends PathNavigateGround {
@@ -61,6 +63,9 @@ public class BaritonePathNavigate extends PathNavigateGround {
     static final int FOLLOW_REGOAL_INTERVAL = 10;
     static final float MAX_WIDTH = 1.0F;
     static final float MAX_HEIGHT = 2.0F;
+    /** D-028: meje, ki jih M8 dokaže (golden testi do 2,0 × 3,6, T3 do CNPC size 10). */
+    static final int MAX_SIDE_SPACE = 1;
+    static final int MAX_HEIGHT_BLOCKS = 4;
 
     private final Baritone baritone;
     private final EntityInteractions interactions;
@@ -101,13 +106,28 @@ public class BaritonePathNavigate extends PathNavigateGround {
         return status;
     }
 
-    /** D-019: Baritone vodi samo entitete v enem stolpcu 1×2. */
+    /** D-019/D-028: ali Baritone vodi to entiteto (sicer vanilla). */
     public boolean fits() {
         return fits(entity.width, entity.height);
     }
 
     static boolean fits(float width, float height) {
-        return width <= MAX_WIDTH && height <= MAX_HEIGHT;
+        return fits(width, height, NpcBaritoneMod.config().largeEntities);
+    }
+
+    /**
+     * @param largeEntities config {@code movement.largeEntities} (M8): false = D-019 (en stolpec
+     *                      1×2), true = D-028 (do 3 stolpce, 4 bloke)
+     */
+    static boolean fits(float width, float height, boolean largeEntities) {
+        if (!largeEntities) {
+            return width <= MAX_WIDTH && height <= MAX_HEIGHT;
+        }
+        if (!(width > 0) || !(height > 0)) {
+            return false;
+        }
+        EntitySize size = new EntitySize(width, height);
+        return size.sideSpace <= MAX_SIDE_SPACE && size.heightBlocks <= MAX_HEIGHT_BLOCKS;
     }
 
     /** M6.5: ali sme izvajalec poti šprintati (bere {@code BaritoneMoveHelper}). */

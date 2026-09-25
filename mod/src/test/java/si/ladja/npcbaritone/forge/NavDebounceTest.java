@@ -125,4 +125,20 @@ public class NavDebounceTest {
         assertFalse("pajek 1,4×0,9 → vanilla (D-019)", BaritonePathNavigate.fits(1.4F, 0.9F));
         assertFalse("enderman 0,6×2,9 → vanilla", BaritonePathNavigate.fits(0.6F, 2.9F));
     }
+
+    @Test
+    public void largeEntitiesSwitch() {
+        // privzeti config: D-019 ostane (obnašanje porabnika se brez stikala ne spremeni)
+        assertFalse(NpcbConfig.defaults().largeEntities);
+        assertFalse(BaritonePathNavigate.fits(1.4F, 0.9F, false));
+        // D-028: s stikalom do 3 stolpcev (širina ≤ 3,0) in 4 blokov (višina ≤ 4,0)
+        assertTrue("pajek 1,4×0,9", BaritonePathNavigate.fits(1.4F, 0.9F, true));
+        assertTrue("enderman 0,6×2,9", BaritonePathNavigate.fits(0.6F, 2.9F, true));
+        assertTrue("železni golem 1,4×2,7", BaritonePathNavigate.fits(1.4F, 2.7F, true));
+        assertTrue("CNPC size 10 1,2×3,6", BaritonePathNavigate.fits(0.6F / 5F * 10, 1.8F / 5F * 10, true));
+        assertTrue("zombi 0,6×1,95", BaritonePathNavigate.fits(0.6F, 1.95F, true));
+        assertFalse("ghast 4×4 → vanilla", BaritonePathNavigate.fits(4.0F, 4.0F, true));
+        assertFalse("višina 4,5 → vanilla", BaritonePathNavigate.fits(0.6F, 4.5F, true));
+        assertFalse("ničelna velikost", BaritonePathNavigate.fits(0F, 1.8F, true));
+    }
 }

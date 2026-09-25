@@ -49,6 +49,12 @@ public final class NpcbConfig {
     public final int maxTurnDegrees;
     public final boolean syncPathsToOps;
     /**
+     * M8/D-028: navigator ({@link BaritonePathNavigate}, API) vodi tudi entitete izven 1×2 (do
+     * širine 3,0 in višine 4,0). Privzeto false = D-019, obnašanje porabnika se ne spremeni.
+     * Ukazi in tečaji ({@code /npcb attach}, T3) velikosti ne preverjajo.
+     */
+    public final boolean largeEntities;
+    /**
      * D-016, M3.1: poimenovani profili — ime → prepisi nastavitev Baritona (ključ z malimi
      * črkami → vrednost). {@value #DEFAULT_PROFILE} je vedno prisoten in brez prepisov.
      */
@@ -70,6 +76,14 @@ public final class NpcbConfig {
     NpcbConfig(int searchThreads, int searchQueueLimit, int snapshotMarginChunks, int shareRadiusChunks,
                SpeedMode speedMode, int maxTurnDegrees, boolean syncPathsToOps,
                Map<String, Map<String, String>> profiles) {
+        this(searchThreads, searchQueueLimit, snapshotMarginChunks, shareRadiusChunks, speedMode, maxTurnDegrees,
+                syncPathsToOps, profiles, false);
+    }
+
+    NpcbConfig(int searchThreads, int searchQueueLimit, int snapshotMarginChunks, int shareRadiusChunks,
+               SpeedMode speedMode, int maxTurnDegrees, boolean syncPathsToOps,
+               Map<String, Map<String, String>> profiles, boolean largeEntities) {
+        this.largeEntities = largeEntities;
         this.searchThreads = clamp(searchThreads, 1, 8);
         this.searchQueueLimit = clamp(searchQueueLimit, 8, 1024);
         this.snapshotMarginChunks = clamp(snapshotMarginChunks, 2, 32);
@@ -103,13 +117,15 @@ public final class NpcbConfig {
         int share = cfg.getInt("shareRadiusChunks", CAT_SEARCH, d.shareRadiusChunks, 0, 4, "Iskanje se deli, če se začetka razlikujeta za največ toliko chunkov.");
         String speed = cfg.getString("speedMode", CAT_MOVEMENT, "player", "player = kot igralec (sprint, skok), own = lastna hitrost entitete.", new String[]{"player", "own"});
         int turn = cfg.getInt("maxTurnDegrees", CAT_MOVEMENT, d.maxTurnDegrees, 5, 180, "Največji obrat telesa v stopinjah na tick.");
+        boolean large = cfg.getBoolean("largeEntities", CAT_MOVEMENT, d.largeEntities,
+                "M8 (D-028): navigator vodi tudi entitete, širše od 1,0 ali višje od 2,0 (do 3,0 x 4,0). false = samo 1x2 (D-019).");
         boolean sync = cfg.getBoolean("syncPathsToOps", CAT_DEBUG, d.syncPathsToOps, "Pošlji poti vsem operaterjem z modom na klientu (debug prikaz). Brez tega jih dobi samo, kdor vklopi /npcb debug on.");
         String[] named = cfg.getStringList("named", CAT_PROFILE, DEFAULT_NAMED_PROFILES,
                 "Poimenovani profili: 'ime: nastavitev=vrednost, nastavitev=vrednost'. Imena nastavitev so Baritonova (Settings). Profil 'default' je vedno prisoten.");
         if (cfg.hasChanged()) {
             cfg.save();
         }
-        return new NpcbConfig(threads, queue, margin, share, parseSpeedMode(speed), turn, sync, parseProfiles(named));
+        return new NpcbConfig(threads, queue, margin, share, parseSpeedMode(speed), turn, sync, parseProfiles(named), large);
     }
 
     /**
@@ -181,6 +197,7 @@ public final class NpcbConfig {
                 + ", snapshotMargin=" + snapshotMarginChunks + ", shareRadius=" + shareRadiusChunks
                 + ", speedMode=" + speedMode.name().toLowerCase(Locale.ROOT)
                 + ", maxTurn=" + maxTurnDegrees + ", syncPathsToOps=" + syncPathsToOps
+                + ", largeEntities=" + largeEntities
                 + ", profiles=" + profiles.keySet() + "}";
     }
 }
