@@ -16,7 +16,10 @@ $logDir = Join-Path $root 'docs\build-logs'
 $outDir = Join-Path $root 'docs\meritve\m4'
 New-Item -ItemType Directory -Force -Path $run, $logDir, $outDir | Out-Null
 $outLog = Join-Path $logDir 'm4-t2.log'
-if (Test-Path $outLog) { Remove-Item $outLog -Force }
+if (Test-Path $outLog) {
+    try { Remove-Item $outLog -Force -ErrorAction Stop }
+    catch { throw "Log $outLog je zaklenjen: prejšnji strežnik še teče. Ustavi ga: Get-Process java | Stop-Process -Force (zapri tudi Minecraft, če teče), nato znova." }
+}
 
 $candidates = @($env:NPCB_JAVA8_HOME, (Join-Path $root '..\customNPC_rework\.tools\jdk8'), 'C:\Program Files\Java\jdk1.8.0_202') | Where-Object { $_ }
 $jdk = $candidates | Where-Object { Test-Path (Join-Path $_ 'bin\javac.exe') } | Select-Object -First 1
@@ -100,6 +103,11 @@ if ($csv) {
     Check "A1 železna vrata končajo FAILED: $($seg2.result)" ($seg2 -and $seg2.result -eq 'FAILED')
     Check "A3 škoda v T2: $damage (= 0)" ($damage -eq 0)
     Check "A4 vrata za NPC-jem zaprta: $($doors.Count - $open.Count)/$($doors.Count)" (($doors.Count -gt 0) -and ($open.Count -eq 0))
+    $reachRows = @($rows | Where-Object { $_.result -eq 'REACHED' })
+    $notArrived = @($reachRows | Where-Object { $_.nav_state -ne 'ARRIVED' })
+    Check "M5 NavStatus ARRIVED za dosežene odseke: $($reachRows.Count - $notArrived.Count)/$($reachRows.Count)" (($reachRows.Count -gt 0) -and ($notArrived.Count -eq 0))
+    $failRows = @($rows | Where-Object { $_.result -eq 'FAILED' })
+    Check "M5 NavStatus FAILED za neuspele odseke: $(@($failRows | Where-Object { $_.nav_state -eq 'FAILED' }).Count)/$($failRows.Count)" (@($failRows | Where-Object { $_.nav_state -ne 'FAILED' }).Count -eq 0)
     $rows | Format-Table segment, name, result, pass, ticks, meters, max_fall, damage, openables_closed -AutoSize | Out-String | Write-Output
 } else {
     Check 'T2 CSV obstaja' $false

@@ -34,7 +34,10 @@ $exceptions = 0
 
 function RunOnce([int]$n, [int]$rep) {
     $outLog = Join-Path $logDir "m5-t4-$n-$rep.log"
-    if (Test-Path $outLog) { Remove-Item $outLog -Force }
+    if (Test-Path $outLog) {
+        try { Remove-Item $outLog -Force -ErrorAction Stop }
+        catch { throw "Log $outLog je zaklenjen: prejšnji strežnik še teče. Ustavi ga: Get-Process java | Stop-Process -Force, nato znova." }
+    }
     $worldDir = Join-Path $run $level
     if (Test-Path $worldDir) { Remove-Item $worldDir -Recurse -Force }
     $props = @("level-name=$level", 'level-seed=20260925', 'level-type=FLAT', 'generate-structures=false',

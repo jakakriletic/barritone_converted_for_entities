@@ -61,6 +61,8 @@ public final class CourseRunner {
     static final int SETTLE_TICKS = 10;
     static final int MIN_TICKS_BEFORE_FAIL = 10;
     static final int TIMEOUT_TICKS = 600;
+    /** Največ tickov čakanja na končno stanje navigacije po izidu odseka. */
+    static final int NAV_SETTLE_TICKS = 20;
 
     private Run run;
 
@@ -90,6 +92,9 @@ public final class CourseRunner {
         long chunkLoadsAtStart;
         boolean enteredForbidden;
         int passed;
+        /** Izid odseka je znan; čaka se, da se navigacija umiri (M5: preverba NavStatus). */
+        String pendingResult;
+        int settleTicks;
         final float[] yaw = new float[TIMEOUT_TICKS + 1];
 
         Run(EntityLiving entity, Baritone baritone, ICommandSender sender, Course course, BlockPos origin) {
@@ -100,7 +105,7 @@ public final class CourseRunner {
             this.origin = origin;
             this.segments = course.segments(origin);
             this.signature = signature(entity.world, course.bounds(origin));
-            csv.add("course,segment,name,expect,result,pass,ticks,meters,max_fall,chunk_loads,yaw_jitter,forbidden_entered,damage,openables_closed");
+            csv.add("course,segment,name,expect,result,pass,ticks,meters,max_fall,chunk_loads,yaw_jitter,forbidden_entered,damage,openables_closed,nav_state");
         }
     }
 
@@ -152,6 +157,8 @@ public final class CourseRunner {
         r.maxFall = 0;
         r.enteredForbidden = false;
         r.damage = 0;
+        r.pendingResult = null;
+        r.settleTicks = 0;
     }
 
     /** M4 A3: škoda, ki jo entiteta tečaja dobi med odsekom (padec, utopitev, lava, kaktus). */
@@ -178,6 +185,16 @@ public final class CourseRunner {
         }
         keepTicking(r.entity);
         Course.Segment s = r.segments.get(r.index);
+        if (r.pendingResult != null) {
+            NavStatus st = Attach.status(r.entity);
+            NavStatus.State state = st == null ? NavStatus.State.IDLE : st.state();
+            boolean settled = state != NavStatus.State.MOVING && state != NavStatus.State.SEARCHING;
+            if (settled || ++r.settleTicks >= NAV_SETTLE_TICKS) {
+                record(r, s, r.pendingResult, state);
+                next();
+            }
+            return;
+        }
         if (!r.started) {
             if (++r.ticks < SETTLE_TICKS) {
                 return;
@@ -224,8 +241,9 @@ public final class CourseRunner {
                         r.baritone.getPathingBehavior().getInProgress().isPresent(),
                         r.entity.world.isBlockLoaded(new BlockPos(r.entity)));
             }
-            record(r, s, result);
-            next();
+            // izid velja zdaj (ticks, metri); zapis počaka, da NavStatus pove končno stanje
+            r.pendingResult = result;
+            r.settleTicks = 0;
         }
     }
 
@@ -245,7 +263,7 @@ public final class CourseRunner {
                 && !b.getPathingBehavior().getInProgress().isPresent();
     }
 
-    private void record(Run r, Course.Segment s, String result) {
+    private void record(Run r, Course.Segment s, String result, NavStatus.State navState) {
         long loads = Telemetry.INSTANCE.chunkLoadsTotal() - r.chunkLoadsAtStart;
         int jitter = 0;
         for (int i = 6; i <= Math.min(r.ticks, r.yaw.length - 1); i++) {
@@ -264,9 +282,9 @@ public final class CourseRunner {
             r.passed++;
         }
         r.baritone.getPathingBehavior().cancelEverything();
-        r.csv.add(String.format(Locale.ROOT, "%s,%d,\"%s\",%s,%s,%s,%d,%.2f,%.2f,%d,%d,%s,%.1f,%s",
+        r.csv.add(String.format(Locale.ROOT, "%s,%d,\"%s\",%s,%s,%s,%d,%.2f,%.2f,%d,%d,%s,%.1f,%s,%s",
                 r.course.id(), s.index, s.name.replace("\"", "\"\""), s.expect, result, pass, r.ticks, r.meters, r.maxFall, loads, jitter,
-                r.enteredForbidden, r.damage, s.openables.isEmpty() ? "" : String.valueOf(closedOk)));
+                r.enteredForbidden, r.damage, s.openables.isEmpty() ? "" : String.valueOf(closedOk), navState));
         say(r, String.format(Locale.ROOT, "%s %d/%d %-28s %-8s %s  %d t  %.1f m  padec %.1f  chunki %d  škoda %.1f%s",
                 r.course.id(), s.index, r.segments.size(), s.name, result, pass ? "OK" : "NAPAKA", r.ticks, r.meters, r.maxFall, loads,
                 r.damage, s.openables.isEmpty() ? "" : (closedOk ? "  vrata zaprta" : "  VRATA ODPRTA")));

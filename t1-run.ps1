@@ -17,7 +17,10 @@ $outDir = Join-Path $root 'docs\meritve\m2'
 $m3Dir = Join-Path $root 'docs\meritve\m3'
 New-Item -ItemType Directory -Force -Path $run, $logDir, $outDir, $m3Dir | Out-Null
 $outLog = Join-Path $logDir 'm2-t1.log'
-if (Test-Path $outLog) { Remove-Item $outLog -Force }
+if (Test-Path $outLog) {
+    try { Remove-Item $outLog -Force -ErrorAction Stop }
+    catch { throw "Log $outLog je zaklenjen: prejšnji strežnik še teče. Ustavi ga: Get-Process java | Stop-Process -Force (zapri tudi Minecraft, če teče), nato znova." }
+}
 
 $candidates = @($env:NPCB_JAVA8_HOME, (Join-Path $root '..\customNPC_rework\.tools\jdk8'), 'C:\Program Files\Java\jdk1.8.0_202') | Where-Object { $_ }
 $jdk = $candidates | Where-Object { Test-Path (Join-Path $_ 'bin\javac.exe') } | Select-Object -First 1
@@ -107,6 +110,11 @@ if ($csv) {
     Check "A1 T1 odsekov OK: $passed/10 (>= 9)" ($passed -ge 9)
     Check "A1 odsek 10 konča FAILED, ne tava: $($seg10.result)" ($seg10 -and $seg10.result -eq 'FAILED')
     Check "A4 naloženih chunkov med T1: $loads (= 0)" ($loads -eq 0)
+    $reachRows = @($rows | Where-Object { $_.result -eq 'REACHED' })
+    $notArrived = @($reachRows | Where-Object { $_.nav_state -ne 'ARRIVED' })
+    Check "M5 NavStatus ARRIVED za dosežene odseke: $($reachRows.Count - $notArrived.Count)/$($reachRows.Count)" (($reachRows.Count -gt 0) -and ($notArrived.Count -eq 0))
+    $failRows = @($rows | Where-Object { $_.result -eq 'FAILED' })
+    Check "M5 NavStatus FAILED za neuspele odseke: $(@($failRows | Where-Object { $_.nav_state -eq 'FAILED' }).Count)/$($failRows.Count)" (@($failRows | Where-Object { $_.nav_state -ne 'FAILED' }).Count -eq 0)
     $rows | Format-Table segment, name, result, pass, ticks, meters, max_fall, chunk_loads, yaw_jitter -AutoSize | Out-String | Write-Output
 } else {
     Check 'T1 CSV obstaja' $false
