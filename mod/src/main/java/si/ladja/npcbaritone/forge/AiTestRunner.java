@@ -197,12 +197,29 @@ public final class AiTestRunner {
         r.tick++;
         if (r.tick % 20 == 0) {
             NpcBaritoneMod.LOG.info("NPCB-AITEST-DBG t={} baritone[{}] kontrola[{}]", r.tick, describe(r.husk), describe(r.controlHusk));
+            // vanilla EntityAIAttackMelee začne samo, če sinhroni vanilla pathfinder vrne pot (ali je tarča v dosegu)
+            NpcBaritoneMod.LOG.info("NPCB-AITEST-VPATH t={} baritone[{}] kontrola[{}]", r.tick,
+                    vanillaPath(r.husk, r.villager), vanillaPath(r.controlHusk, r.controlVillager));
         }
         boolean done = r.hitTick >= 0 && (r.controlHitTick >= 0 || r.tick >= TIMEOUT_TICKS);
         if (done || r.tick >= TIMEOUT_TICKS || r.husk.isDead) {
             finish(r);
             run = null;
         }
+    }
+
+    /** Diagnostika: ali vanilla sinhroni pathfinder najde pot do tarče (pogoj za vanilla napad). */
+    static String vanillaPath(EntityLiving e, EntityLiving target) {
+        net.minecraft.pathfinding.Path p = e.getNavigator().getPathToEntityLiving(target);
+        String end = "-";
+        if (p != null && p.getFinalPathPoint() != null) {
+            net.minecraft.pathfinding.PathPoint f = p.getFinalPathPoint();
+            end = f.x + "," + f.y + "," + f.z;
+        }
+        return String.format(Locale.ROOT, "path=%s len=%d end=%s target=%.1f,%.1f,%.1f dist=%.1f reachSq=%.1f range=%.0f",
+                p == null ? "null" : "ok", p == null ? -1 : p.getCurrentPathLength(), end,
+                target.posX, target.posY, target.posZ, e.getDistance(target),
+                (double) (e.width * 2.0F * e.width * 2.0F + target.width), e.getNavigator().getPathSearchRange());
     }
 
     /** Diagnostika: tarča, taski, ki tečejo, položaj, tla, navigator. */
