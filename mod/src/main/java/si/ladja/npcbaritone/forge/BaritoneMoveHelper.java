@@ -55,6 +55,15 @@ public class BaritoneMoveHelper extends EntityMoveHelper {
 
     @Override
     public void onUpdateMoveHelper() {
+        long t0 = System.nanoTime();
+        try {
+            update();
+        } finally {
+            PerfMeter.INSTANCE.add(System.nanoTime() - t0); // M5.6
+        }
+    }
+
+    private void update() {
         InputOverrideHandler in = baritone.getInputOverrideHandler();
         if (!in.isInControl()) {
             if (controlling) {

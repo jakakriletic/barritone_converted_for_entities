@@ -52,6 +52,8 @@ import java.util.Locale;
  * /npcb trace on [entity] | off | dump
  * /npcb speedtest &lt;entity&gt; [walk|sprint]
  * /npcb chunks [reset]
+ * /npcb perf [reset]
+ * /npcb stress start &lt;n&gt; [polmer] [sekunde] [rušenje-s] [x y z] | stop
  * /npcb course &lt;t1|t2&gt; build [x y z]
  * /npcb course &lt;t1|t2&gt; run &lt;entity&gt; [x y z]
  * /npcb course stop
@@ -61,7 +63,7 @@ import java.util.Locale;
 public class NpcbCommand extends CommandBase {
 
     private static final List<String> SUB = Arrays.asList("attach", "detach", "goto", "stop", "status", "profile", "debug", "trace",
-            "speedtest", "chunks", "course");
+            "speedtest", "chunks", "course", "perf", "stress");
 
     @Override
     public String getName() {
@@ -75,7 +77,7 @@ public class NpcbCommand extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/npcb <attach|detach|goto|stop|status|profile|debug|trace|speedtest|chunks|course> ...";
+        return "/npcb <attach|detach|goto|stop|status|profile|debug|trace|speedtest|chunks|course|perf|stress> ...";
     }
 
     @Override
@@ -284,6 +286,43 @@ public class NpcbCommand extends CommandBase {
                 }
                 break;
             }
+            case "perf": {
+                if (args.length > 1 && "reset".equalsIgnoreCase(args[1])) {
+                    si.ladja.npcbaritone.core.SearchStats.reset();
+                    PerfMeter.INSTANCE.reset();
+                }
+                reply(sender, si.ladja.npcbaritone.core.SearchStats.summary());
+                reply(sender, PerfMeter.INSTANCE.summary());
+                NpcBaritoneMod.LOG.info("NPCB-PERF {} | {}", si.ladja.npcbaritone.core.SearchStats.summary(), PerfMeter.INSTANCE.summary());
+                break;
+            }
+            case "stress": {
+                String usage = "/npcb stress start <n> [polmer=48] [sekunde=120] [rušenje-s=5] [x y z] | /npcb stress stop";
+                need(args, 2, usage);
+                if ("stop".equalsIgnoreCase(args[1])) {
+                    StressRunner.INSTANCE.abort("ukaz");
+                    break;
+                }
+                need(args, 3, usage);
+                if (!"start".equalsIgnoreCase(args[1])) {
+                    throw new WrongUsageException(usage);
+                }
+                if (StressRunner.INSTANCE.isRunning() || CourseRunner.INSTANCE.isRunning()) {
+                    throw new CommandException("Stres ali tečaj že teče");
+                }
+                int n = parseInt(args[2], 1, 1000);
+                int radius = args.length > 3 ? parseInt(args[3], 8, 128) : 48;
+                int seconds = args.length > 4 ? parseInt(args[4], 5, 7200) : 120;
+                int breakEvery = args.length > 5 ? parseInt(args[5], 0, 600) : 5;
+                BlockPos origin = args.length >= 9 ? parseBlockPos(sender, args, 6, false) : sender.getPosition();
+                if (!(sender.getEntityWorld() instanceof net.minecraft.world.WorldServer)) {
+                    throw new CommandException("samo na strežniku");
+                }
+                int spawned = StressRunner.INSTANCE.start((net.minecraft.world.WorldServer) sender.getEntityWorld(), sender, origin,
+                        n, radius, seconds, breakEvery);
+                reply(sender, "T4: " + spawned + "/" + n + " NPC-jev pri " + origin);
+                break;
+            }
             default:
                 throw new WrongUsageException(getUsage(sender));
         }
@@ -307,6 +346,12 @@ public class NpcbCommand extends CommandBase {
         }
         if (args.length == 2 && "debug".equalsIgnoreCase(args[0])) {
             return getListOfStringsMatchingLastWord(args, "on", "off");
+        }
+        if (args.length == 2 && "perf".equalsIgnoreCase(args[0])) {
+            return getListOfStringsMatchingLastWord(args, "reset");
+        }
+        if (args.length == 2 && "stress".equalsIgnoreCase(args[0])) {
+            return getListOfStringsMatchingLastWord(args, "start", "stop");
         }
         if (args.length == 2 && "trace".equalsIgnoreCase(args[0])) {
             return getListOfStringsMatchingLastWord(args, "on", "off", "dump");

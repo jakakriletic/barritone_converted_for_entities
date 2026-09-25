@@ -24,6 +24,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
+import si.ladja.npcbaritone.core.SearchExecutor;
 import net.minecraftforge.fml.common.network.NetworkCheckHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.LogManager;
@@ -75,6 +77,8 @@ public final class NpcBaritoneMod {
         MinecraftForge.EVENT_BUS.register(CourseRunner.INSTANCE);
         MinecraftForge.EVENT_BUS.register(PathTrace.INSTANCE);
         MinecraftForge.EVENT_BUS.register(DebugSync.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(PerfMeter.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(StressRunner.INSTANCE);
         DebugSync.INSTANCE.register();
         proxy.preInit();
         LOG.info("{} {} loaded (side={}, upstream={}); {}", NAME, VERSION, event.getSide(), UPSTREAM, config);
@@ -83,7 +87,19 @@ public final class NpcBaritoneMod {
     @Mod.EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
         event.registerServerCommand(new NpcbCommand());
-        LOG.info("{} ready on server (dedicated={})", MODID, event.getServer().isDedicatedServer());
+        // M5.1: bazen iz configa (D-017)
+        SearchExecutor.start(config.searchThreads, config.searchQueueLimit);
+        LOG.info("{} ready on server (dedicated={}, search threads={}, queue={})", MODID, event.getServer().isDedicatedServer(),
+                config.searchThreads, config.searchQueueLimit);
+    }
+
+    /** M5.5: tečaji in stres se končajo, čakajoča iskanja se zavržejo, bazen se zapre. */
+    @Mod.EventHandler
+    public void serverStopping(FMLServerStoppingEvent event) {
+        StressRunner.INSTANCE.abort("strežnik se ustavlja");
+        CourseRunner.INSTANCE.abort();
+        int dropped = SearchExecutor.stop();
+        LOG.info("{} search pool stopped ({} queued searches dropped)", MODID, dropped);
     }
 
     /**

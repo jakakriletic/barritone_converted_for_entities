@@ -61,8 +61,10 @@ public class BaritonePathNavigate extends PathNavigateGround {
     @Override
     public void onUpdateNavigation() {
         ++this.totalTicks;
+        long t0 = System.nanoTime();
         baritone.tick();
         interactions.tick(); // M4.1: CLICK_RIGHT → vrata
+        PerfMeter.INSTANCE.add(System.nanoTime() - t0); // M5.6
     }
 
     /** Postavi cilj Baritonu; isti blok ob ponovnem klicu ne sproži novega iskanja. */
