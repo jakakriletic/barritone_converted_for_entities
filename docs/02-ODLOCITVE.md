@@ -330,6 +330,24 @@ posamezne vrednosti. Brez Automatonovih polnih kaskadnih nastavitev in ukaza `/s
 commitih (`89b1174a`, `7bd582c2`, `a1bb2422`; skupaj ~90 datotek dotaknjenih) — mi
 potrebujemo samo profil + prepis.
 
+### D-027 — Dve stopnji meje zmogljivosti (M5)
+
+**Odločitev.** Merilo M5 A1 (prispevek glavne niti pri 200 mobih) ima dve stopnji:
+- **Stopnja B — zdaj:** p95 ≤ **5 ms/tick**. Vrata V3 za M6 in za prvega porabnika, drug mod,
+  ki ne rabi toliko entitet.
+- **Stopnja A — odprta:** p95 ≤ **2 ms/tick**. Pogoj za integracijo v CustomNPC rework (M7),
+  kjer bo NPC-jev veliko. Do M7 ostane zapisana kot cilj, ne blokira M5/M6.
+
+Obe se merita z istim tečajem T4 in se poročata ločeno; stopnja A, ki ni dosežena, je
+zapisana kot odprta naloga pred M7 (manj niti, krajše časovne omejitve, več deljenja ali
+omejitev števila NPC-jev z Baritonom pri CNPC).
+
+**Dokaz.** Uporabnik 2026-09-25: "opcija 1 (2 ms) odprta za kasnejšo integracijo s
+CustomNPC, opcija 2 (5 ms) za drug mod".
+
+**Preverba.** M5 tabela 50/200 mobov z obema mejama; M7 se ne začne brez stopnje A ali
+izrecne nove odločitve.
+
 ---
 
 ## F. Integracija
@@ -448,3 +466,4 @@ klientom — vanilla klient bi bil zavrnjen, kar krši D-024.
 | D-024 | 2026-09-24 | Samo strežnik, klient izbiren | velja |
 | D-025 | 2026-09-24 | Testi na vanilla mobih | velja |
 | D-026 | 2026-09-24 | Prvi commit = nespremenjen upstream | velja |
+| D-027 | 2026-09-25 | Dve stopnji meje zmogljivosti (5 ms zdaj, 2 ms pred M7) | velja |

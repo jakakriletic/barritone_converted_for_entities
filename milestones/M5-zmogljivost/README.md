@@ -22,13 +22,14 @@ nikoli ne čaka na iskanje.
 
 ## Merila sprejema
 
-| # | Merilo | Meja (predlog, potrdi uporabnik) |
+| # | Merilo | Meja (D-027) |
 |---|---|---|
-| A1 | prispevek glavne niti pri 200 mobih | p95 ≤ 2 ms/tick |
+| A1 | prispevek glavne niti pri 200 mobih — **stopnja B (zdaj)** | p95 ≤ 5 ms/tick |
+| A1+ | isto — **stopnja A (odprta, pogoj za M7)** | p95 ≤ 2 ms/tick |
 | A2 | µs kopije posnetka pri robu 8 | p95 < 100 µs |
 | A3 | niti izven bazena | 0 |
 | A4 | izjeme v 1 h stresa z rušenjem | 0 |
 | A5 | tabela 50/200 mobov: iskanj/s, µs p50/p95, delež deljenih | zapisana v `docs/meritve/` |
 
-**Vrata V3:** A1 v meji ⇒ M6. Sicer: manj niti, krajše časovne omejitve, večje deljenje;
+**Vrata V3:** A1 (stopnja B) v meji ⇒ M6. A1+ ni pogoj za M6, je pa pogoj za M7 (D-027). Sicer: manj niti, krajše časovne omejitve, večje deljenje;
 če še vedno ne, se meja za CNPC (M7) omeji na število NPC-jev z Baritonom.
