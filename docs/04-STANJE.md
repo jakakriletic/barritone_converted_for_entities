@@ -4,6 +4,25 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (6) — M5: zmogljivost (veja `m5-zmogljivost` iz `m4-interakcije`)
+
+**Odločitev:** D-027 — meja A1 v dveh stopnjah: 5 ms/tick p95 pri 200 mobih zdaj (drug mod z manj entitetami), 2 ms ostane odprta kot pogoj za CustomNPC (M7). Merge v `main` počaka na ročne preverbe v klientu.
+
+**Narejeno (oblak, 73/73 JUnit)**
+
+| Commit | Kaj |
+|---|---|
+| `b37c044` | jedro: prednostni iskalni bazen z mejo in življenjskim ciklom, `SearchStats` (µs iskanja, vrsta, posnetek) |
+| `b4c14d3` | `PerfMeter` (µs knjižnice na tick, MSPT), `/npcb perf`, `StressRunner` (`/npcb stress`), `t4-run.ps1` |
+
+Ni narejeno namenoma: M5.2 deljenje iskanj in M5.3 umerjanje časovnih omejitev — najprej številke iz T4.
+
+**Prevedeno, čaka na zagon:** `t4-run.ps1` (najprej `-Repeats 1 -Seconds 60`), nato polni tek in 1 h (A4).
+
+**Naslednji korak:** `.\dev.ps1 build --offline; .\t4-run.ps1 -Repeats 1 -Seconds 60`; po številkah odločitev o M5.2/M5.3.
+
+---
+
 ## 2026-09-25 (5) — M4 zaključen v prvem teku
 
 **Preverjeno (Windows, veja `m4-interakcije`, `cd58424`):** `t2-run.ps1` in `t1-run.ps1` zelena.
