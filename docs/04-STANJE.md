@@ -4,6 +4,18 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (8) — T1 po popravku prihoda; tečaj čaka na končno stanje
+
+**Preverjeno (16:11):** T1 10/10, `blocks_changed=0`, hoja 4,317, sprint 5,612 m/s. Sled pa **še vedno brez ARRIVED**: `CourseRunner` je razglasil REACHED, ko so bile noge v ciljnem bloku, in odsek v istem ticku preklical — proces cilja prihoda ni nikoli videl. Preverba "ARRIVED v sledi" v T1 zato ni mogla potrditi popravka iz (7).
+
+**Popravek:** `CourseRunner` po izidu odseka počaka največ 20 tickov, da `NavStatus` ni več MOVING/SEARCHING, in zapiše `nav_state` v CSV. `t1-run.ps1` in `t2-run.ps1` zahtevata ARRIVED za vse dosežene in FAILED za neuspele odseke. Vsi trije skripti ob zaklenjenem logu (prejšnji strežnik še teče) povedo, kaj narediti.
+
+Ob tem: `extractNatives` je padel, ker so ostali trije Java procesi prejšnjega teka; po `Stop-Process` je šlo.
+
+**Naslednji korak:** `.\dev.ps1 build --offline; .\t1-run.ps1; .\t4-run.ps1`.
+
+---
+
 ## 2026-09-25 (7) — M5: prvi (hitri) T4 in popravek prihoda
 
 **Preverjeno (Windows, `t4-run.ps1 -Repeats 1 -Seconds 60`, 12:01–12:04):** oba teka brez izjem in brez "Can't keep up"; 2 niti, 0 zavrnjenih iskanj.
