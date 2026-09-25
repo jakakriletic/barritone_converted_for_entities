@@ -37,11 +37,21 @@ import si.ladja.npcbaritone.core.api.pathing.goals.GoalBlock;
 public class BaritonePathNavigate extends PathNavigateGround {
 
     private final Baritone baritone;
+    private final EntityInteractions interactions;
     private BlockPos lastGoal;
 
     public BaritonePathNavigate(EntityLiving entity, World world, Baritone baritone) {
+        this(entity, world, baritone, new EntityInteractions(entity, baritone));
+    }
+
+    BaritonePathNavigate(EntityLiving entity, World world, Baritone baritone, EntityInteractions interactions) {
         super(entity, world);
         this.baritone = baritone;
+        this.interactions = interactions;
+    }
+
+    public EntityInteractions interactions() {
+        return interactions;
     }
 
     public Baritone baritone() {
@@ -52,6 +62,7 @@ public class BaritonePathNavigate extends PathNavigateGround {
     public void onUpdateNavigation() {
         ++this.totalTicks;
         baritone.tick();
+        interactions.tick(); // M4.1: CLICK_RIGHT → vrata
     }
 
     /** Postavi cilj Baritonu; isti blok ob ponovnem klicu ne sproži novega iskanja. */

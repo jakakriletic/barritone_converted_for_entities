@@ -64,6 +64,7 @@ public final class Attach {
         final Baritone baritone;
         final BaritoneMoveHelper ourMove;
         final NavStatus status;
+        final EntityInteractions interactions;
         String profile;
 
         Saved(EntityLiving e, boolean puppet, Baritone baritone, BaritoneMoveHelper ourMove, String profile) {
@@ -74,6 +75,7 @@ public final class Attach {
             this.baritone = baritone;
             this.ourMove = ourMove;
             this.status = NavStatus.install(baritone);
+            this.interactions = new EntityInteractions(e, baritone);
             this.profile = profile;
         }
     }
@@ -117,7 +119,7 @@ public final class Attach {
             saved.tasks.forEach(t -> entity.tasks.removeTask(t.action));
             saved.targetTasks.forEach(t -> entity.targetTasks.removeTask(t.action));
         }
-        set(F_NAVIGATOR, entity, new BaritonePathNavigate(entity, entity.world, baritone));
+        set(F_NAVIGATOR, entity, new BaritonePathNavigate(entity, entity.world, baritone, saved.interactions));
         set(F_MOVE_HELPER, entity, move);
         set(F_JUMP_HELPER, entity, new BaritoneJumpHelper(entity, baritone));
         ATTACHED.put(entity, saved);
@@ -133,6 +135,7 @@ public final class Attach {
         saved.baritone.getPathingBehavior().forceCancel();
         saved.baritone.getInputOverrideHandler().clearAllKeys();
         saved.ourMove.release();
+        saved.interactions.release();
         entity.setJumping(false);
         set(F_NAVIGATOR, entity, saved.navigator);
         set(F_MOVE_HELPER, entity, saved.moveHelper);
@@ -153,6 +156,11 @@ public final class Attach {
     public static synchronized NavStatus status(EntityLiving entity) {
         Saved saved = ATTACHED.get(entity);
         return saved == null ? null : saved.status;
+    }
+
+    public static synchronized EntityInteractions interactions(EntityLiving entity) {
+        Saved saved = ATTACHED.get(entity);
+        return saved == null ? null : saved.interactions;
     }
 
     public static synchronized String profile(EntityLiving entity) {
