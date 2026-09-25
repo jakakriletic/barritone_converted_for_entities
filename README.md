@@ -13,8 +13,8 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 | | |
 |---|---|
 | Datum zadnje posodobitve | 2026-09-25 |
-| Trenutna faza | **M6 — navigator in API** na veji `m6-navigator` (iz `m5-zmogljivost`): PathNavigate adapter po D-018 in test vanilla AI (husk napade vaščana), 85/85 JUnit, čaka `t1-run.ps1`. M5 zaključen za stopnjo B (1 h A4 še čaka) |
-| Naslednji korak | `.\dev.ps1 build --offline; .\t1-run.ps1`; nato M6.7 javni API — [`milestones/M6-navigator-in-api/README.md`](milestones/M6-navigator-in-api/README.md) |
+| Trenutna faza | **M6 — navigator in API** (veja `m6-navigator`): PathNavigate adapter (D-018), javni API 1 + `apiJar`, 87/87 JUnit; T1 zelen z adapterjem; čaka aitest (vanilla napad prek Baritona, A1/A4). M5 zaključen za stopnjo B |
+| Naslednji korak | `.\mod\gradlew.bat --stop; .\dev.ps1 build --offline; .\t1-run.ps1`; API: [`milestones/M6-navigator-in-api/README.md`](milestones/M6-navigator-in-api/README.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |

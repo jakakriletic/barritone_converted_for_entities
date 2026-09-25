@@ -4,6 +4,24 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (14) — M6: tretji aitest, javni API in apiJar
+
+**Preverjeno (19:52, po popravku `extractNatives` v `build.gradle`):** build in T1 10/10. `aitest`: arena pri `-60 4 40` s prisilno naloženimi chunki, **vsi štirje spawnani** — pa **nobeden od huskov (tudi kontrola brez Baritona) ne izbere vaščana** z `EntityAINearestAttackableTarget` v 30 s. Koda 1.12.2 (javap) pogoja, ki bi to preprečil, ne kaže; ker velja tudi brez Baritona, ni naša napaka in ni predmet M6. **Ukrep:** test tarčo nastavi neposredno (`setAttackTarget`), `EntityAIZombieAttack` ostane vanilla.
+
+Iz sledi: husk z Baritonom je dvakrat dobil cilj od vanilla tavanja (`-65,2,38` pod tlemi, `-70,4,31` za steno arene) → `FAILED(no_path)` → `noPath()=true` → task odneha. Pravilno po D-018; vanilla bi naredil nekaj korakov proti nedosegljivi točki. Zapisano kot razlika v README M6.
+
+**Narejeno (oblak, 87/87 JUnit):**
+
+| Commit | Kaj |
+|---|---|
+| `1996b7f` | `build.gradle`: `extractNatives` izklopljen, ko teče samo `runServer` (padal je na odprtem jar-ju v Gradle cache) |
+| `4ec54de` | M6.7 javni API 1 (`NpcBaritone`, `INpcNavigator`, `NavState`, `NavListener`, `ApiProvider`), A5 `ApiJarTest`, aitest s tarčo |
+| `f127303` | M6.8 `apiJar` |
+
+**Naslednji korak:** `.\mod\gradlew.bat --stop; .\dev.ps1 build --offline; .\t1-run.ps1` → M6 A1/A4 (husk z vanilla napadom prek Baritona), v `mod\build\libs` mora biti tudi `*-api.jar`.
+
+---
+
 ## 2026-09-25 (13) — M6: drugi aitest — okolje in "hoja na mestu"
 
 **Preverjeno (18:53):** T1 10/10. `aitest attack` s kontrolo: **ne husk z Baritonom ne kontrolni husk brez Baritona nista nikoli dobila tarče** (`target=-` 30 s) → problem je okolje testa. Arena pri z=150 je izven spawn območja (128 blokov), ki ostane naloženo na strežniku brez igralca; vaščan se je morda razložil ali sploh ni bil spawnan (`spawnEntity` tega ne javi).
