@@ -81,6 +81,15 @@ afterEvaluate {
     tasks.getByName('runServer').args 'nogui'
 }
 
+// Dedicated strežnik LWJGL natives ne rabi. extractNatives pa na Windowsu pade ("Could not
+// expand ZIP"), ko ima jar v Gradle cache odprt drug Gradle proces (npr. daemon iz
+// '.\dev.ps1 build'). Kadar graf vsebuje runServer brez runClient, se korak preskoči.
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(':runServer') && !graph.hasTask(':runClient')) {
+        tasks.getByName('extractNatives').enabled = false
+    }
+}
+
 // Compile classpath za oblačno prevajanje in IDE.
 task workspacePaths {
     doLast {
