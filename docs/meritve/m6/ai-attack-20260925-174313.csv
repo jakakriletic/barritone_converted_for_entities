@@ -1,0 +1,2 @@
+scenario,result,hit_tick,nav_requests,nav_new_searches,searches,final_distance
+attack,TIMEOUT,-1,0,0,0,20.00
