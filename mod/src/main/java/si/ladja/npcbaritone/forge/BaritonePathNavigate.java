@@ -73,6 +73,10 @@ public class BaritonePathNavigate extends PathNavigateGround {
     /** M6 A4: klici tryMoveTo in setPath ter koliko jih je začelo novo iskanje. */
     private int requests;
     private int newSearches;
+    /** M6.7: razdalja sledenja (GoalNear), privzeto 1 za vanilla {@code tryMoveToEntityLiving}. */
+    private int followRange = 1;
+    private final java.util.List<si.ladja.npcbaritone.api.NavListener> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private NavStatus.State lastState = NavStatus.State.IDLE;
 
     public BaritonePathNavigate(EntityLiving entity, World world, Baritone baritone) {
         this(entity, world, baritone, new EntityInteractions(entity, baritone), NavStatus.install(baritone));
@@ -138,6 +142,67 @@ public class BaritonePathNavigate extends PathNavigateGround {
             interactions.tick(); // M4.1: CLICK_RIGHT → vrata
         }
         PerfMeter.INSTANCE.add(System.nanoTime() - t0); // M5.6
+        fireTransitions();
+    }
+
+    /** M6.7: povratni klic enkrat na prehod v ARRIVED ali FAILED. */
+    private void fireTransitions() {
+        NavStatus.State now = status.state();
+        if (now == lastState) {
+            return;
+        }
+        lastState = now;
+        if (listeners.isEmpty()) {
+            return;
+        }
+        for (si.ladja.npcbaritone.api.NavListener l : listeners) {
+            try {
+                if (now == NavStatus.State.ARRIVED) {
+                    l.onArrived(entity);
+                } else if (now == NavStatus.State.FAILED) {
+                    l.onFailed(entity, status.failReason());
+                }
+            } catch (RuntimeException ex) {
+                NpcBaritoneMod.LOG.error("NavListener {} failed for {}", l, entity, ex);
+            }
+        }
+    }
+
+    public void addListener(si.ladja.npcbaritone.api.NavListener l) {
+        if (l != null && !listeners.contains(l)) {
+            listeners.add(l);
+        }
+    }
+
+    public void removeListener(si.ladja.npcbaritone.api.NavListener l) {
+        listeners.remove(l);
+    }
+
+    /** M6.7: sledi entiteti na razdalji {@code range} (API; hitrost po profilu). */
+    public boolean follow(Entity target, int range) {
+        if (!fits() || target == null) {
+            return false;
+        }
+        BlockPos pos = new BlockPos(target);
+        if (!world.isBlockLoaded(pos)) {
+            return false;
+        }
+        speed = 0;
+        followRange = Math.max(1, range);
+        debounce.reset();
+        debounce.goalPos = pos;
+        followTarget = target;
+        lastFollowRegoal = totalTicks;
+        newSearches++;
+        baritone.getCustomGoalProcess().setGoalAndPath(new GoalNear(pos, followRange));
+        return true;
+    }
+
+    /** M6.7: takojšen preklic (API {@code stop}); brez pavze, ki velja za vanilla {@code clearPath}. */
+    public void stopNow() {
+        debounce.reset();
+        followTarget = null;
+        baritone.getPathingBehavior().cancelEverything();
     }
 
     private void updateFollow() {
@@ -156,7 +221,7 @@ public class BaritonePathNavigate extends PathNavigateGround {
         if (!NavDebounce.sameTarget(now, debounce.goalPos, (int) FOLLOW_REGOAL_DISTANCE) && world.isBlockLoaded(now)) {
             debounce.goalPos = now;
             newSearches++;
-            baritone.getCustomGoalProcess().setGoalAndPath(new GoalNear(now, 1));
+            baritone.getCustomGoalProcess().setGoalAndPath(new GoalNear(now, followRange));
             lastFollowRegoal = totalTicks;
         }
     }
@@ -167,6 +232,7 @@ public class BaritonePathNavigate extends PathNavigateGround {
     public boolean goTo(Goal goal) {
         speed = 0;
         followTarget = null;
+        followRange = 1;
         debounce.reset();
         baritone.getCustomGoalProcess().setGoalAndPath(goal);
         return true;
@@ -198,6 +264,7 @@ public class BaritonePathNavigate extends PathNavigateGround {
             return false;
         }
         setSpeed(speedIn);
+        followRange = 1;
         boolean ok = request(pos, (int) FOLLOW_REGOAL_DISTANCE, new GoalNear(pos, 1));
         if (ok) {
             if (followTarget != target) {

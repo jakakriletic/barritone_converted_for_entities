@@ -80,6 +80,7 @@ public final class NpcBaritoneMod {
         MinecraftForge.EVENT_BUS.register(PerfMeter.INSTANCE);
         MinecraftForge.EVENT_BUS.register(StressRunner.INSTANCE);
         MinecraftForge.EVENT_BUS.register(AiTestRunner.INSTANCE);
+        si.ladja.npcbaritone.api.NpcBaritone.setProvider(ApiProvider.INSTANCE); // M6.7
         DebugSync.INSTANCE.register();
         proxy.preInit();
         LOG.info("{} {} loaded (side={}, upstream={}); {}", NAME, VERSION, event.getSide(), UPSTREAM, config);

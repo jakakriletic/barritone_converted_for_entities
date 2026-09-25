@@ -43,7 +43,8 @@ import java.util.Locale;
 /**
  * M6.9 / M6 A1, A4: vanilla AI z Baritonovim navigatorjem, brez igralca. Husk (vanilla zombi
  * AI, ne gori) je pripet <b>brez</b> {@code puppet}; vaščan z {@code NoAI} stoji za zidom z režo
- * 20 blokov stran. Husk ga mora sam najti ({@code EntityAINearestAttackableTarget}) in napasti
+ * 20 blokov stran. Tarča se nastavi neposredno (vanilla iskanje tarče v tem okolju ne izbere
+ * vaščana, tudi brez Baritona); husk ga mora napasti
  * ({@code EntityAIAttackMelee} — {@code setPath}, nato {@code tryMoveToEntityLiving} vsakih
  * 4–11 tickov). Izid: tick prvega udarca, klici navigatorja in nova iskanja (A4).
  *
@@ -104,6 +105,11 @@ public final class AiTestRunner {
         EntityHusk controlHusk = husk(world, c);
         Attach.attach(husk, false, NpcBaritoneMod.config()); // vanilla AI ostane
         BaritonePathNavigate nav = (BaritonePathNavigate) husk.getNavigator();
+        // Vanilla EntityAINearestAttackableTarget v dedicated okolju brez igralca vaščana ni izbral
+        // (2026-09-25, tudi kontrola brez Baritona) — iskanje tarče ni predmet M6, napad je:
+        // tarča se nastavi neposredno, EntityAIZombieAttack ostane nespremenjen.
+        husk.setAttackTarget(villager);
+        controlHusk.setAttackTarget(controlVillager);
         run = new Run(world, sender, husk, villager, nav, controlHusk, controlVillager);
         run.tickets.addAll(tickets);
         PathTrace.INSTANCE.start(java.util.Collections.singletonList(husk));
