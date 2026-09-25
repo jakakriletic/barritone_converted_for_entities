@@ -4,6 +4,16 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (11) — M6: PathNavigate adapter (veja `m6-navigator`)
+
+**Narejeno (oblak, 85/85 JUnit):** navigator po D-018/D-019 (debounce, pavza po `clearPath`, zavrnitev po neuspehu, sledenje, `setPath`/`getPath`/`setSpeed`, vanilla za prevelike entitete) in samodejni test vanilla AI `/npcb aitest attack` (A1, A4) v `t1-run.ps1`. Popravljen vrstni red stanj v `NavStatus`: takoj po novem cilju je SEARCHING, ne stari FAILED/ARRIVED (sicer bi `noPath()` vanilla task takoj ustavil).
+
+**Prevedeno, čaka na zagon:** `.\dev.ps1 build --offline; .\t1-run.ps1` (T1 regresija + M6 A1/A4).
+
+**Naslednji korak:** M6.7/M6.8 javni API (`NpcBaritone`, `INpcNavigator`, `NavState`, povratni klici) in `apiJar`.
+
+---
+
 ## 2026-09-25 (10) — M5 zaključen za stopnjo B (razen 1 h, A4)
 
 **Preverjeno (17:08–17:15, po utišanju logov):** `t4-run.ps1 -Mobs 200`, 3 ponovitve × 120 s, svež svet vsakič; log: 0 "Pathing complete", 0 `STDOUT`, 0 izjem.

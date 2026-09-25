@@ -13,8 +13,8 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 | | |
 |---|---|
 | Datum zadnje posodobitve | 2026-09-25 |
-| Trenutna faza | **M5 zaključen za stopnjo B** (veja `m5-zmogljivost`): 200 mobov 3,27 ms/tick p95 (≤ 5 ms), posnetek 29 µs, 0 niti izven bazena; stopnja A (≤ 2 ms) odprta do M7; čaka 1 h (A4). Naslednje: **M6 — PathNavigate adapter in javni API** |
-| Naslednji korak | `.\t4-run.ps1 -Mobs 200 -Repeats 1 -Seconds 3600` (A4, v ozadju); razvoj M6: [`milestones/M6-navigator-in-api/README.md`](milestones/M6-navigator-in-api/README.md) |
+| Trenutna faza | **M6 — navigator in API** na veji `m6-navigator` (iz `m5-zmogljivost`): PathNavigate adapter po D-018 in test vanilla AI (husk napade vaščana), 85/85 JUnit, čaka `t1-run.ps1`. M5 zaključen za stopnjo B (1 h A4 še čaka) |
+| Naslednji korak | `.\dev.ps1 build --offline; .\t1-run.ps1`; nato M6.7 javni API — [`milestones/M6-navigator-in-api/README.md`](milestones/M6-navigator-in-api/README.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |
