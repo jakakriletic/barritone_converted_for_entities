@@ -134,11 +134,9 @@ public interface MovementHelper extends ActionCosts, Helper {
             return NO;
         }
         if (block instanceof BlockDoor || block instanceof BlockFenceGate) {
-            // TODO this assumes that all doors in all mods are openable
-            if (block == Blocks.IRON_DOOR) {
-                return NO;
-            }
-            return YES;
+            // M4.1 (Automatone b1899f30): lesena vrata in ograjna vrata se odprejo, vse ostalo
+            // (železna vrata, kovinska vrata iz modov) je neprehodno
+            return block instanceof BlockFenceGate || state.getMaterial() == net.minecraft.block.material.Material.WOOD ? YES : NO;
         }
         if (block == Blocks.CARPET) {
             return MAYBE;

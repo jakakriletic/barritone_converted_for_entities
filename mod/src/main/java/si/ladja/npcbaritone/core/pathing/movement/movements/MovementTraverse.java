@@ -162,6 +162,34 @@ public class MovementTraverse extends Movement {
         }
     }
 
+    /**
+     * M4.2: zahteva odpiranje lesenih vrat ali ograjnih vrat na {@code doorPos}, če zapirajo
+     * pot iz {@code from}. Vhod {@code CLICK_RIGHT} izvede forge plast ({@code EntityInteractions})
+     * neposredno na bloku, zato ni treba, da je blok v dosegu pogleda (za razliko od igralca).
+     */
+    private boolean tryOpenDoors(MovementState state, IBlockState bs, BlockPos doorPos, BlockPos from) {
+        if (bs.getBlock() instanceof BlockDoor) {
+            boolean notPassable = !MovementHelper.isDoorPassable(ctx, doorPos, from);
+            // Automatone b1899f30: odpirajo se samo lesena vrata
+            boolean canOpen = bs.getMaterial() == net.minecraft.block.material.Material.WOOD;
+            if (notPassable && canOpen) {
+                state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(new BlockStateInterface(ctx).access, doorPos), ctx.entityRotations()), true))
+                        .setInput(Input.CLICK_RIGHT, true);
+                return true;
+            }
+        } else if (bs.getBlock() instanceof BlockFenceGate) {
+            BlockPos blocked = !MovementHelper.isGatePassable(ctx, doorPos.up(), from.up()) ? doorPos.up()
+                    : !MovementHelper.isGatePassable(ctx, doorPos, from) ? doorPos
+                    : null;
+            if (blocked != null) {
+                state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(new BlockStateInterface(ctx).access, blocked), ctx.entityRotations()), true))
+                        .setInput(Input.CLICK_RIGHT, true);
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public MovementState updateState(MovementState state) {
         super.updateState(state);
@@ -213,27 +241,15 @@ public class MovementTraverse extends Movement {
         Block fd = BlockStateInterface.get(ctx, src.down()).getBlock();
         boolean ladder = fd == Blocks.LADDER || fd == Blocks.VINE;
 
-        if (pb0.getBlock() instanceof BlockDoor || pb1.getBlock() instanceof BlockDoor) {
-
-            boolean notPassable = pb0.getBlock() instanceof BlockDoor && !MovementHelper.isDoorPassable(ctx, src, dest) || pb1.getBlock() instanceof BlockDoor && !MovementHelper.isDoorPassable(ctx, dest, src);
-            boolean canOpen = !(Blocks.IRON_DOOR.equals(pb0.getBlock()) || Blocks.IRON_DOOR.equals(pb1.getBlock()));
-
-            if (notPassable && canOpen) {
-                return state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(new BlockStateInterface(ctx).access, positionsToBreak[0]), ctx.entityRotations()), true))
-                        .setInput(Input.CLICK_RIGHT, true);
-            }
+        // M4.2 (Automatone 3216de48): vrata na cilju premika in na izhodišču (entiteta stoji v
+        // odprtini). Upstream 1.12.2 je klical isDoorPassable(ctx, src, dest) z zamenjanima
+        // argumentoma in zato zaprtih vrat pred sabo nikoli ni odprl. FACING/OPEN ima samo
+        // spodnja polovica vrat, zato se bere dest (pb1), ne dest.up().
+        if (tryOpenDoors(state, pb1, dest, src)) {
+            return state;
         }
-
-        if (pb0.getBlock() instanceof BlockFenceGate || pb1.getBlock() instanceof BlockFenceGate) {
-            BlockPos blocked = !MovementHelper.isGatePassable(ctx, positionsToBreak[0], src.up()) ? positionsToBreak[0]
-                    : !MovementHelper.isGatePassable(ctx, positionsToBreak[1], src) ? positionsToBreak[1]
-                    : null;
-            if (blocked != null) {
-                Optional<Rotation> rotation = RotationUtils.reachable(ctx, blocked);
-                if (rotation.isPresent()) {
-                    return state.setTarget(new MovementState.MovementTarget(rotation.get(), true)).setInput(Input.CLICK_RIGHT, true);
-                }
-            }
+        if (tryOpenDoors(state, BlockStateInterface.get(ctx, src), src, dest)) {
+            return state;
         }
 
         boolean isTheBridgeBlockThere = MovementHelper.canWalkOn(ctx, positionToPlace) || ladder || MovementHelper.canUseFrostWalker(ctx, positionToPlace);
