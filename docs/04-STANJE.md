@@ -19,9 +19,9 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 Poleg tega `PathTrace` posluša s prioriteto HIGH, da vzorči pred `CourseRunner` (sicer zadnji tick odseka, npr. FAILED, manjka). `t1-run.ps1` preveri še: stanje FAILED in razlog `no_path` v sledi, ≤ 5 iskanj na T1/10, ≤ 20 samostojnih `CANCELED`.
 
-**Prevedeno, čaka na zagon:** popravka #1 in #2 (JUnit 61/61; headless test ni mogoč, ker noben test ne sestavi instance z entiteto — merilo je `t1-run.ps1`).
+**Preverjeno (ponovni tek 11:11, `t1-20260925-111153*`):** T1 10/10, hoja 4,317, sprint 5,612 m/s; iskanj na T1/10 **3** (prej 48), samostojnih `CANCELED` **1** (prej ~90), sled vsebuje FAILED z `no_path` (tick 837), "No path found" v logu 2× (prej 47×), 0 debug paketov. Popravka #1 in #2 sta potrjena.
 
-**Naslednji korak:** `.\dev.ps1 build --offline; .\t1-run.ps1` (nove vrstice M3 morajo biti OK), nato klient po `milestones/M3-vidnost/README.md` (A1, A2) in M2 A6/D-008.
+**Naslednji korak:** M3 ostane odprt samo za ročne preverbe v klientu (A1 izris, A2 vanilla klient) in M2 A6/D-008; razvoj gre naprej na M4 (veja `m4-interakcije` iz `m3-vidnost`).
 
 ---
 
