@@ -23,6 +23,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import si.ladja.npcbaritone.core.Baritone;
@@ -72,6 +73,7 @@ public final class CourseRunner {
         final List<String> csv = new ArrayList<>();
         int index = -1;
         int ticks;
+        int entityTicksAtStart;
         boolean started;
         double lastX, lastZ, meters, maxFall;
         long chunkLoadsAtStart;
@@ -101,6 +103,14 @@ public final class CourseRunner {
             run.baritone.getPathingBehavior().cancelEverything();
             say(run, "tečaj prekinjen");
             run = null;
+        }
+    }
+
+    /** Dedicated tečaj brez igralca: vanilla sicer preskoči entiteto, če okolica ni naložena. */
+    @SubscribeEvent
+    public void onCanUpdate(EntityEvent.CanUpdate event) {
+        if (run != null && event.getEntity() == run.entity) {
+            event.setCanUpdate(true);
         }
     }
 
@@ -144,6 +154,7 @@ public final class CourseRunner {
             }
             r.started = true;
             r.ticks = 0;
+            r.entityTicksAtStart = r.entity.ticksExisted;
             r.lastX = r.entity.posX;
             r.lastZ = r.entity.posZ;
             r.chunkLoadsAtStart = Telemetry.INSTANCE.chunkLoadsTotal();
@@ -175,6 +186,14 @@ public final class CourseRunner {
             result = "TIMEOUT";
         }
         if (result != null) {
+            if ("TIMEOUT".equals(result)) {
+                NpcBaritoneMod.LOG.warn("T1 timeout diagnostic: entityTicks={} active={} pathing={} inProgress={} loaded={}",
+                        r.entity.ticksExisted - r.entityTicksAtStart,
+                        r.baritone.getCustomGoalProcess().isActive(),
+                        r.baritone.getPathingBehavior().isPathing(),
+                        r.baritone.getPathingBehavior().getInProgress().isPresent(),
+                        r.entity.world.isBlockLoaded(new BlockPos(r.entity)));
+            }
             record(r, s, result);
             next();
         }
@@ -211,8 +230,8 @@ public final class CourseRunner {
             r.passed++;
         }
         r.baritone.getPathingBehavior().cancelEverything();
-        r.csv.add(String.format(Locale.ROOT, "T1,%d,%s,%s,%s,%s,%d,%.2f,%.2f,%d,%d,%s",
-                s.index, s.name, s.expect, result, pass, r.ticks, r.meters, r.maxFall, loads, jitter, r.enteredForbidden));
+        r.csv.add(String.format(Locale.ROOT, "T1,%d,\"%s\",%s,%s,%s,%d,%.2f,%.2f,%d,%d,%s",
+                s.index, s.name.replace("\"", "\"\""), s.expect, result, pass, r.ticks, r.meters, r.maxFall, loads, jitter, r.enteredForbidden));
         say(r, String.format(Locale.ROOT, "T1 %d/10 %-28s %-8s %s  %d t  %.1f m  padec %.1f  chunki %d",
                 s.index, s.name, result, pass ? "OK" : "NAPAKA", r.ticks, r.meters, r.maxFall, loads));
     }

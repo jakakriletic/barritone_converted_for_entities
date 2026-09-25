@@ -43,16 +43,16 @@ bi ga igralec z Baritonom: s pravo hitrostjo, skoki in brez tresenja.
 
 Vrata, voda kot cilj testiranja (samo kot del T1, če je), vanilla AI taski (M6), izris (M3).
 
-## Stanje (2026-09-24, veja `m2-noge`)
+## Stanje (2026-09-25, veja `m2-noge`)
 
 | # | Stanje |
 |---|---|
 | M2.1 | preskočen — `InputOverrideHandler` je že samo stanje vhodov |
-| M2.2–M2.8 | napisano, prevedeno, delno testirano headless (`ForgeLayerTest`) |
-| M2.9 | `CourseT1` + `CourseRunner` + `t1-run.ps1`; geometrija preverjena headless |
+| M2.2–M2.8 | Windows build, JUnit in dedicated T1 zeleni; D-008 preverba brez `puppet` še čaka klient |
+| M2.9 | `CourseT1` + `CourseRunner` + `t1-run.ps1`; 3× dedicated 10/10 pričakovanih izidov |
 | M2.10 | števec v `Telemetry`, stolpec `chunk_loads` v CSV |
-| M2.11 | ročno v klientu (glej spodaj) |
-| M2.12 | `t1-run.ps1` teče na dedicated strežniku |
+| M2.11 | čaka običajen Forge klient: uradni obfuskirani Baritone jar sesuje ForgeGradle `runClient` pri `MixinStateImplementation` |
+| M2.12 | `t1-run.ps1` trikrat exit 0 na dedicated strežniku (A1–A5, A7) |
 
 ### Ročni preverbi v klientu
 

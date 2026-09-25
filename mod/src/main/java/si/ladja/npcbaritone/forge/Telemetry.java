@@ -21,9 +21,13 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.world.ChunkEvent;
+import net.minecraftforge.event.entity.EntityEvent;
+import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import si.ladja.npcbaritone.core.Baritone;
@@ -70,6 +74,17 @@ public final class Telemetry {
         chunkLoadsSinceReset = 0;
     }
 
+    /** Speedtest brez igralca teče samo za izbrano entiteto. */
+    @SubscribeEvent
+    public void onCanUpdate(EntityEvent.CanUpdate event) {
+        for (SpeedTest test : tests) {
+            if (event.getEntity() == test.entity) {
+                event.setCanUpdate(true);
+                return;
+            }
+        }
+    }
+
     @SubscribeEvent
     public void onChunkLoad(ChunkEvent.Load event) {
         if (!event.getWorld().isRemote) {
@@ -86,17 +101,20 @@ public final class Telemetry {
         final ICommandSender sender;
         final boolean sprint;
         final Settings restore;
+        final ForgeChunkManager.Ticket ticket;
         int ticks;
         double x0, z0;
         final float[] yaw = new float[WARMUP_TICKS + MEASURE_TICKS + 1];
         boolean done;
 
-        SpeedTest(EntityLiving entity, Baritone baritone, ICommandSender sender, boolean sprint, Settings restore) {
+        SpeedTest(EntityLiving entity, Baritone baritone, ICommandSender sender, boolean sprint, Settings restore,
+                  ForgeChunkManager.Ticket ticket) {
             this.entity = entity;
             this.baritone = baritone;
             this.sender = sender;
             this.sprint = sprint;
             this.restore = restore;
+            this.ticket = ticket;
         }
     }
 
@@ -109,8 +127,31 @@ public final class Telemetry {
         EnumFacing facing = EnumFacing.fromAngle(entity.rotationYaw);
         BlockPos start = new BlockPos(entity);
         BlockPos goal = start.offset(facing, TEST_DISTANCE);
+        ForgeChunkManager.Ticket ticket = null;
+        // Ukaz je namenska meritev: pripravi ravno progo pred iskanjem, ko na strežniku ni igralca.
+        if (entity.world instanceof WorldServer) {
+            WorldServer world = (WorldServer) entity.world;
+            ticket = ForgeChunkManager.requestTicket(NpcBaritoneMod.INSTANCE, world, ForgeChunkManager.Type.NORMAL);
+            if (ticket == null) {
+                throw new IllegalStateException("speedtest: ni Forge chunk ticketa");
+            }
+            int minX = (Math.min(start.getX(), goal.getX()) - 16) >> 4;
+            int maxX = (Math.max(start.getX(), goal.getX()) + 16) >> 4;
+            int minZ = (Math.min(start.getZ(), goal.getZ()) - 16) >> 4;
+            int maxZ = (Math.max(start.getZ(), goal.getZ()) + 16) >> 4;
+            for (int cx = minX; cx <= maxX; cx++) {
+                for (int cz = minZ; cz <= maxZ; cz++) {
+                    world.getChunkProvider().provideChunk(cx, cz);
+                    if (cz == (start.getZ() >> 4)) {
+                        ForgeChunkManager.forceChunk(ticket, new ChunkPos(cx, cz));
+                    }
+                }
+            }
+        }
+        // /tp je lahko premaknil entiteto v še negeneriran chunk; po pripravi proge jo znova vpiši vanj.
+        entity.setPositionAndUpdate(entity.posX, entity.posY, entity.posZ);
         baritone.getCustomGoalProcess().setGoalAndPath(new GoalBlock(goal));
-        tests.add(new SpeedTest(entity, baritone, sender, sprint, restore));
+        tests.add(new SpeedTest(entity, baritone, sender, sprint, restore, ticket));
         return goal;
     }
 
@@ -122,6 +163,7 @@ public final class Telemetry {
         for (Iterator<SpeedTest> it = tests.iterator(); it.hasNext(); ) {
             SpeedTest t = it.next();
             if (t.entity.isDead) {
+                if (t.ticket != null) ForgeChunkManager.releaseTicket(t.ticket);
                 it.remove();
                 continue;
             }
@@ -145,6 +187,7 @@ public final class Telemetry {
     }
 
     private void finish(SpeedTest t, boolean stopped) {
+        if (t.ticket != null) ForgeChunkManager.releaseTicket(t.ticket);
         int measured = t.ticks - WARMUP_TICKS;
         double dx = t.entity.posX - t.x0;
         double dz = t.entity.posZ - t.z0;

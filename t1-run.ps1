@@ -61,6 +61,9 @@ try {
     Send 'gamerule doMobSpawning false'
     Send 'gamerule doDaylightCycle false'
     Send 'time set 6000'
+    # Brez igralca spawn chunk ni nujno naložen; postavitev T1 ga naloži pred /summon.
+    Send 'npcb course t1 build 0 4 0'
+    if (-not (WaitFor 'T1 postavljen pri')) { throw 'T1 ni bilo mogoče postaviti' }
     Send 'summon husk 0.5 4 0.5 {PersistenceRequired:1b}'
     Start-Sleep -Seconds 2
     Send 'npcb course t1 run @e[type=husk,c=1] 0 4 0'

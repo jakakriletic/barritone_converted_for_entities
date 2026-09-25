@@ -24,6 +24,7 @@ import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.utils.InputOverrideHandler;
+import si.ladja.npcbaritone.core.pathing.path.PathExecutor;
 
 /**
  * D-010: edina točka, ki piše gibalne vhode entitete, dokler vodi Baritone.
@@ -66,7 +67,9 @@ public class BaritoneMoveHelper extends EntityMoveHelper {
             takeControl();
         }
         boolean sneak = in.isInputForcedDown(Input.SNEAK);
-        boolean sprint = in.isInputForcedDown(Input.SPRINT) && !sneak;
+        // PathExecutor porabi in počisti vhod SPRINT, odločitev pa shrani za tekoči tick.
+        PathExecutor path = baritone.getPathingBehavior().getCurrent();
+        boolean sprint = !sneak && ((path != null && path.isSprinting()) || in.isInputForcedDown(Input.SPRINT));
         float forward = axis(in.isInputForcedDown(Input.MOVE_FORWARD), in.isInputForcedDown(Input.MOVE_BACK), sneak);
         float strafe = axis(in.isInputForcedDown(Input.MOVE_LEFT), in.isInputForcedDown(Input.MOVE_RIGHT), sneak);
         entity.setSneaking(sneak);

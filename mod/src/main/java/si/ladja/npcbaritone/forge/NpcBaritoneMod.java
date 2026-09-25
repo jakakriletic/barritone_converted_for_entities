@@ -18,6 +18,7 @@
 package si.ladja.npcbaritone.forge;
 
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -41,6 +42,8 @@ import java.util.Map;
 public final class NpcBaritoneMod {
 
     public static final String MODID = "npcbaritone";
+    @Mod.Instance(MODID)
+    public static NpcBaritoneMod INSTANCE;
     public static final String NAME = "NPC Baritone";
     public static final String VERSION = "@VERSION@";
     /** Izvor jedra (D-001, D-026). */
@@ -59,6 +62,9 @@ public final class NpcBaritoneMod {
         Configuration cfg = new Configuration(event.getSuggestedConfigurationFile());
         config = NpcbConfig.load(cfg);
         config.applyTo(BaritoneAPI.getSettings()); // skupni NPC profil (D-016)
+        // Vozovnice so samo za tekoči speedtest; po ponovnem zagonu ne ohranimo nobene.
+        ForgeChunkManager.setForcedChunkLoadingCallback(this, (tickets, world) ->
+                tickets.forEach(ForgeChunkManager::releaseTicket));
         MinecraftForge.EVENT_BUS.register(Telemetry.INSTANCE);
         MinecraftForge.EVENT_BUS.register(CourseRunner.INSTANCE);
         LOG.info("{} {} loaded (side={}, upstream={}); {}", NAME, VERSION, event.getSide(), UPSTREAM, config);

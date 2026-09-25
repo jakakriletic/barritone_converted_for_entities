@@ -12,9 +12,9 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 
 | | |
 |---|---|
-| Datum zadnje posodobitve | 2026-09-24 |
-| Trenutna faza | **M2 — noge** na veji `m2-noge`: move/jump helper, `/npcb`, tečaj T1 in speedtest napisani, 43/43 JUnit v oblaku; čaka `t1-run.ps1` |
-| Naslednji korak | `git checkout m2-noge`, `.\dev.ps1 build --offline`, `.\t1-run.ps1`; glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
+| Datum zadnje posodobitve | 2026-09-25 |
+| Trenutna faza | **M2 — noge** na veji `m2-noge`: Windows build in 3× dedicated T1 zeleni (10/10 izidov, hoja 4,317 m/s, sprint 5,612 m/s); čaka preverba v klientu |
+| Naslednji korak | M2.11/A6 in D-008 v klientu; glej [`milestones/M2-noge/README.md`](milestones/M2-noge/README.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |

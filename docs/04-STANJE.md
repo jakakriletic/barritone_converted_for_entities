@@ -4,6 +4,20 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 — M2: Windows build in dedicated tečaj
+
+**Namen seje:** na veji `m2-noge` pognati `dev.ps1 build --offline` in `t1-run.ps1`, pregledati merila A1–A5/A7 ter popraviti konkretne napake.
+
+**Preverjeno:** `dev.ps1 build --offline` (prevod, JUnit, reobf) zelen. `t1-run.ps1` trikrat zapored konča z exit 0 na svežem dedicated svetu; CSV so v `docs/meritve/m2/` (trije `t1-*.csv` in trije `speed-*.csv`). Mediana in razpon vseh treh tekov: T1 **10/10 [10, 10]** pričakovanih izidov (odsek 10 pravilno `FAILED`), hoja **4,317 [4,317, 4,317] m/s**, sprint **5,612 [5,612, 5,612] m/s**, novi chunki med T1 **0 [0, 0]**, yaw tresenje na merilni progi **0 [0, 0]**. Dedicated zagon, pripenjanje in premikanje zato izpolnijo A1–A5 in A7.
+
+**Popravki ob merjenju:** skript pred `/summon` postavi T1, ker strežnik brez igralca sprva nima naloženega chunka; med tečajem in speedtestom testna entiteta dobi `CanUpdate`; speedtest si pred začetkom pripravi ravno progo in jo med meritvijo zadrži s Forge chunk vozovnico (ob koncu sprosti). `BaritoneMoveHelper` uporabi odločitev `PathExecutor.isSprinting()`, ker izvajalec poti vhod `SPRINT` že porabi. CSV ime odseka z vejico je pravilno citirano.
+
+**Še odprto:** A6/M2.11 v klientu s pravim Baritonom 1.2.19 ter D-008 preverba, da zombi brez `puppet` še napade. Uradni `baritone-standalone-forge-1.2.19.jar` (SHA-1 se ujema z `checksums.txt`) se v ForgeGradle `runClient` ustavi pri `MixinStateImplementation: Shadow field b was not located` — ta obfuskirani jar ni združljiv z razvojnimi MCP mappingi. Jar je zato shranjen v `tools/cache/`, ne v `mod/run/mods`. `runClient` brez tega jarja naloži integrirani strežnik in igralca, a se je zaprl pred ročno preverbo napada. A6 zahteva običajen Forge klient z izdanima jarjema; D-008 ostaja ročna preverba. M2 se zaključi po teh preverbah.
+
+**Naslednji korak:** v klientu opravi M2.11/A6 in D-008 po navodilih v `milestones/M2-noge/README.md`.
+
+---
+
 ## 2026-09-24 (6) — M2: noge (veja `m2-noge`)
 
 **Narejeno (oblak, 43/43 JUnit)**
