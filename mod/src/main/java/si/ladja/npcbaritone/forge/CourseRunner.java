@@ -69,7 +69,7 @@ public final class CourseRunner {
         final EntityLiving entity;
         final Baritone baritone;
         final ICommandSender sender;
-        final List<CourseT1.Segment> segments;
+        final List<Course.Segment> segments;
         final List<String> csv = new ArrayList<>();
         int index = -1;
         int ticks;
@@ -81,7 +81,7 @@ public final class CourseRunner {
         int passed;
         final float[] yaw = new float[TIMEOUT_TICKS + 1];
 
-        Run(EntityLiving entity, Baritone baritone, ICommandSender sender, List<CourseT1.Segment> segments) {
+        Run(EntityLiving entity, Baritone baritone, ICommandSender sender, List<Course.Segment> segments) {
             this.entity = entity;
             this.baritone = baritone;
             this.sender = sender;
@@ -124,7 +124,7 @@ public final class CourseRunner {
             finish(r);
             return;
         }
-        CourseT1.Segment s = r.segments.get(r.index);
+        Course.Segment s = r.segments.get(r.index);
         PathTrace.INSTANCE.setTag("T1/" + s.index);
         r.baritone.getPathingBehavior().cancelEverything();
         r.entity.setPositionAndUpdate(s.start.getX() + 0.5, s.start.getY(), s.start.getZ() + 0.5);
@@ -152,7 +152,7 @@ public final class CourseRunner {
             return;
         }
         keepTicking(r.entity);
-        CourseT1.Segment s = r.segments.get(r.index);
+        Course.Segment s = r.segments.get(r.index);
         if (!r.started) {
             if (++r.ticks < SETTLE_TICKS) {
                 return;
@@ -220,7 +220,7 @@ public final class CourseRunner {
                 && !b.getPathingBehavior().getInProgress().isPresent();
     }
 
-    private void record(Run r, CourseT1.Segment s, String result) {
+    private void record(Run r, Course.Segment s, String result) {
         long loads = Telemetry.INSTANCE.chunkLoadsTotal() - r.chunkLoadsAtStart;
         int jitter = 0;
         for (int i = 6; i <= Math.min(r.ticks, r.yaw.length - 1); i++) {
@@ -228,7 +228,7 @@ public final class CourseRunner {
                 jitter++;
             }
         }
-        boolean expected = s.expect == CourseT1.Expect.REACH ? "REACHED".equals(result) : "FAILED".equals(result);
+        boolean expected = s.expect == Course.Expect.REACH ? "REACHED".equals(result) : "FAILED".equals(result);
         boolean fallOk = Double.isNaN(s.maxFall) || r.maxFall <= s.maxFall;
         boolean pass = expected && fallOk && !r.enteredForbidden;
         if (pass) {

@@ -68,7 +68,7 @@ public class CourseT1PathTest {
         BootstrapOnce.ensure();
         // x -6..46, z 0..108 (+-5): chunki -1..3 x -1..7; tla pod progami postavi build
         world = SyntheticWorld.create().ensureChunks(-2, -2, 4, 8);
-        int n = CourseT1.build(new CourseT1.Sink() {
+        int n = CourseT1.build(new Course.Sink() {
             @Override
             public IBlockState get(BlockPos pos) {
                 IBlockState s = world.get(pos);
@@ -83,7 +83,7 @@ public class CourseT1PathTest {
         assertTrue(n > 1000);
     }
 
-    private static PathCalculationResult search(CourseT1.Segment s) {
+    private static PathCalculationResult search(Course.Segment s) {
         BlockStateInterface bsi = new BlockStateInterface(world.chunks(), null, null, NpcProfile.create());
         CalculationContext ctx = CalculationContext.headless(bsi);
         BlockPos a = s.start;
@@ -98,11 +98,11 @@ public class CourseT1PathTest {
 
     @Test
     public void everySegmentBehavesAsExpected() {
-        List<CourseT1.Segment> segs = CourseT1.segments(ORIGIN);
+        List<Course.Segment> segs = CourseT1.segments(ORIGIN);
         assertEquals(10, segs.size());
-        for (CourseT1.Segment s : segs) {
+        for (Course.Segment s : segs) {
             PathCalculationResult r = search(s);
-            if (s.expect == CourseT1.Expect.REACH) {
+            if (s.expect == Course.Expect.REACH) {
                 assertEquals("segment " + s.index + " " + s.name, PathCalculationResult.Type.SUCCESS_TO_GOAL, r.getType());
                 IPath p = r.getPath().get();
                 if (s.forbiddenColumn != null) {
@@ -123,7 +123,7 @@ public class CourseT1PathTest {
 
     @Test
     public void segment4PlatformIsReallyFourHigh() {
-        CourseT1.Segment s = CourseT1.segments(ORIGIN).get(3);
+        Course.Segment s = CourseT1.segments(ORIGIN).get(3);
         assertEquals(Blocks.STONE, world.get(s.start.down()).getBlock());
         assertEquals(Blocks.AIR, world.get(s.start).getBlock());
         assertEquals(Blocks.STONE, world.get(s.start.down(4)).getBlock());

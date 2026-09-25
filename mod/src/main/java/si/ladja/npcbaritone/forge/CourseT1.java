@@ -40,33 +40,6 @@ public final class CourseT1 {
 
     public static final int LANE_SPACING = 12;
 
-    public enum Expect { REACH, FAIL }
-
-    public static final class Segment {
-        public final int index;
-        public final String name;
-        public final BlockPos start;
-        public final BlockPos goal;
-        public final Expect expect;
-        /** Največja dovoljena padalna razdalja (bloki); NaN = ni preverjeno. */
-        public final double maxFall;
-        /** Blok (x, z), skozi katerega entiteta ne sme iti; null = ni preverjeno. */
-        public final BlockPos forbiddenColumn;
-        /** Začetni yaw (−90 = proti +X). */
-        public final float startYaw;
-
-        Segment(int index, String name, BlockPos start, BlockPos goal, Expect expect, double maxFall, BlockPos forbiddenColumn, float startYaw) {
-            this.index = index;
-            this.name = name;
-            this.start = start;
-            this.goal = goal;
-            this.expect = expect;
-            this.maxFall = maxFall;
-            this.forbiddenColumn = forbiddenColumn;
-            this.startYaw = startYaw;
-        }
-    }
-
     private static final IBlockState STONE = Blocks.STONE.getDefaultState();
     private static final IBlockState AIR = Blocks.AIR.getDefaultState();
     private static final IBlockState TOP_SLAB = Blocks.STONE_SLAB.getDefaultState()
@@ -81,42 +54,35 @@ public final class CourseT1 {
         return origin.add(0, 0, i * LANE_SPACING);
     }
 
-    public static List<Segment> segments(BlockPos o) {
-        List<Segment> s = new ArrayList<>();
+    public static List<Course.Segment> segments(BlockPos o) {
+        List<Course.Segment> s = new ArrayList<>();
         BlockPos l;
         l = lane(o, 0);
-        s.add(new Segment(1, "ravnina 30", l, l.add(30, 0, 0), Expect.REACH, Double.NaN, null, -90));
+        s.add(new Course.Segment(1, "ravnina 30", l, l.add(30, 0, 0), Course.Expect.REACH, Double.NaN, null, -90));
         l = lane(o, 1);
-        s.add(new Segment(2, "zid z režo", l, l.add(20, 0, 0), Expect.REACH, Double.NaN, null, -90));
+        s.add(new Course.Segment(2, "zid z režo", l, l.add(20, 0, 0), Course.Expect.REACH, Double.NaN, null, -90));
         l = lane(o, 2);
-        s.add(new Segment(3, "stopnice gor 1/2/3", l, l.add(15, 3, 0), Expect.REACH, Double.NaN, null, -90));
+        s.add(new Course.Segment(3, "stopnice gor 1/2/3", l, l.add(15, 3, 0), Course.Expect.REACH, Double.NaN, null, -90));
         l = lane(o, 3);
-        s.add(new Segment(4, "padec 2/3/4 (4 mora zaviti)", l.add(3, 4, 0), l.add(12, 0, 0), Expect.REACH, 3.5, null, -90));
+        s.add(new Course.Segment(4, "padec 2/3/4 (4 mora zaviti)", l.add(3, 4, 0), l.add(12, 0, 0), Course.Expect.REACH, 3.5, null, -90));
         l = lane(o, 4);
-        s.add(new Segment(5, "diagonala ob stebrih", l, l.add(5, 0, 5), Expect.REACH, Double.NaN, null, -90));
+        s.add(new Course.Segment(5, "diagonala ob stebrih", l, l.add(5, 0, 5), Course.Expect.REACH, Double.NaN, null, -90));
         l = lane(o, 5);
-        s.add(new Segment(6, "ozek hodnik 1x2", l, l.add(11, 0, 0), Expect.REACH, Double.NaN, null, -90));
+        s.add(new Course.Segment(6, "ozek hodnik 1x2", l, l.add(11, 0, 0), Course.Expect.REACH, Double.NaN, null, -90));
         l = lane(o, 6);
-        s.add(new Segment(7, "reža 1,5 pod ploščo (obhod)", l, l.add(20, 0, 0), Expect.REACH, Double.NaN, l.add(10, 0, 0), -90));
+        s.add(new Course.Segment(7, "reža 1,5 pod ploščo (obhod)", l, l.add(20, 0, 0), Course.Expect.REACH, Double.NaN, l.add(10, 0, 0), -90));
         l = lane(o, 7);
-        s.add(new Segment(8, "obrat 180", l.add(20, 0, 0), l.add(8, 0, 0), Expect.REACH, Double.NaN, null, -90));
+        s.add(new Course.Segment(8, "obrat 180", l.add(20, 0, 0), l.add(8, 0, 0), Course.Expect.REACH, Double.NaN, null, -90));
         l = lane(o, 8);
-        s.add(new Segment(9, "cilj za vogalom", l, l.add(10, 0, -2), Expect.REACH, Double.NaN, null, -90));
+        s.add(new Course.Segment(9, "cilj za vogalom", l, l.add(10, 0, -2), Course.Expect.REACH, Double.NaN, null, -90));
         l = lane(o, 9);
-        s.add(new Segment(10, "nedosegljiv cilj (FAILED)", l, l.add(15, 0, 0), Expect.FAIL, Double.NaN, null, -90));
+        s.add(new Course.Segment(10, "nedosegljiv cilj (FAILED)", l, l.add(15, 0, 0), Course.Expect.FAIL, Double.NaN, null, -90));
         return Collections.unmodifiableList(s);
-    }
-
-    /** Cilj postavljanja: svet v igri ali sintetični svet v testih. */
-    public interface Sink {
-        IBlockState get(BlockPos pos);
-
-        void set(BlockPos pos, IBlockState state);
     }
 
     /** Postavi vse proge v svet (flag 2: brez posodobitev sosedov). */
     public static int build(World w, BlockPos o) {
-        return build(new Sink() {
+        return build(new Course.Sink() {
             @Override
             public IBlockState get(BlockPos pos) {
                 return w.getBlockState(pos);
@@ -130,8 +96,8 @@ public final class CourseT1 {
     }
 
     /** Postavi vse proge. Vrne število spremenjenih blokov. */
-    public static int build(Sink w, BlockPos o) {
-        B b = new B(w);
+    public static int build(Course.Sink w, BlockPos o) {
+        Course.Builder b = new Course.Builder(w);
         for (int i = 0; i < 10; i++) {
             BlockPos l = lane(o, i);
             b.fill(l.add(-6, 0, -5), l.add(46, 6, 5), AIR);
@@ -181,27 +147,5 @@ public final class CourseT1 {
         b.fill(l.add(15, 0, 0), l.add(15, 1, 0), AIR);
         b.fill(l.add(14, 3, -1), l.add(16, 3, 1), STONE);
         return b.changed;
-    }
-
-    private static final class B {
-        final Sink w;
-        int changed;
-
-        B(Sink w) {
-            this.w = w;
-        }
-
-        void set(BlockPos p, IBlockState s) {
-            if (w.get(p) != s) {
-                w.set(p, s);
-                changed++;
-            }
-        }
-
-        void fill(BlockPos a, BlockPos c, IBlockState s) {
-            for (BlockPos p : BlockPos.getAllInBoxMutable(a, c)) {
-                set(p.toImmutable(), s);
-            }
-        }
     }
 }
