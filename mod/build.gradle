@@ -90,6 +90,23 @@ gradle.taskGraph.whenReady { graph ->
     }
 }
 
+// M6.8: API jar za porabnike (compileOnly), deobf (MCP imena), različica API 1.
+// Vzorci morajo biti enaki kot ApiJarTest.API_JAR_INCLUDES (test preveri, da se porabnik prevede).
+task apiJar(type: Jar, dependsOn: classes) {
+    classifier = 'api'
+    def apiIncludes = ['si/ladja/npcbaritone/api/**',
+                       'si/ladja/npcbaritone/core/api/pathing/goals/**',
+                       'si/ladja/npcbaritone/core/api/utils/BetterBlockPos*',
+                       'si/ladja/npcbaritone/core/api/utils/interfaces/IGoalRenderPos*',
+                       'si/ladja/npcbaritone/core/api/pathing/movement/ActionCosts*']
+    from(sourceSets.main.output) { include apiIncludes }
+    from(sourceSets.main.allJava) { include apiIncludes }
+    from(rootProject.file('../LICENSE')) { into 'META-INF' }
+    from(rootProject.file('../NOTICE.md')) { into 'META-INF' }
+    manifest { attributes('NpcBaritone-Api-Version': '1') }
+}
+build.dependsOn apiJar
+
 // Compile classpath za oblačno prevajanje in IDE.
 task workspacePaths {
     doLast {
