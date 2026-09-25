@@ -4,6 +4,37 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (10) — M5 zaključen za stopnjo B (razen 1 h, A4)
+
+**Preverjeno (17:08–17:15, po utišanju logov):** `t4-run.ps1 -Mobs 200`, 3 ponovitve × 120 s, svež svet vsakič; log: 0 "Pathing complete", 0 `STDOUT`, 0 izjem.
+
+| 200 mobov | mediana [razpon] |
+|---|---|
+| glavna nit µs/tick p95 | **3265** [3154, 4084] |
+| glavna nit p50 / p99 | 2472 [2351, 3129] / 5083 [4389, 6146] |
+| MSPT p95 | 4,65 [4,51, 6,16] ms |
+| iskanj/s, µs p50 / p95 | 23,5, 562 / 13 456 |
+| čakanje v vrsti µs p95 | 226 [27, 254] |
+| posnetek µs p95 | 29 [27, 36] |
+| doseženih ciljev | 95 % (2304–2358 / 2430–2476), zavrnjenih 0 |
+
+**Merila M5 (D-027):**
+
+| # | Merilo | Izid |
+|---|---|---|
+| A1 | stopnja B: p95 ≤ 5 ms pri 200 | **da** — 3,27 ms (tudi najslabša ponovitev 4,08) |
+| A1+ | stopnja A: p95 ≤ 2 ms pri 200 | **ne** — odprto, pogoj za M7; pri 50 mobih 1,36 ms |
+| A2 | posnetek p95 < 100 µs | **da** — 29 µs (200), 72–85 µs (50) |
+| A3 | niti izven bazena | **0** |
+| A4 | izjeme v 1 h stresa z rušenjem | **čaka** (`.\t4-run.ps1 -Mobs 200 -Repeats 1 -Seconds 3600`) |
+| A5 | tabela 50/200 | `docs/meritve/m5/t4-summary-20260925-171507.csv` + CSV posameznih tekov |
+
+**Za stopnjo A (pred M7):** ~12 µs na NPC na tick na glavni niti ostane; kandidati po vrsti: profil (kaj v `baritone.tick()` je drago — izvajalec poti, `PathingControlManager`, `LookBehavior`), redkejši tick NPC-jev daleč od igralcev, deljenje iskanj (M5.2 — glavne niti skoraj ne obremenjuje, iskanja so na nitih). Vrata V3 za M6 so odprta.
+
+**Naslednji korak:** 1 h tek (A4) lahko teče v ozadju; razvoj gre na M6 (`PathNavigate` adapter in javni API).
+
+---
+
 ## 2026-09-25 (9) — M5: T4 3×50 in 1×200; prihod potrjen; tek se je "zataknil" v konzoli
 
 **Preverjeno (16:16–16:27):** T1 10/10 z `nav_state`: **9/9 doseženih ARRIVED, odsek 10 FAILED** — popravka iz (7) in (8) delujeta. T4 (120 s meritve, rušenje vsakih 5 s):

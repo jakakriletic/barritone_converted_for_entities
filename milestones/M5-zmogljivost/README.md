@@ -64,3 +64,7 @@ husk-i kot puppet, naključni cilj v polmeru 48 vsakič, ko NPC miruje ≥ 10 ti
 .\t4-run.ps1                            # A1, A2, A3, A5: 3 × (50, 200), 120 s (~25 min)
 .\t4-run.ps1 -Mobs 200 -Repeats 1 -Seconds 3600   # A4: 1 h z rušenjem
 ```
+
+### Rezultat (2026-09-25 17:15)
+
+**Stopnja B izpolnjena:** 200 mobov, glavna nit p95 mediana 3,27 ms [3,15–4,08] v 3 ponovitvah; A2, A3, A5 da; A4 (1 h) čaka; A1+ (2 ms) odprto do M7. Podrobnosti v `docs/04-STANJE.md` (10).
