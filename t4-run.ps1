@@ -28,6 +28,23 @@ if (-not ((Test-Path $eula) -and ((Get-Content $eula -Raw) -match 'eula\s*=\s*tr
     throw "mod\run\eula.txt ni sprejet: najprej '.\smoke-server.ps1 -AcceptEula'."
 }
 $inv = [Globalization.CultureInfo]::InvariantCulture
+
+# Klik v okno konzole (QuickEdit) zamrzne ta skript, dokler ne pritisneš tipke — strežnik pa
+# teče naprej in meritev se podaljša (2026-09-25: 36 min). Med tekom QuickEdit izklopimo.
+$quickEdit = $null
+try {
+    Add-Type -Namespace Npcb -Name ConsoleMode -MemberDefinition @'
+[DllImport("kernel32.dll")] public static extern System.IntPtr GetStdHandle(int n);
+[DllImport("kernel32.dll")] public static extern bool GetConsoleMode(System.IntPtr h, out uint m);
+[DllImport("kernel32.dll")] public static extern bool SetConsoleMode(System.IntPtr h, uint m);
+'@ -ErrorAction Stop
+    $hIn = [Npcb.ConsoleMode]::GetStdHandle(-10)
+    $mode = [uint32]0
+    if ([Npcb.ConsoleMode]::GetConsoleMode($hIn, [ref]$mode)) {
+        $quickEdit = $mode
+        [void][Npcb.ConsoleMode]::SetConsoleMode($hIn, [uint32](($mode -band (-bnot 0x40)) -bor 0x80))
+    }
+} catch { Write-Host "  (QuickEdit ni bilo mogoče izklopiti: ne klikaj v okno med tekom)" }
 $level = 'm5-t4'
 $results = @()
 $exceptions = 0
@@ -139,4 +156,5 @@ Check "T4 smiselnost: tekov brez doseženega cilja: $noArrivals (= 0)" ($noArriv
 Check "A3  niti izven bazena: $maxThreads (= 0)" ($maxThreads -le 0)
 Check "A4  izjeme v logih: $exceptions (= 0)" ($exceptions -eq 0)
 Check "A5  tabela zapisana: docs\meritve\m5\t4-summary-$stamp.csv" ($summary.Count -gt 0)
+if ($quickEdit -ne $null) { [void][Npcb.ConsoleMode]::SetConsoleMode($hIn, [uint32]$quickEdit) }
 if ($fails.Count -gt 0) { exit 1 }
