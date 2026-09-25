@@ -4,6 +4,32 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (5) — M4 zaključen v prvem teku
+
+**Preverjeno (Windows, veja `m4-interakcije`, `cd58424`):** `t2-run.ps1` in `t1-run.ps1` zelena.
+
+| # | Merilo | Rezultat |
+|---|---|---|
+| A1 | T2 odsekov OK ≥ 9/10, železna vrata FAILED | **10/10**, odsek 2 FAILED po 35 tickih (3 iskanja) |
+| A2 | porušenih/postavljenih blokov | **0** v T2 in 0 v T1 (`blocks_changed`) |
+| A3 | škoda T1+T2 | **0,0** (tudi padec 10 v vodo, lava, kaktusi) |
+| A4 | vrata za NPC-jem zaprta | **2/2** (lesena in ograjna) |
+
+T1 regresija: 10/10, hoja 4,317, sprint 5,612 m/s, 0 debug paketov. Meritve: `docs/meritve/m4/t2-20260925-114638*.csv`, `docs/meritve/m2/*-1147*`, `docs/meritve/m3/t1-20260925-114742-trace.csv`.
+
+Iz sledi T2: lestev gor = `Pillar`, dol = `Downward`, voda 1 in 3 = `Descend/Ascend` po površini (mob ni potonil, 0 škode), padec = `Fall`. Kisik (M4.5) zato ni bil potreben — Baritone ne vodi pod vodo.
+
+**Opažanja (ne kršijo meril, za kasneje):**
+- T2/9 kaktusi: 5 iskanj in 2 naložena chunka — NPC je zašel s poti ob reži; škode ni bilo.
+- yaw tresenje 10–15 na odsekih z lestvijo dol in padcem (A5 velja samo za ravno progo).
+- prvo iskanje na svežem strežniku znova ~63 ms (JIT), nato ≤ 2,3 ms.
+
+**Ni narejeno (namenoma):** M4.6 ogenj in magma nimata testa (lava in kaktus ga imata); M4.7 izogibanje mobom ni začeto (privzeto izklopljeno, ni v merilih) → M10.
+
+**Naslednji korak:** merge `m4-interakcije` → `main` po ročnih preverbah v klientu (M2 A6/D-008, M3 A1/A2) ali brez njih po odločitvi uporabnika; razvoj gre na M5 (zmogljivost).
+
+---
+
 ## 2026-09-25 (4) — M4: interakcije (veja `m4-interakcije` iz `m3-vidnost`)
 
 **Namen seje:** M4 do točke, ko ostane tek T2 na Windowsu; voda in lestve najprej izmeriti, šele nato popravljati.

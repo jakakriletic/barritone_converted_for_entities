@@ -13,8 +13,8 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 | | |
 |---|---|
 | Datum zadnje posodobitve | 2026-09-25 |
-| Trenutna faza | **M4 — interakcije** na veji `m4-interakcije` (iz `m3-vidnost`): vrata (s popravkom upstream napake), tečaj T2, podpis blokov; 68/68 JUnit, čaka `t2-run.ps1`. M3 in M2 čakata samo ročne preverbe v klientu |
-| Naslednji korak | `.\dev.ps1 build --offline; .\t2-run.ps1; .\t1-run.ps1`; glej [`milestones/M4-interakcije-in-varnost/README.md`](milestones/M4-interakcije-in-varnost/README.md) |
+| Trenutna faza | **M4 zaključen** (veja `m4-interakcije`): T2 10/10, 0 porušenih blokov, 0 škode, vrata zaprta; T1 regresija zelena. M2/M3 čakata le ročne preverbe v klientu. Naslednje: **M5 — zmogljivost** |
+| Naslednji korak | M5: `SearchExecutor`, števci, tečaj T4 (50/200 mobov); glej [`milestones/M5-zmogljivost/README.md`](milestones/M5-zmogljivost/README.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |

@@ -58,6 +58,10 @@ ali postavil blok.
 | 9 | kaktusi z režami širine 1 | REACH, 0 škode |
 | 10 | padec 10 v bazen globine 2 | REACH, 0 škode |
 
+### Rezultat (2026-09-25 11:46)
+
+**Zaključen:** T2 10/10, 0 spremenjenih blokov, 0 škode, vrata 2/2 zaprta; T1 regresija zelena. Podrobnosti v `docs/04-STANJE.md` (5).
+
 ### Preverba pri uporabniku
 
 `.\dev.ps1 build --offline; .\t2-run.ps1; .\t1-run.ps1` → vse vrstice OK (T1 dobi še
