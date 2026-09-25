@@ -131,6 +131,8 @@ if ($main) {
     else { Write-Output ("  ODPRTO  A1+ (stopnja A, pogoj za M7): {0} µs > 2000 — zapisano, ne blokira M6 (D-027)" -f $main.median) }
 } else { Check 'A1 rezultati obstajajo' $false }
 if ($snap) { Check ("A2  posnetek p95: mediana {0} µs [{1}, {2}] (< 100)" -f $snap.median, $snap.min, $snap.max) ($snap.median -lt 100) }
+$noArrivals = @($results | Where-Object { [int]$_.reached -eq 0 }).Count
+Check "T4 smiselnost: tekov brez doseženega cilja: $noArrivals (= 0)" ($noArrivals -eq 0)
 Check "A3  niti izven bazena: $maxThreads (= 0)" ($maxThreads -le 0)
 Check "A4  izjeme v logih: $exceptions (= 0)" ($exceptions -eq 0)
 Check "A5  tabela zapisana: docs\meritve\m5\t4-summary-$stamp.csv" ($summary.Count -gt 0)

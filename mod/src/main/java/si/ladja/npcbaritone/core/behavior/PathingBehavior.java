@@ -550,6 +550,9 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
             PathCalculationResult calcResult = pathfinder.calculate(primaryTimeout, failureTimeout);
             lastSearchMicros = (System.nanoTime() - t0) / 1000L;
             lastSearchResult = calcResult.getType().name().toLowerCase(java.util.Locale.ROOT);
+            if (calcResult.getType() == PathCalculationResult.Type.FAILURE || calcResult.getType() == PathCalculationResult.Type.EXCEPTION) {
+                si.ladja.npcbaritone.core.SearchStats.FAILED.incrementAndGet();
+            }
             synchronized (pathPlanLock) {
                 Optional<PathExecutor> executor = calcResult.getPath().map(p -> new PathExecutor(PathingBehavior.this, p));
                 if (current == null) {

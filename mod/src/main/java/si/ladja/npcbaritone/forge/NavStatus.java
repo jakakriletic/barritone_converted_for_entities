@@ -17,6 +17,7 @@
 
 package si.ladja.npcbaritone.forge;
 
+import net.minecraft.util.math.BlockPos;
 import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.event.events.PathEvent;
 import si.ladja.npcbaritone.core.api.event.listener.AbstractGameEventListener;
@@ -43,9 +44,7 @@ public final class NavStatus implements AbstractGameEventListener {
     private final StringBuilder eventsInTick = new StringBuilder();
     private int replans;
     private int failures;
-    private String failReason = "";
-    private boolean arrived;
-    private boolean failed;
+    private final Flags flags = new Flags();
 
     NavStatus(Baritone baritone) {
         this.baritone = baritone;
@@ -70,37 +69,62 @@ public final class NavStatus implements AbstractGameEventListener {
         }
         eventsInTick.append(event.name());
         lastEvent = event;
-        switch (event) {
-            case CALC_STARTED:
-                arrived = false;
-                failed = false;
-                failReason = "";
-                replans++;
-                break;
-            case NEXT_SEGMENT_CALC_STARTED:
-                replans++;
-                break;
-            case CALC_FINISHED_NOW_EXECUTING:
-                failed = false;
-                failReason = "";
-                break;
-            case AT_GOAL:
-                arrived = true;
-                failed = false;
-                failReason = "";
-                break;
-            case CALC_FAILED:
-                failed = true;
-                failures++;
-                failReason = reasonFrom(behavior().lastSearchResult());
-                break;
-            case CANCELED:
-                arrived = false;
-                failed = false;
-                failReason = "";
-                break;
-            default:
-                break;
+        if (event == PathEvent.CALC_STARTED || event == PathEvent.NEXT_SEGMENT_CALC_STARTED) {
+            replans++;
+        }
+        if (event == PathEvent.CALC_FAILED) {
+            failures++;
+        }
+        flags.on(event, behavior().getGoal(), baritone.getEntityContext().feetPos(), behavior().lastSearchResult());
+    }
+
+    /**
+     * Izid navigacije iz zaporedja dogodkov (čista logika, headless test).
+     *
+     * <p>Upstream posebnost (M5): prihod navadno opazi {@code CustomGoalProcess} (noge v cilju),
+     * preden izvajalec zaključi pot — proces izgubi nadzor, tekoča pot se prekliče in namesto
+     * {@code AT_GOAL} pride {@code CANCELED}. Zato se ob {@code CANCELED} preveri, ali so noge v
+     * zadnjem znanem cilju. Enako {@code CANCELED} po {@code CALC_FAILED} ne pobriše neuspeha.
+     * Ponastavi se samo ob novem poskusu ({@code CALC_STARTED}).
+     */
+    static final class Flags {
+        boolean arrived;
+        boolean failed;
+        String failReason = "";
+        /** Zadnji neprazen cilj (proces ga ob izgubi nadzora pobriše, preden pride CANCELED). */
+        Goal trackedGoal;
+
+        void on(PathEvent event, Goal goalNow, BlockPos feet, String searchResult) {
+            if (goalNow != null) {
+                trackedGoal = goalNow;
+            }
+            switch (event) {
+                case CALC_STARTED:
+                    arrived = false;
+                    failed = false;
+                    failReason = "";
+                    break;
+                case CALC_FINISHED_NOW_EXECUTING:
+                    failed = false;
+                    failReason = "";
+                    break;
+                case AT_GOAL:
+                    arrived = true;
+                    failed = false;
+                    failReason = "";
+                    break;
+                case CALC_FAILED:
+                    failed = true;
+                    failReason = reasonFrom(searchResult);
+                    break;
+                case CANCELED:
+                    if (!failed && trackedGoal != null && feet != null && trackedGoal.isInGoal(feet)) {
+                        arrived = true;
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -116,18 +140,18 @@ public final class NavStatus implements AbstractGameEventListener {
         if (p.getInProgress().isPresent()) {
             return State.SEARCHING;
         }
-        if (arrived) {
-            return State.ARRIVED;
-        }
-        if (failed) {
+        if (flags.failed) {
             return State.FAILED;
+        }
+        if (flags.arrived) {
+            return State.ARRIVED;
         }
         return baritone.getCustomGoalProcess().isActive() ? State.SEARCHING : State.IDLE;
     }
 
     /** Koda razloga za {@link State#FAILED} ({@code no_path}, {@code queue_full}, ...); prazno sicer. */
     public String failReason() {
-        return failReason;
+        return flags.failReason;
     }
 
     public int replans() {

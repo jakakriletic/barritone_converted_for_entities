@@ -124,6 +124,7 @@ if ($trace) {
     # M3 popravki jedra: brez CANCELED v mirovanju, brez ponavljanja neuspelega načrtovanja naprej
     $states = @($trows | Select-Object -ExpandProperty state -Unique)
     Check "M3 stanje FAILED v sledi (stanja: $($states -join ','))" ($states -contains 'FAILED')
+    Check "M5 stanje ARRIVED v sledi (prihod kot CANCELED)" ($states -contains 'ARRIVED')
     Check "M3 razlog neuspeha no_path v sledi" (@($trows | Where-Object { $_.fail_reason -eq 'no_path' }).Count -gt 0)
     $s10 = @($trows | Where-Object { $_.tag -eq 'T1/10' })
     $n10 = if ($s10.Count) { [int]$s10[-1].searches - [int]$s10[0].searches } else { -1 }
