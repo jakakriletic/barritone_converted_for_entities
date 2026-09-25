@@ -27,6 +27,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.EntityEvent;
@@ -96,6 +97,8 @@ public final class CourseRunner {
         String pendingResult;
         int settleTicks;
         final float[] yaw = new float[TIMEOUT_TICKS + 1];
+        /** M8.9: prisiljeni chunki tečaja (T3 je večji od spawn območja strežnika brez igralca). */
+        final List<net.minecraftforge.common.ForgeChunkManager.Ticket> tickets = new ArrayList<>();
 
         Run(EntityLiving entity, Baritone baritone, ICommandSender sender, Course course, BlockPos origin) {
             this.entity = entity;
@@ -105,7 +108,7 @@ public final class CourseRunner {
             this.origin = origin;
             this.segments = course.segments(origin);
             this.signature = signature(entity.world, course.bounds(origin));
-            csv.add("course,segment,name,expect,result,pass,ticks,meters,max_fall,chunk_loads,yaw_jitter,forbidden_entered,damage,openables_closed,nav_state");
+            csv.add("course,segment,name,expect,result,pass,ticks,meters,max_fall,chunk_loads,yaw_jitter,forbidden_entered,damage,openables_closed,nav_state,npc_size,width,height");
         }
     }
 
@@ -114,6 +117,9 @@ public final class CourseRunner {
             throw new IllegalStateException("course already running");
         }
         run = new Run(entity, baritone, sender, course, origin);
+        if (course.forceChunks()) {
+            forceChunks(run);
+        }
         // M3.4 (A3): en tek T1 = ena datoteka sledi poleg CSV izidov
         PathTrace.INSTANCE.start(java.util.Collections.singletonList(entity));
         next();
@@ -124,7 +130,38 @@ public final class CourseRunner {
             run.baritone.getPathingBehavior().cancelEverything();
             say(run, "tečaj prekinjen");
             PathTrace.INSTANCE.stop();
+            releaseChunks(run);
             run = null;
+        }
+    }
+
+    private static final String[] SET_SIZE = {"func_70105_a", "setSize"};
+    private static java.lang.reflect.Method setSizeMethod;
+
+    /**
+     * M8.9: nastavi velikost entitete kot CNPC ({@code Entity.setSize}, zaščitena; pri zombijih
+     * jo prepiše {@code EntityZombie.setSize}, ki si velikost zapomni).
+     */
+    static void resize(EntityLiving entity, float width, float height) {
+        try {
+            if (setSizeMethod == null) {
+                for (String name : SET_SIZE) {
+                    try {
+                        java.lang.reflect.Method m = net.minecraft.entity.Entity.class.getDeclaredMethod(name, float.class, float.class);
+                        m.setAccessible(true);
+                        setSizeMethod = m;
+                        break;
+                    } catch (NoSuchMethodException ignored) {
+                        // naslednje ime (SRG v izdaji, MCP v razvoju)
+                    }
+                }
+                if (setSizeMethod == null) {
+                    throw new IllegalStateException("Entity.setSize not found");
+                }
+            }
+            setSizeMethod.invoke(entity, width, height);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("cannot resize " + entity, e);
         }
     }
 
@@ -146,6 +183,11 @@ public final class CourseRunner {
         Course.Segment s = r.segments.get(r.index);
         PathTrace.INSTANCE.setTag(r.course.id() + "/" + s.index);
         r.baritone.getPathingBehavior().cancelEverything();
+        if (s.npcSize > 0) {
+            // M8.9 (T3): velikost pred teleportom, da setPosition postavi okvir na sredino
+            EntitySize size = CourseT3.npcSize(s.npcSize);
+            resize(r.entity, size.width, size.height);
+        }
         r.entity.setPositionAndUpdate(s.start.getX() + 0.5, s.start.getY(), s.start.getZ() + 0.5);
         r.entity.rotationYaw = s.startYaw;
         r.entity.renderYawOffset = s.startYaw;
@@ -180,6 +222,7 @@ public final class CourseRunner {
         if (r.entity.isDead) {
             say(r, "entiteta je umrla; tečaj prekinjen");
             PathTrace.INSTANCE.stop();
+            releaseChunks(r);
             run = null;
             return;
         }
@@ -282,9 +325,10 @@ public final class CourseRunner {
             r.passed++;
         }
         r.baritone.getPathingBehavior().cancelEverything();
-        r.csv.add(String.format(Locale.ROOT, "%s,%d,\"%s\",%s,%s,%s,%d,%.2f,%.2f,%d,%d,%s,%.1f,%s,%s",
+        r.csv.add(String.format(Locale.ROOT, "%s,%d,\"%s\",%s,%s,%s,%d,%.2f,%.2f,%d,%d,%s,%.1f,%s,%s,%d,%.2f,%.2f",
                 r.course.id(), s.index, s.name.replace("\"", "\"\""), s.expect, result, pass, r.ticks, r.meters, r.maxFall, loads, jitter,
-                r.enteredForbidden, r.damage, s.openables.isEmpty() ? "" : String.valueOf(closedOk), navState));
+                r.enteredForbidden, r.damage, s.openables.isEmpty() ? "" : String.valueOf(closedOk), navState,
+                s.npcSize, r.entity.width, r.entity.height));
         say(r, String.format(Locale.ROOT, "%s %d/%d %-28s %-8s %s  %d t  %.1f m  padec %.1f  chunki %d  škoda %.1f%s",
                 r.course.id(), s.index, r.segments.size(), s.name, result, pass ? "OK" : "NAPAKA", r.ticks, r.meters, r.maxFall, loads,
                 r.damage, s.openables.isEmpty() ? "" : (closedOk ? "  vrata zaprta" : "  VRATA ODPRTA")));
@@ -311,7 +355,43 @@ public final class CourseRunner {
                 + (changed.isEmpty() ? "" : " npr. " + changed.subList(0, Math.min(3, changed.size()))));
         NpcBaritoneMod.LOG.info("NPCB-COURSE-DONE course={} passed={} total={} blocks_changed={} csv={} trace={} trace_rows={}",
                 r.course.id(), r.passed, r.segments.size(), changed.size(), out.getAbsolutePath(), trace.getAbsolutePath(), traceRows);
+        releaseChunks(r);
         run = null;
+    }
+
+    // ------------------------------------------------------------------ M8.9 chunki
+
+    private static void forceChunks(Run r) {
+        if (!(r.entity.world instanceof WorldServer)) {
+            return;
+        }
+        WorldServer w = (WorldServer) r.entity.world;
+        BlockPos[] b = r.course.bounds(r.origin);
+        int perTicket = Math.max(1, net.minecraftforge.common.ForgeChunkManager.getMaxChunkDepthFor(NpcBaritoneMod.MODID));
+        net.minecraftforge.common.ForgeChunkManager.Ticket ticket = null;
+        int inTicket = 0;
+        for (int cx = (b[0].getX() >> 4) - 1; cx <= (b[1].getX() >> 4) + 1; cx++) {
+            for (int cz = (b[0].getZ() >> 4) - 1; cz <= (b[1].getZ() >> 4) + 1; cz++) {
+                if (ticket == null || inTicket >= perTicket) {
+                    ticket = net.minecraftforge.common.ForgeChunkManager.requestTicket(NpcBaritoneMod.INSTANCE, w, net.minecraftforge.common.ForgeChunkManager.Type.NORMAL);
+                    if (ticket == null) {
+                        NpcBaritoneMod.LOG.warn("{}: ni več Forge chunk vozovnic; tečaj teče brez prisiljenih chunkov", r.course.id());
+                        return;
+                    }
+                    r.tickets.add(ticket);
+                    inTicket = 0;
+                }
+                net.minecraftforge.common.ForgeChunkManager.forceChunk(ticket, new net.minecraft.util.math.ChunkPos(cx, cz));
+                inTicket++;
+            }
+        }
+    }
+
+    private static void releaseChunks(Run r) {
+        for (net.minecraftforge.common.ForgeChunkManager.Ticket t : r.tickets) {
+            net.minecraftforge.common.ForgeChunkManager.releaseTicket(t);
+        }
+        r.tickets.clear();
     }
 
     // ------------------------------------------------------------------ M4.9 podpis blokov

@@ -55,8 +55,8 @@ import java.util.Locale;
  * /npcb perf [reset]
  * /npcb aitest attack [x y z]
  * /npcb stress start &lt;n&gt; [polmer] [sekunde] [rušenje-s] [x y z] | stop
- * /npcb course &lt;t1|t2&gt; build [x y z]
- * /npcb course &lt;t1|t2&gt; run &lt;entity&gt; [x y z]
+ * /npcb course &lt;t1|t2|t3&gt; build [x y z]
+ * /npcb course &lt;t1|t2|t3&gt; run &lt;entity&gt; [x y z]
  * /npcb course stop
  * </pre>
  * Brez koordinat je izhodišče tečaja pošiljateljev položaj.
@@ -252,7 +252,7 @@ public class NpcbCommand extends CommandBase {
                 break;
             }
             case "course": {
-                String usage = "/npcb course <t1|t2> build [x y z] | /npcb course <t1|t2> run <entity> [x y z] | /npcb course stop";
+                String usage = "/npcb course <t1|t2|t3> build [x y z] | /npcb course <t1|t2|t3> run <entity> [x y z] | /npcb course stop";
                 need(args, 2, usage);
                 if ("stop".equalsIgnoreCase(args[1])) {
                     CourseRunner.INSTANCE.abort();
@@ -371,7 +371,7 @@ public class NpcbCommand extends CommandBase {
             return getListOfStringsMatchingLastWord(args, "on", "off", "dump");
         }
         if (args.length == 2 && "course".equalsIgnoreCase(args[0])) {
-            return getListOfStringsMatchingLastWord(args, "t1", "t2", "stop");
+            return getListOfStringsMatchingLastWord(args, "t1", "t2", "t3", "stop");
         }
         if (args.length == 3 && "course".equalsIgnoreCase(args[0])) {
             return getListOfStringsMatchingLastWord(args, "build", "run");
@@ -423,6 +423,8 @@ public class NpcbCommand extends CommandBase {
                 return CourseT1.INSTANCE;
             case "t2":
                 return CourseT2.INSTANCE;
+            case "t3":
+                return CourseT3.INSTANCE;
             default:
                 return null;
         }

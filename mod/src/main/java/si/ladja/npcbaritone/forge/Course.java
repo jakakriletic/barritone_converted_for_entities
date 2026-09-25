@@ -39,6 +39,11 @@ public interface Course {
     /** Najmanjši in največji kot območja, ki ga tečaj postavi (za podpis blokov, M4.9). */
     BlockPos[] bounds(BlockPos origin);
 
+    /** M8.9: ali tekač med tekom prisili nalaganje chunkov v {@link #bounds} (strežnik brez igralca). */
+    default boolean forceChunks() {
+        return false;
+    }
+
     /** Postavi v svet (flag 2: brez posodobitev sosedov). */
     default int build(World w, BlockPos origin) {
         return build(new Sink() {
@@ -70,6 +75,8 @@ public interface Course {
         public final float startYaw;
         /** Vrata/ograjna vrata (spodnja polovica), ki morajo biti po odseku zaprta (M4 A4). */
         public final List<BlockPos> openables;
+        /** M8.9: CNPC velikost (1–10), na katero se entiteta nastavi pred odsekom; 0 = brez spremembe. */
+        public final int npcSize;
 
         public Segment(int index, String name, BlockPos start, BlockPos goal, Expect expect, double maxFall, BlockPos forbiddenColumn, float startYaw) {
             this.index = index;
@@ -81,6 +88,7 @@ public interface Course {
             this.forbiddenColumn = forbiddenColumn;
             this.startYaw = startYaw;
             this.openables = Collections.emptyList();
+            this.npcSize = 0;
         }
 
         private Segment(Segment s, List<BlockPos> openables) {
@@ -93,10 +101,29 @@ public interface Course {
             this.forbiddenColumn = s.forbiddenColumn;
             this.startYaw = s.startYaw;
             this.openables = Collections.unmodifiableList(openables);
+            this.npcSize = s.npcSize;
+        }
+
+        /** M8.9: odsek osnovnega tečaja za dano velikost (T3). */
+        private Segment(Segment s, int index, String name, Expect expect, BlockPos forbiddenColumn, int npcSize) {
+            this.index = index;
+            this.name = name;
+            this.start = s.start;
+            this.goal = s.goal;
+            this.expect = expect;
+            this.maxFall = s.maxFall;
+            this.forbiddenColumn = forbiddenColumn;
+            this.startYaw = s.startYaw;
+            this.openables = s.openables;
+            this.npcSize = npcSize;
         }
 
         public Segment withOpenables(BlockPos... positions) {
             return new Segment(this, Arrays.asList(positions));
+        }
+
+        public Segment forSize(int index, String name, Expect expect, BlockPos forbiddenColumn, int npcSize) {
+            return new Segment(this, index, name, expect, forbiddenColumn, npcSize);
         }
     }
 
