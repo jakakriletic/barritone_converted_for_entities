@@ -4,6 +4,28 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (7) — M5: prvi (hitri) T4 in popravek prihoda
+
+**Preverjeno (Windows, `t4-run.ps1 -Repeats 1 -Seconds 60`, 12:01–12:04):** oba teka brez izjem in brez "Can't keep up"; 2 niti, 0 zavrnjenih iskanj.
+
+| | 50 mobov | 200 mobov |
+|---|---|---|
+| glavna nit µs/tick p50 / p95 / p99 | 962 / **1645** / 3586 | 3201 / **3590** / 8546 |
+| MSPT strežnika p50 / p95 | 1,47 / 2,72 ms | 4,55 / 5,32 ms |
+| iskanj/s, µs p50 / p95 | 6,4, 665 / 67 387 | 24,0, 580 / 67 093 |
+| čakanje v vrsti µs p95 | 60 | 32 |
+| posnetek µs p50 / p95 (chunkov) | 48 / 109 (306) | 20 / 43 (306) |
+
+Ena ponovitev, zato samo smer: **stopnja B (≤ 5 ms pri 200) izpolnjena z rezervo, stopnja A (≤ 2 ms) ne** — ~16 µs na NPC na tick; A2 (posnetek < 100 µs) na meji pri 50 (manj vzorcev, JIT). Iskanja p95 ≈ 67 ms so iskanja do nedosegljivih ciljev (cilji v stebrih/zidovih) — tečejo na iskalnih nitih, glavne niti ne obremenjujejo.
+
+**Napaka, ki jo je T4 razkril: `reached = 0`.** `CustomGoalProcess` opazi prihod (noge v cilju) pred izvajalcem poti, izgubi nadzor in prekliče pot — namesto `AT_GOAL` pride `CANCELED`, ki je v `NavStatus` pobrisal stanje (enako `CANCELED` po `CALC_FAILED`). Zato tudi sledi T1/T2 nikoli niso pokazale ARRIVED. Popravek `NavStatus.Flags`: zapomni si zadnji cilj, ob `CANCELED` preveri noge, ponastavi samo ob `CALC_STARTED`; + števec neuspelih iskanj. `t1-run.ps1` zdaj zahteva ARRIVED v sledi, `t4-run.ps1` vsaj en dosežen cilj na tek. JUnit 77/77.
+
+**Opažanje:** šumniki v logu dedicated strežnika so pokvarjeni (kodna stran Windows konzole) — samo kozmetika, CSV so UTF-8.
+
+**Naslednji korak:** `.\dev.ps1 build --offline; .\t1-run.ps1` (ARRIVED v sledi), nato polni `.\t4-run.ps1` (3 × 50/200, 120 s) za A1/A2 z mediano in razponom.
+
+---
+
 ## 2026-09-25 (6) — M5: zmogljivost (veja `m5-zmogljivost` iz `m4-interakcije`)
 
 **Odločitev:** D-027 — meja A1 v dveh stopnjah: 5 ms/tick p95 pri 200 mobih zdaj (drug mod z manj entitetami), 2 ms ostane odprta kot pogoj za CustomNPC (M7). Merge v `main` počaka na ročne preverbe v klientu.
