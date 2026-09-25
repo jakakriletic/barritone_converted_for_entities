@@ -4,6 +4,18 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (13) — M6: drugi aitest — okolje in "hoja na mestu"
+
+**Preverjeno (18:53):** T1 10/10. `aitest attack` s kontrolo: **ne husk z Baritonom ne kontrolni husk brez Baritona nista nikoli dobila tarče** (`target=-` 30 s) → problem je okolje testa. Arena pri z=150 je izven spawn območja (128 blokov), ki ostane naloženo na strežniku brez igralca; vaščan se je morda razložil ali sploh ni bil spawnan (`spawnEntity` tega ne javi).
+
+**Druga ugotovitev (prava napaka navigatorja):** husk z Baritonom je 9 s izvajal `EntityAIWanderAvoidWater` z `noPath()=false`, premaknil pa se je za 0,1 bloka; kontrola je v istem času normalno tavala.
+
+**Ukrep:** arena pri `-60 4 40` (znotraj spawn območja) + Forge vozovnice; sporočilo ob začetku pove, ali sta vaščan in husk spawnana; diagnostika vsako sekundo kaže stanje navigacije, cilj, pot, `inControl`, move helper; sled husk-a v `ai-attack-<čas>-trace.csv`.
+
+**Naslednji korak:** `.\dev.ps1 build --offline; .\t1-run.ps1`.
+
+---
+
 ## 2026-09-25 (12) — M6: prvi aitest spodletel (AI napada ni začel)
 
 **Preverjeno (17:42):** T1 10/10, `blocks_changed=0`, hitrosti nespremenjene — adapter ne pokvari tečaja. **`aitest attack`: TIMEOUT v 30 s, 0 klicev navigatorja** — husk z vanilla AI sploh ni začel napada (brez `setPath`/`tryMoveToEntityLiving`), zato navigator ni dobil ukaza. Vzrok iz loga ni razviden (tarča? `EntityAIAttackMelee.shouldExecute`? okolje brez igralca?).
