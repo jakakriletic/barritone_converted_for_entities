@@ -4,6 +4,46 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (16) — M8: velikosti entitet (veja `m8-velikosti`)
+
+**Namen seje:** M8 do točke, ko ostaneta build in tek T3 na Windowsu.
+
+**Narejeno (oblak, 106/106 JUnit; prej 87)**
+
+| Commit | Kaj |
+|---|---|
+| `2ef4af5` | M8.1–M8.7: `EntitySize`, velikost v `CalculationContext` in premikih; splošna (size-aware) veja za Traverse, Ascend, Descend/Fall, Diagonal, Pillar, Downward, Parkour; bližnjice sprinta v `PathExecutor` samo za 1×2; `SizeAwareEquivalenceTest` |
+| `57bdf5a` | M8.8: `GoldenSizeTest` — G1–G14 za 16 velikosti (0,3–2,0 × 0,9–3,6) |
+| `227c3e0` | `cloud-compile.sh`: `NPCB_JAVA_OPTS` |
+| `4af1781` | M8.9: tečaj T3 (`CourseT3`, `/npcb course t3`, velikost pred odsekom, prisiljeni chunki, CSV `npc_size`), `CourseT3PathTest`, `t3-run.ps1` |
+| `ce280ce` | M8.10: navigator s stikalom `movement.largeEntities` (privzeto false = D-019) |
+
+**Odločitev D-028** (zamenja D-019): okvir blokov na sredini bloka nog (`⌈višina⌉` blokov,
+`⌈(širina−1)/2⌉` stolpcev na stran); standardna velikost ostane na upstream veji; široke
+entitete brez diagonal, lestev in parkourja; spust samo za širino < 2 (stolpci pred ciljem,
+ker kolizija entiteto porine naprej — tega Automatone ni rešil); meje navigatorja 3 × 4.
+
+**Kako je preverjeno (headless):**
+- enakost vej za 0,6 × 1,8: 6 naključnih terenov × 2 profila (NPC in z rušenjem/parkourjem)
+  × vsi premiki iz vsakega položaja; mutacije (prednja ploskev, strop, vrh spusta, vogal
+  diagonale) test ujame (5 od 6; zastavica padajočih blokov na vrhu diagonale ne — redek primer);
+- `GoldenSizeTest` je najprej padel na G9 (široka entiteta, zagnana v hodniku 1×2, je "ušla"
+  skozi steno ob sebi) → ciljni stolpec se preveri tudi pri Traverse/Ascend;
+- T3 headless: 100 odsekov, 9 pričakovanih neuspehov z razlogom (tabela v README M8), size 1
+  sme skozi režo 1,5; size 10 obide zidove čez sosednjo progo.
+
+**Prevedeno, čaka na zagon:** `.\mod\gradlew.bat --stop; .\dev.ps1 build --offline; .\t3-run.ps1`
+(M8 A1–A2; do ~1 h). Regresija standardne velikosti: `.\t1-run.ps1`, `.\t2-run.ps1`
+(pričakovano nespremenjeno — upstream veja).
+
+**Tveganja za tek v igri:** `Entity.setSize` prek refleksije na husku (zombi si velikost
+zapomni); široka entiteta ob spustu visi na robu, dokler je kolizija ne porine naprej;
+izvajalec poti cilja sredino bloka — pri širini 1,2 v prehodu širine 3 brez rezerve.
+
+**Naslednji korak:** `.\mod\gradlew.bat --stop; .\dev.ps1 build --offline; .\t3-run.ps1`.
+
+---
+
 ## 2026-09-25 (15) — M6: peti aitest; A1 na ročno preverbo, začetek M8
 
 **Preverjeno (20:26):** T1 10/10 (`docs/meritve/m2/t1-20260925-202615.csv`, hitrosti `speed-20260925-202719.csv`).

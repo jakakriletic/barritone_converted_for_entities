@@ -191,6 +191,6 @@ false in vse ostane vanilla (D-005).
 
 - igralci (fake player ali pravi) — to je Baritone sam
 - leteči in plavajoči NPC-ji (`movementType` 1, 2) — ostanejo vanilla/CNPC
-- entitete večje od 1×2 do M8 (D-019)
+- entitete večje od 3 stolpcev × 4 blokov; od 1×2 do te meje samo s stikalom `movement.largeEntities` (D-028, prej D-019)
 - rušenje, postavljanje, inventar do M10 (D-015)
 - hoja po nenaloženem svetu (D-014)

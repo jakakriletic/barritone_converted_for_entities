@@ -13,8 +13,8 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 | | |
 |---|---|
 | Datum zadnje posodobitve | 2026-09-25 |
-| Trenutna faza | **M6 — navigator in API** (veja `m6-navigator`): PathNavigate adapter (D-018), javni API 1 + `apiJar`, 87/87 JUnit; T1 zelen z adapterjem; čaka aitest (vanilla napad prek Baritona, A1/A4). M5 zaključen za stopnjo B |
-| Naslednji korak | `.\mod\gradlew.bat --stop; .\dev.ps1 build --offline; .\t1-run.ps1`; API: [`milestones/M6-navigator-in-api/README.md`](milestones/M6-navigator-in-api/README.md) |
+| Trenutna faza | **M8 — velikosti entitet** (veja `m8-velikosti`): size-aware premiki (D-028 zamenja D-019), golden testi za 16 velikosti, tečaj T3, 106/106 JUnit; čaka build in T3 na Windowsu. M6: A1–A3 ročno v klientu; M7 čaka stopnjo A (D-027) |
+| Naslednji korak | `.\mod\gradlew.bat --stop; .\dev.ps1 build --offline; .\t3-run.ps1`; podrobno: [`milestones/M8-velikosti-entitet/README.md`](milestones/M8-velikosti-entitet/README.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |
@@ -41,7 +41,7 @@ morajo priti daleč, čez zahteven teren ali zanesljivo (D-005).
 | **README.md** (ta datoteka) | pregled, status, kazalo | vedno prvo |
 | [`docs/04-STANJE.md`](docs/04-STANJE.md) | **živ dnevnik** — kaj je narejeno, kaj teče, kaj je blokirano | vedno drugo |
 | [`docs/01-ARHITEKTURA.md`](docs/01-ARHITEKTURA.md) | zgradba knjižnice, tok enega ticka, meje modulov | preden pišeš kodo |
-| [`docs/02-ODLOCITVE.md`](docs/02-ODLOCITVE.md) | **27 težkih vprašanj, vsako z odločitvijo, dokazom in preverbo** | preden karkoli spremeniš |
+| [`docs/02-ODLOCITVE.md`](docs/02-ODLOCITVE.md) | **28 težkih vprašanj, vsako z odločitvijo, dokazom in preverbo** | preden karkoli spremeniš |
 | [`docs/03-FAZE.md`](docs/03-FAZE.md) | milestoni M0–M10, odvisnosti, izhodni kriteriji | ko načrtuješ sejo |
 | [`docs/05-SEJA-PROTOKOL.md`](docs/05-SEJA-PROTOKOL.md) | kako seja začne, dela, preverja in zaključi | vedno, tudi na koncu seje |
 | [`docs/06-RAZISKAVA.md`](docs/06-RAZISKAVA.md) | izmerjena dejstva: prevod, velikosti, Automatone časovnica, CNPC API | ko dvomiš v odločitev |
