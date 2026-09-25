@@ -40,15 +40,28 @@ si.ladja.npcbaritone
 │   ├── BaritoneJumpHelper      extends EntityJumpHelper
 │   ├── Attach                  refleksija za tuje entitete (D-008)
 │   ├── SearchExecutor          omejen bazen, vrsta, deljenje (D-017)
-│   ├── Telemetry               števci, CSV (M3/M5)
-│   ├── NpcbCommand             /npcb (M3)
-│   └── NpcBaritoneMod          @Mod, config, NetworkCheckHandler (D-024)
+│   ├── Telemetry               števci, speedtest (M2/M5)
+│   ├── NavStatus               stanje IDLE/SEARCHING/MOVING/ARRIVED/FAILED iz PathEvent (M3)
+│   ├── PathTrace               sled na tick v CSV (M3.4)
+│   ├── DebugSync               pošiljanje poti OP-jem z modom, 4 Hz (M3.2)
+│   ├── net/PathSyncMessage     paket poti (format 1)
+│   ├── CommonProxy             strežniški @SidedProxy
+│   ├── NpcbCommand             /npcb (M2, M3.1)
+│   └── NpcBaritoneMod          @Mod, config, kanal, NetworkCheckHandler (D-024)
 └── client/                 samo klient, neobvezno (M3): izris poti iz paketa
+    ├── ClientProxy             prejem paketa na glavni niti
+    ├── ClientPaths             zadnja pot po ID entitete, poteče po 3 s
+    └── PathRenderer            RenderWorldLastEvent: črte + cilj skozi bloke
 ```
 
 Stanje po M1: Baritonovi razredi so ohranili svoje podpakete (`core/utils/BlockStateInterface`,
 `core/utils/InputOverrideHandler`, `core/api/...`); nov je `core/world/ChunkSnapshot`. BSI nosi
 profil nastavitev instance (`bsi.settings`, D-016), `IEntityContext.baritone()` vodi do instance.
+
+Stanje po M3: `client/` doseže samo `@SidedProxy` z nizom imena razreda; lint test preveri,
+da ga izven `client/` nihče ne uvozi (dedicated strežnik ga nikoli ne naloži).
+Paket poti gre samo igralcem, ki imajo mod po FML seznamu iz rokovanja, zato vanilla klient
+nikoli ne dobi neznanega kanala (D-024).
 
 Pravilo meje: `core` ne uvaža `forge` in nikoli `net.minecraft.client`. `api` ne uvaža
 `core` razen ciljev. Test v M1 preveri uvoze (ArchUnit-lite: skeniranje izvornih
@@ -138,7 +151,8 @@ IDLE ──tryMoveTo──► SEARCHING ──pot najdena──► MOVING ──
 | `profile.default.*` | NPC vrednosti iz §8 raziskave | — | profil (D-016) |
 | `movement.speedMode` | `player` | `player`/`own` | D-010 |
 | `movement.maxTurnDegrees` | 30 | 5–180 | D-011 |
-| `debug.syncPathsToOps` | false | — | M3 |
+| `profile.named` | `walk`, `parkour`, `cautious` | seznam `ime: nastavitev=vrednost, …` | poimenovani profili (D-016, M3.1); `default` vedno obstaja |
+| `debug.syncPathsToOps` | false | — | M3: poti vsem OP-jem z modom; sicer samo z `/npcb debug on` |
 
 Nesmiselne vrednosti se obrežejo (vzorec `FleetCommandLimits` iz `ladja_mod`).
 

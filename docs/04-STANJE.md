@@ -4,6 +4,36 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-25 (2) — M3: vidnost (veja `m3-vidnost`, iz `m2-noge`)
+
+**Namen seje:** M2 čaka samo ročni preverbi v klientu (A6, D-008), zato M3 do točke, ko ostanejo build na Windowsu in preverbe v igri.
+
+**Narejeno (oblak, 61/61 JUnit; prej 43)**
+
+| # | Kaj |
+|---|---|
+| jedro | `PathingBehavior`: `lastSearchMicros()`, `lastSearchResult()`, `searchesStarted()` (edina sprememba v `core`) |
+| M3.1 | `/npcb` razširjen: `attach … [profil]`, `goto` na entiteto, `status [e]`, `profile`, `debug`, `trace`; poimenovani profili v configu (`profile.named`, D-016) |
+| M3.2 | `DebugSync` + `net/PathSyncMessage`: kanal `npcbaritone`, prejemniki = OP 2 + mod na klientu + `debug on`/`syncPathsToOps`, 128 blokov, 4 Hz |
+| M3.3 | `client/`: `ClientProxy`, `ClientPaths`, `PathRenderer` (`@SidedProxy`) |
+| M3.4 | `NavStatus` (stanja in razlogi iz ARHITEKTURE §5), `PathTrace` (17 stolpcev), T1 zapiše `t1-<čas>-trace.csv` |
+| testi | `M3VisibilityTest` (16), `ClientPathsTest` (1), lint "nihče izven `client/` ne uvaža `client`"; mutacijske preverbe: paket, keepalive, lint, profil — vse štiri ujete |
+| skript | `t1-run.ps1`: filter izidov izključi `*-trace.csv` (sicer bi pobral sled), preverbi M3 A3 in A4, sled v `docs/meritve/m3/` |
+
+Odločitve pri izvedbi (brez spremembe D-xxx):
+- **Prejemnik ima mod** se ugotovi iz FML seznama modov (`NetworkDispatcher.getModList()`), ne s "hello" paketom — vanilla klient tako nikoli ne dobi paketa (D-024).
+- **Sled je v pomnilniku** (največ 500 000 vrstic, presežek se šteje) in se zapiše ob `dump` ali koncu tečaja; `course t1 run` zamenja ročno začeto sled.
+- **Stanje `NavStatus`** je predhodnik javnega `NavState` (M6); M6 ga premakne v `api`.
+- **Profil** se ob menjavi uporabi s `softCancelIfSafe` — cilj ostane, pot se izračuna znova.
+
+**Prevedeno, čaka na zagon (Windows):** `.\dev.ps1 build --offline`, `.\t1-run.ps1` (M2 A1–A5 + M3 A3, A4). Izris v klientu (A1) in vanilla klient (A2) ročno po `milestones/M3-vidnost/README.md`.
+
+**Še odprto iz M2:** A6/M2.11 in D-008 v klientu (nespremenjeno).
+
+**Naslednji korak:** uporabnik: `git checkout m3-vidnost; .\dev.ps1 build --offline; .\t1-run.ps1`, nato v klientu preverbe 2–4 iz M3 README (in obe M2 preverbi, ker je klient že odprt).
+
+---
+
 ## 2026-09-25 — M2: Windows build in dedicated tečaj
 
 **Namen seje:** na veji `m2-noge` pognati `dev.ps1 build --offline` in `t1-run.ps1`, pregledati merila A1–A5/A7 ter popraviti konkretne napake.
