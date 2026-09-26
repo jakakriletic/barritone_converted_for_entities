@@ -136,33 +136,68 @@ public final class CourseRunner {
     }
 
     private static final String[] SET_SIZE = {"func_70105_a", "setSize"};
+    private static final String[] ZOMBIE_MULTIPLY_SIZE = {"func_146069_a", "multiplySize"};
     private static java.lang.reflect.Method setSizeMethod;
+    private static java.lang.reflect.Method zombieMultiplySize;
 
     /**
-     * M8.9: nastavi velikost entitete kot CNPC ({@code Entity.setSize}, zaščitena; pri zombijih
-     * jo prepiše {@code EntityZombie.setSize}, ki si velikost zapomni).
+     * M8.9: nastavi velikost entitete kot CNPC ({@code Entity.setSize}, zaščitena).
+     * {@code EntityZombie.setSize} jo prepiše: po prvem klicu (konstruktor) si velikost samo
+     * zapomni, uveljavi pa jo šele {@code multiplySize(1)} — brez tega je prvi tek T3
+     * (2026-09-26) vse velikosti prevozil s huskom 0,60 × 1,95.
      */
     static void resize(EntityLiving entity, float width, float height) {
         try {
             if (setSizeMethod == null) {
-                for (String name : SET_SIZE) {
-                    try {
-                        java.lang.reflect.Method m = net.minecraft.entity.Entity.class.getDeclaredMethod(name, float.class, float.class);
-                        m.setAccessible(true);
-                        setSizeMethod = m;
-                        break;
-                    } catch (NoSuchMethodException ignored) {
-                        // naslednje ime (SRG v izdaji, MCP v razvoju)
-                    }
-                }
-                if (setSizeMethod == null) {
-                    throw new IllegalStateException("Entity.setSize not found");
-                }
+                setSizeMethod = findMethod(net.minecraft.entity.Entity.class, SET_SIZE, float.class, float.class);
             }
             setSizeMethod.invoke(entity, width, height);
+            if (entity instanceof net.minecraft.entity.monster.EntityZombie
+                    && (entity.width != width || entity.height != height)) {
+                if (zombieMultiplySize == null) {
+                    zombieMultiplySize = findMethod(net.minecraft.entity.monster.EntityZombie.class, ZOMBIE_MULTIPLY_SIZE, float.class);
+                }
+                zombieMultiplySize.invoke(entity, 1.0F);
+            }
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("cannot resize " + entity, e);
         }
+        if (Math.abs(entity.width - width) > 1e-4 || Math.abs(entity.height - height) > 1e-4) {
+            throw new IllegalStateException("cannot resize " + entity + ": " + width + " x " + height
+                    + " requested, " + entity.width + " x " + entity.height + " applied");
+        }
+    }
+
+    /**
+     * Metoda po SRG (izdaja) ali MCP (razvoj) imenu; če ni nobenega, edina deklarirana metoda
+     * s temi parametri (EntityZombie ima eno samo {@code (float)}), da napačno SRG ime ne
+     * zlomi izdaje.
+     */
+    private static java.lang.reflect.Method findMethod(Class<?> owner, String[] names, Class<?>... params)
+            throws NoSuchMethodException {
+        for (String name : names) {
+            try {
+                java.lang.reflect.Method m = owner.getDeclaredMethod(name, params);
+                m.setAccessible(true);
+                return m;
+            } catch (NoSuchMethodException ignored) {
+                // naslednje ime (SRG v izdaji, MCP v razvoju)
+            }
+        }
+        java.lang.reflect.Method only = null;
+        for (java.lang.reflect.Method m : owner.getDeclaredMethods()) {
+            if (m.getReturnType() == void.class && java.util.Arrays.equals(m.getParameterTypes(), params)) {
+                if (only != null) {
+                    throw new NoSuchMethodException(owner.getName() + "." + names[names.length - 1] + " is ambiguous");
+                }
+                only = m;
+            }
+        }
+        if (only == null) {
+            throw new NoSuchMethodException(owner.getName() + "." + names[names.length - 1]);
+        }
+        only.setAccessible(true);
+        return only;
     }
 
     /** Dedicated tečaj brez igralca: vanilla sicer preskoči entiteto, če okolica ni naložena. */
