@@ -39,9 +39,15 @@ public interface Course {
     /** Najmanjši in največji kot območja, ki ga tečaj postavi (za podpis blokov, M4.9). */
     BlockPos[] bounds(BlockPos origin);
 
-    /** M8.9: ali tekač med tekom prisili nalaganje chunkov v {@link #bounds} (strežnik brez igralca). */
+    /**
+     * M8.9: ali tekač med tekom prisili nalaganje chunkov v {@link #bounds} (strežnik brez igralca).
+     * Od 2026-09-27 za vse tečaje: na dedicated strežniku brez igralca se chunki izven spawn
+     * območja med tekom razložijo; BSI razloženi chunk bere kot zrak, zato je T2/8 in T2/9
+     * (2026-09-27 00:11) izvajalec prekinil ("future movement impossible") in novo iskanje ni
+     * našlo cilja — odvisno od časa, 2026-09-25 je isti tek uspel.
+     */
     default boolean forceChunks() {
-        return false;
+        return true;
     }
 
     /** Postavi v svet (flag 2: brez posodobitev sosedov). */
