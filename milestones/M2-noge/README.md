@@ -51,7 +51,7 @@ Vrata, voda kot cilj testiranja (samo kot del T1, če je), vanilla AI taski (M6)
 | M2.2–M2.8 | Windows build, JUnit in dedicated T1 zeleni; D-008 preverjen v klientu z `/npcb selftest` (2026-09-26: zombi brez `puppet` udari igralca po 90 tickih) |
 | M2.9 | `CourseT1` + `CourseRunner` + `t1-run.ps1`; 3× dedicated 10/10 pričakovanih izidov |
 | M2.10 | števec v `Telemetry`, stolpec `chunk_loads` v CSV |
-| M2.11 | čaka običajen Forge klient: uradni obfuskirani Baritone jar sesuje ForgeGradle `runClient` pri `MixinStateImplementation` |
+| M2.11 | **A6 preverjen** (2026-09-26): Forge 14.23.5.2859 (CurseForge) s pravim Baritone 1.2.19 + naš izdani jar, `/npcb selftest` 6/6, brez `LinkageError` (v dev `runClient` Baritonov obfuskirani jar ne deluje — `MixinStateImplementation`) |
 | M2.12 | `t1-run.ps1` trikrat exit 0 na dedicated strežniku (A1–A5, A7) |
 
 ### Ročni preverbi v klientu

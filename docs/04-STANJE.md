@@ -30,11 +30,20 @@ preusmeri na našega (po vrednosti, ne po imenu), ob `detach` nazaj. `AttachRewi
 | M6 A3 | ukročen volk 11 blokov za zidom pride peš | OK — 51 tickov, 1 iskanje, 0 teleportov |
 | M6 A2 | vaščan ponoči skozi vrata v kolibo | OK — 146 tickov; kontrola 130 |
 
-**Še ročno (potrebujeta launcher):** M2 A6 (pravi Baritone 1.2.19 + naš izdani jar v Forge
-profilu — hkrati preveri SRG imena izdanega jarja, R-14) in M3 A2 (vanilla klient na
-dedicated strežnik z modom).
+**M2 A6 preverjen (16:17–16:19, CurseForge instanca, Forge 14.23.5.2859):** v `mods` pravi
+`baritone-standalone-forge-1.2.19.jar` (Mixin 0.7.11 naložen) + naš **izdani (reobf) jar**
+(`launcher-test.ps1`), `/npcb selftest` **6/6**, brez `LinkageError` in brez izjem; edina
+napaka v logu je Baritonova lastna (`mixins.baritone.json does not specify "minVersion"`).
+Hkrati potrjena SRG imena izdanega jarja (R-14: `Attach` polja, preusmeritev taskov, izris).
+Zombi z Baritonom je udaril po 216 tickih (tarčo je izbral šele pri ~140); kontrolni zombi v
+45 s tarče ni izbral (vanilla naključje/vidnost, ne naš adapter). Meritve:
+`docs/meritve/klient/selftest-forge-20260926-161900.*`.
 
-**Naslednji korak:** M2 A6 in M3 A2 v launcherju; nato stopnja A zmogljivosti (pogoj za M7).
+**Še ročno:** M3 A2 (vanilla klient na dedicated strežnik z modom): `.\launcher-test.ps1 -Server`
+— prvi poskus se ni povezal, ker strežnik ni bil zagnan (ni `m3-vanilla`, ni "Done").
+
+**Naslednji korak:** M3 A2 (`.\launcher-test.ps1 -Server`, počakaj na "Done", vanilla 1.12.2 →
+`localhost`); nato stopnja A zmogljivosti (pogoj za M7).
 
 ---
 

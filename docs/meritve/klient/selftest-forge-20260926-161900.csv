@@ -1,0 +1,7 @@
+step,name,result,ticks,detail
+1,"M3 A1 izris",OK,2,"pot narisana po 2 tickih (5 sličic, poti v sličici 1)"
+2,"M3 ukazi",OK,47,"4/4 ukazi OK, husk pri tebi po 47 tickih (profil walk)"
+3,"M3 A1 debug off",OK,78,"črte izginile po 2898 ms"
+4,"D-008 + M6 A1 zombi",OK,417,"Baritone: udarec po 216 tickih, klicev navigatorja 75, iskanj 1; kontrola: NI udarca"
+5,"M6 A3 volk",OK,50,"pri tebi po 50 tickih; klicev navigatorja 5, iskanj 1, teleportov 0"
+6,"M6 A2 vaščan",OK,284,"vas zaznana po 2 tickih; Baritone: v kolibi po 113 tickih (klicev navigatorja 1, iskanj 1); kontrola: v kolibi po 284 tickih"
