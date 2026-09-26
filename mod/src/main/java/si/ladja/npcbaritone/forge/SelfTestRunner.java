@@ -37,6 +37,7 @@ import net.minecraft.world.GameType;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import si.ladja.npcbaritone.core.api.pathing.goals.GoalBlock;
 
@@ -67,9 +68,28 @@ public final class SelfTestRunner {
 
     public static final SelfTestRunner INSTANCE = new SelfTestRunner();
 
+    /**
+     * M3 A2 (vanilla klient na dedicated): z okoljsko spremenljivko {@code NPCB_SELFTEST_ON_JOIN=1}
+     * se test začne sam 5 s po prijavi prvega igralca (brez OP), strežnik se po koncu ustavi.
+     */
+    static final boolean ON_JOIN = "1".equals(System.getenv("NPCB_SELFTEST_ON_JOIN"));
+
     private Run run;
+    private EntityPlayerMP pending;
+    private int pendingTicks;
+    private int shutdownTicks = -1;
 
     private SelfTestRunner() {
+    }
+
+    @SubscribeEvent
+    public void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (ON_JOIN && run == null && pending == null && shutdownTicks < 0 && event.player instanceof EntityPlayerMP) {
+            pending = (EntityPlayerMP) event.player;
+            pendingTicks = 100;
+            pending.sendMessage(new TextComponentString("[npcb] " + TextFormatting.YELLOW
+                    + "selftest se začne čez 5 s — stoj pri miru, strežnik se po koncu ustavi"));
+        }
     }
 
     public boolean isRunning() {
@@ -163,6 +183,9 @@ public final class SelfTestRunner {
         r.steps.add(new VillagerHome());
         run = r;
         say(r, TextFormatting.YELLOW + "selftest: " + r.steps.size() + " korakov, ~3 min. Stoj pri miru, ne odpiraj menija (ESC ustavi strežnik).");
+        // M3 A2: vanilla klient nima kanala npcbaritone (D-024) — zapis, s katerim klientom je test tekel
+        NpcBaritoneMod.LOG.info("NPCB-SELFTEST-CLIENT player={} mod_on_client={} dedicated={}", player.getName(),
+                DebugSync.hasMod(player), r.server.isDedicatedServer());
         next(r);
     }
 
@@ -193,8 +216,25 @@ public final class SelfTestRunner {
 
     @SubscribeEvent
     public void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        if (pending != null && --pendingTicks <= 0) {
+            EntityPlayerMP p = pending;
+            pending = null;
+            if (!p.hasDisconnected()) {
+                start(p);
+            }
+        }
+        if (shutdownTicks > 0 && --shutdownTicks == 0) {
+            MinecraftServer server = net.minecraftforge.fml.common.FMLCommonHandler.instance().getMinecraftServerInstance();
+            if (server != null) {
+                NpcBaritoneMod.LOG.info("NPCB-SELFTEST-SHUTDOWN");
+                server.initiateShutdown();
+            }
+        }
         Run r = run;
-        if (event.phase != TickEvent.Phase.END || r == null) {
+        if (r == null) {
             return;
         }
         if (r.player.isDead || r.player.hasDisconnected()) {
@@ -300,7 +340,8 @@ public final class SelfTestRunner {
             goal = new BlockPos(r.player);
             for (String cmd : new String[]{"npcb status " + id, "npcb profile list", "npcb profile " + id + " walk",
                     "npcb goto " + id + " " + r.player.getName()}) {
-                if (r.server.getCommandManager().executeCommand(r.player, cmd) <= 0) {
+                net.minecraft.command.ICommandSender as = r.player.canUseCommand(2, "npcb") ? r.player : r.server;
+                if (r.server.getCommandManager().executeCommand(as, cmd) <= 0) {
                     failed.add(cmd.split(" ")[1]);
                 }
             }
@@ -593,6 +634,10 @@ public final class SelfTestRunner {
         say(r, (r.passed == r.steps.size() ? TextFormatting.GREEN : TextFormatting.RED) + "selftest končan: " + r.passed + "/"
                 + r.steps.size() + " OK" + TextFormatting.RESET + " — " + out.getPath());
         NpcBaritoneMod.LOG.info("NPCB-SELFTEST-DONE passed={} total={} csv={}", r.passed, r.steps.size(), out.getAbsolutePath());
+        if (ON_JOIN && r.server.isDedicatedServer()) {
+            shutdownTicks = 200; // igralec še 10 s vidi izid
+            say(r, "strežnik se ustavi čez 10 s");
+        }
     }
 
     /** Arena okoli igralca: x -16..30, z -10..24, tla y-1, zrak do y+6. */
