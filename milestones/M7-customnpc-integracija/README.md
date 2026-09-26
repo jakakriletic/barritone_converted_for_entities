@@ -48,8 +48,8 @@ Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 
 | # | Stanje |
 |---|---|
-| pogoj | **izpolnjen**: CNPC D-018 (`customNPC_rework` `30120e5`), stopnja A zmogljivosti (1,64 ms) |
-| M7.1 | **narejeno**: `customNPC_rework/docs/07-BARITONE-OZADJE.md` — 105 klicev, ukrepi U1–U6; adapter popravljen za `getPath()` med iskanjem (`2ee0df2`) |
+| pogoj | **izpolnjen**: CNPC D-022 (`customNPC_rework` `0cd2fa8`), stopnja A zmogljivosti (1,64 ms) |
+| M7.1 | **narejeno**: `customNPC_rework/docs/07-BARITONE-OZADJE.md` — 105 klicev, ukrepi U1–U7 (U7 formacije); adapter popravljen za `getPath()` med iskanjem (`2ee0df2`) |
 | M7.2–M7.3 | čakata API 2 knjižnice (U2 ponovna namestitev, U6 hitrost, U3/U4 vrata na instanco) |
-| M7.4 | čaka CNPC M3.1 (prenos `EntityNPCInterface` v `dev/src/patch`) |
+| M7.4 | predpogoj izpolnjen (CNPC M3.1 na `origin`); čaka API 2 |
 | M7.5–M7.8 | niso začeti |
