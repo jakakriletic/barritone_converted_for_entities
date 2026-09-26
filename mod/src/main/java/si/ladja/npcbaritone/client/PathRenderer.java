@@ -60,8 +60,16 @@ public final class PathRenderer {
         this.paths = paths;
     }
 
+    /** Selftest (M3 A1): sličice, v katerih je bila narisana vsaj ena pot. */
+    static volatile long framesWithPaths;
+    /** Selftest: število poti v zadnji sličici in čas te sličice (ms, System.currentTimeMillis). */
+    static volatile int lastFramePaths;
+    static volatile long lastFrameMs;
+
     @SubscribeEvent
     public void onRenderWorldLast(RenderWorldLastEvent event) {
+        lastFrameMs = System.currentTimeMillis();
+        lastFramePaths = 0;
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.world == null || paths.size() == 0) {
             return;
@@ -74,6 +82,8 @@ public final class PathRenderer {
         if (view == null) {
             return;
         }
+        lastFramePaths = live.size();
+        framesWithPaths++;
         float pt = event.getPartialTicks();
         double vx = view.lastTickPosX + (view.posX - view.lastTickPosX) * pt;
         double vy = view.lastTickPosY + (view.posY - view.lastTickPosY) * pt;

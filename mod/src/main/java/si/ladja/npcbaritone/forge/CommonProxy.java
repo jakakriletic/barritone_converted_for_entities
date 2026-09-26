@@ -32,4 +32,12 @@ public class CommonProxy {
     /** Klic iz omrežne niti; privzeto nič. */
     public void onPathSync(PathSyncMessage message) {
     }
+
+    /**
+     * Selftest (M3 A1): {sličic z vsaj eno potjo, poti v zadnji sličici, čas zadnje sličice ms}
+     * iz izrisa v istem procesu; {@code null} brez klienta (dedicated strežnik).
+     */
+    public long[] renderedPaths() {
+        return null;
+    }
 }

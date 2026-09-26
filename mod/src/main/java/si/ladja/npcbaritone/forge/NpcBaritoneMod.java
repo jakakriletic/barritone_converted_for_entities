@@ -80,6 +80,7 @@ public final class NpcBaritoneMod {
         MinecraftForge.EVENT_BUS.register(PerfMeter.INSTANCE);
         MinecraftForge.EVENT_BUS.register(StressRunner.INSTANCE);
         MinecraftForge.EVENT_BUS.register(AiTestRunner.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(SelfTestRunner.INSTANCE);
         si.ladja.npcbaritone.api.NpcBaritone.setProvider(ApiProvider.INSTANCE); // M6.7
         DebugSync.INSTANCE.register();
         proxy.preInit();
@@ -100,6 +101,7 @@ public final class NpcBaritoneMod {
     public void serverStopping(FMLServerStoppingEvent event) {
         StressRunner.INSTANCE.abort("strežnik se ustavlja");
         CourseRunner.INSTANCE.abort();
+        SelfTestRunner.INSTANCE.abort("strežnik se ustavlja");
         int dropped = SearchExecutor.stop();
         LOG.info("{} search pool stopped ({} queued searches dropped)", MODID, dropped);
     }

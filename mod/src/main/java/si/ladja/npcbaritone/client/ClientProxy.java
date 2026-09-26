@@ -44,6 +44,11 @@ public class ClientProxy extends CommonProxy {
         Minecraft.getMinecraft().addScheduledTask(() -> PATHS.accept(message, Minecraft.getSystemTime()));
     }
 
+    @Override
+    public long[] renderedPaths() {
+        return new long[]{PathRenderer.framesWithPaths, PathRenderer.lastFramePaths, PathRenderer.lastFrameMs};
+    }
+
     @SubscribeEvent
     public void onDisconnect(FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
         Minecraft.getMinecraft().addScheduledTask(PATHS::clear);

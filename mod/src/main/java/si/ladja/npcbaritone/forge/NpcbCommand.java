@@ -64,7 +64,7 @@ import java.util.Locale;
 public class NpcbCommand extends CommandBase {
 
     private static final List<String> SUB = Arrays.asList("attach", "detach", "goto", "stop", "status", "profile", "debug", "trace",
-            "speedtest", "chunks", "course", "perf", "stress", "aitest");
+            "speedtest", "chunks", "course", "perf", "stress", "aitest", "selftest");
 
     @Override
     public String getName() {
@@ -78,7 +78,7 @@ public class NpcbCommand extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/npcb <attach|detach|goto|stop|status|profile|debug|trace|speedtest|chunks|course|perf|stress> ...";
+        return "/npcb <attach|detach|goto|stop|status|profile|debug|trace|speedtest|chunks|course|perf|stress|aitest|selftest> ...";
     }
 
     @Override
@@ -289,6 +289,19 @@ public class NpcbCommand extends CommandBase {
                 } else {
                     throw new WrongUsageException(usage);
                 }
+                break;
+            }
+            case "selftest": {
+                // samodejne preverbe v klientu (M3 A1, D-008, M6 A1–A3): igralec stoji v novem superflat svetu
+                if (args.length > 1 && "stop".equalsIgnoreCase(args[1])) {
+                    SelfTestRunner.INSTANCE.abort("/npcb selftest stop");
+                    break;
+                }
+                EntityPlayerMP player = getCommandSenderAsPlayer(sender);
+                if (SelfTestRunner.INSTANCE.isRunning()) {
+                    throw new CommandException("selftest že teče (/npcb selftest stop)");
+                }
+                SelfTestRunner.INSTANCE.start(player);
                 break;
             }
             case "aitest": {
