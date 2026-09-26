@@ -4,7 +4,7 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
-## 2026-09-26 — M8: prvi tek T3; velikost se ni uveljavila
+## 2026-09-26 — M8: prva dva teka T3; velikost in stikalo largeEntities
 
 **Preverjeno (13:29–13:37):** `dev.ps1 build --offline` zelen, T3 v 7,5 min: **91/100**,
 `blocks_changed=0`, 0 izjem, noben TIMEOUT. A1 po velikostih: 1, 3, 5 → 10/10 + 10/10;
@@ -24,6 +24,31 @@ petkrat zapored pravilna (vseh 10 FAILED pričakovanih izidov za 1×2 je FAILED)
 tekom izklopi QuickEdit (`e40ad21`).
 
 Meritve prvega teka: `docs/meritve/m8/t3-20260926-133727*.csv` (ostanejo kot dokaz napake).
+
+**Drugi tek (14:05–14:10, po `1f4417b`): 71/100.** Velikosti so zdaj uveljavljene (CSV:
+0,12×0,36 … 1,20×3,60, vseh 20 odsekov na velikost). A1:
+
+| size | T1 | T2 | |
+|---|---|---|---|
+| 1 | 10/10 | 9/10 | T2/5 lestev dol: padec 3,94, škoda 1 |
+| 3 | 10/10 | 9/10 | T2/5 enako |
+| 5 | 10/10 | 10/10 | |
+| 7 | 2/10 | 2/10 | samo pričakovani FAILED |
+| 10 | 3/10 | 6/10 | samo pričakovani FAILED |
+
+**Vzrok za 7 in 10:** tečaj je tekel s `movement.largeEntities=false` (privzeto, D-019), zato
+`BaritonePathNavigate.onUpdateNavigation` za entiteto > 1×2 vsak tick pokliče `dropBaritone`
+in prekliče cilj tečaja — v sledi ni niti enega iskanja, odsek je FAILED v 10 tickih. Tek zato
+o D-028 za velike entitete še ne pove ničesar. **Popravek (`7946c65`):** `t3-run.ps1` stikalo
+med tekom vklopi (in ga vrne), preveri `largeEntities=true` v logu; `/npcb course run` zavrne
+tečaj z velikostjo, ki je navigator ne bi vodil (`CourseRunner.sizeNotLed`). 108/108 JUnit.
+
+**Opažanje (ne krši A1):** size 1 in 3 na T2/5 med `MovementDownward` po lestvi zdrsneta iz
+stolpca lestve (size 1: x = 70,06, lestev v stolpcu 69) → ponovno načrtovanje, `MovementFall`
+s 3,3 bloka. Ozka entiteta ob cilju sredine bloka preleti rob; size 5 (0,6) ostane v stolpcu.
+Kandidat za popravek v izvajalcu `MovementDownward` za širino < 0,6 (M8 ali M10).
+
+Meritve drugega teka: `docs/meritve/m8/t3-20260926-141047*.csv`.
 
 **Naslednji korak:** `.\mod\gradlew.bat --stop; .\dev.ps1 build --offline; .\t3-run.ps1`.
 
