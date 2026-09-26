@@ -41,9 +41,10 @@ if (-not ((Test-Path $eula) -and ((Get-Content $eula -Raw) -match 'eula\s*=\s*tr
 $level = 'm3-vanilla'
 $worldDir = Join-Path $run $level
 if (Test-Path $worldDir) { Remove-Item $worldDir -Recurse -Force }
+# spawn-animals/spawn-npcs=false bi volka in vaščana odstranil ob prvem ticku (WorldServer); spawn ustavi selftest (doMobSpawning)
 $props = @("level-name=$level", 'level-seed=20260926', 'level-type=FLAT', 'generate-structures=false',
-           'online-mode=false', 'spawn-protection=0', 'view-distance=6', 'spawn-npcs=false',
-           'spawn-animals=false', 'spawn-monsters=false', 'difficulty=1', 'max-tick-time=-1')
+           'online-mode=false', 'spawn-protection=0', 'view-distance=6', 'spawn-npcs=true',
+           'spawn-animals=true', 'spawn-monsters=false', 'difficulty=1', 'max-tick-time=-1')
 Set-Content -Path (Join-Path $run 'server.properties') -Value $props -Encoding ASCII
 $env:NPCB_SELFTEST_ON_JOIN = '1'
 Write-Output 'Strežnik se zaganja. Ko se v konzoli pokaže "Done", v launcherju zaženi vanilla 1.12.2:'

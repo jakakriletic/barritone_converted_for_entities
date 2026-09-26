@@ -184,8 +184,12 @@ public final class SelfTestRunner {
         run = r;
         say(r, TextFormatting.YELLOW + "selftest: " + r.steps.size() + " korakov, ~3 min. Stoj pri miru, ne odpiraj menija (ESC ustavi strežnik).");
         // M3 A2: vanilla klient nima kanala npcbaritone (D-024) — zapis, s katerim klientom je test tekel
-        NpcBaritoneMod.LOG.info("NPCB-SELFTEST-CLIENT player={} mod_on_client={} dedicated={}", player.getName(),
-                DebugSync.hasMod(player), r.server.isDedicatedServer());
+        NpcBaritoneMod.LOG.info("NPCB-SELFTEST-CLIENT player={} mod_on_client={} dedicated={} spawn_animals={} spawn_npcs={}",
+                player.getName(), DebugSync.hasMod(player), r.server.isDedicatedServer(), r.server.getCanSpawnAnimals(),
+                r.server.getCanSpawnNPCs());
+        if (!r.server.getCanSpawnAnimals() || !r.server.getCanSpawnNPCs()) {
+            say(r, TextFormatting.RED + "opozorilo: spawn-animals/spawn-npcs=false — volk in vaščan bosta odstranjena");
+        }
         next(r);
     }
 
@@ -430,7 +434,7 @@ public final class SelfTestRunner {
             r.world.setWorldTime(18000);
             // vanilla EntityAINearestAttackableTarget rabi vidno črto: obe črti do igralca gresta skozi režo (8, 0..1, 4)
             r.zombie = spawn(r, new EntityZombie(r.world), r.at(16, 0, 8), 90f);
-            r.controlZombie = spawn(r, new EntityZombie(r.world), r.at(15, 0, 7), 90f);
+            r.controlZombie = spawn(r, new EntityZombie(r.world), r.at(14, 0, 7), 90f); // črta na x=8..9: z 4,25..4,75
             Attach.attach(r.zombie, false, NpcBaritoneMod.config());
             nav = (BaritonePathNavigate) r.zombie.getNavigator();
         }
@@ -490,6 +494,10 @@ public final class SelfTestRunner {
 
         @Override
         Boolean tick(Run r, int t) {
+            if (r.wolf.isDead) {
+                detail = removed(r, "volk", r.server.getCanSpawnAnimals(), "spawn-animals");
+                return false;
+            }
             double step = Math.hypot(r.wolf.posX - lastX, r.wolf.posZ - lastZ);
             if (step > 2.5) {
                 teleports++;
@@ -546,6 +554,10 @@ public final class SelfTestRunner {
 
         @Override
         Boolean tick(Run r, int t) {
+            if (r.villager.isDead) {
+                detail = removed(r, "vaščan", r.server.getCanSpawnNPCs(), "spawn-npcs");
+                return false;
+            }
             if (villageTick < 0 && r.world.getVillageCollection().getNearestVillage(r.at(16, 0, 17), 32) != null) {
                 villageTick = t;
             }
@@ -583,6 +595,12 @@ public final class SelfTestRunner {
     }
 
     // ------------------------------------------------------------------ pomožno
+
+    /** WorldServer ob spawn-animals/spawn-npcs=false živali oz. NPC-je odstrani v prvem ticku. */
+    private static String removed(Run r, String what, boolean allowed, String property) {
+        return what + " je bil odstranjen iz sveta" + (allowed ? "" : " — strežnik ima " + property
+                + "=false (server.properties), zato ga vanilla takoj odstrani; test ni veljaven");
+    }
 
     private static <T extends EntityLiving> T spawn(Run r, T e, BlockPos p, float yaw) {
         e.setLocationAndAngles(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, yaw, 0f);
