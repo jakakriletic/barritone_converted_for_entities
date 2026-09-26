@@ -4,6 +4,52 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-26 (2) — M8 zaključen: tretji tek T3 96/100
+
+**Preverjeno (15:08–15:16, `7946c65`, `movement.largeEntities=true` samo med tekom — v logu
+`largeEntities=true`, config po teku vrnjen na `false`):** T3 **96/100**, `blocks_changed=0`,
+0 izjem, 0 TIMEOUT. Velikosti uveljavljene na vseh 100 odsekih.
+
+| size (š × v) | T1 | T2 | neuspeli odseki |
+|---|---|---|---|
+| 1 (0,12 × 0,36) | 10/10 | 9/10 | T2/5 lestev dol: zdrs iz stolpca lestve, padec 3,94, škoda 1 |
+| 3 (0,36 × 1,08) | 10/10 | 9/10 | T2/5 enako |
+| 5 (0,60 × 1,80) | 10/10 | 10/10 | — |
+| 7 (0,84 × 2,52) | 10/10 | 10/10 | — |
+| 10 (1,20 × 3,60) | 9/10 | 9/10 | T1/5, T2/5 (glej spodaj) |
+
+**Merila M8:**
+
+| # | Merilo | Izid |
+|---|---|---|
+| A1 | T3 ≥ 9/10 za vsako velikost | **da** — najslabše 9/10 (size 1, 3 T2; size 10 T1 in T2) |
+| A2 | pričakovani neuspehi FAILED, ne tavanje | **da** — 19/19 FAILED, 0 TIMEOUT; najdaljši 254 tickov (s10 T2/5) |
+| A3 | golden testi za vse kombinacije | **da** — `GoldenSizeTest` 16 velikosti (108/108 JUnit) |
+
+**Size 10, oba neuspeha sta pričakovana FAILED, kršita pa dodatno omejitev odseka:**
+- **T1/5 diagonala ob stebrih:** A* najprej vrne delno pot proti cilju (okvir 3×3 na cilju
+  zadene steber), entiteta ob stebrih dobi **škodo 1** (verjetno zadušitev — glava 3,6 visoke,
+  1,2 široke entitete zareže v steber ob sekanju vogala med zaporednimi Traverse), nato
+  `no_path` v 29 tickih. Izvajalec za široke entitete ob ovirah ne sme sekati vogalov → M10.
+- **T2/5 lestev dol:** obhod čez sosednjo progo, `MovementFall` 4 bloke v vodo proge T2/6
+  (škoda 0), nato do x = 80 in `no_path` (cilj v ozki progi). Pravilno po pravilih Baritona
+  (padec v vodo je varen), omejitev padca odseka pa je pisana za lestev.
+
+**Opažanje size 1/3 (lestev dol)** je nespremenjeno od drugega teka (spodaj); kandidat za
+izvajalca `MovementDownward` pri širini < 0,6.
+
+Meritve: `docs/meritve/m8/t3-20260926-151645*.csv`.
+
+**Odprto (ne blokira M8):** ročne preverbe v klientu (M2 A6/D-008, M3 A1/A2, M6 A1–A3),
+M5 A4 (1 h stres), stopnja A zmogljivosti (≤ 2 ms p95 pri 200 mobih, pogoj za M7, D-027),
+merge vej v `main`.
+
+**Naslednji korak:** stopnja A (pogoj za M7): profil `baritone.tick()` na glavni niti pri
+200 mobih (`.\t4-run.ps1 -Mobs 200`) — kaj od izvajalca poti, `PathingControlManager` in
+`LookBehavior` je drago; ali M9 (ladje, neobvezno), po odločitvi uporabnika.
+
+---
+
 ## 2026-09-26 — M8: prva dva teka T3; velikost in stikalo largeEntities
 
 **Preverjeno (13:29–13:37):** `dev.ps1 build --offline` zelen, T3 v 7,5 min: **91/100**,
@@ -50,7 +96,7 @@ Kandidat za popravek v izvajalcu `MovementDownward` za širino < 0,6 (M8 ali M10
 
 Meritve drugega teka: `docs/meritve/m8/t3-20260926-141047*.csv`.
 
-**Naslednji korak:** `.\mod\gradlew.bat --stop; .\dev.ps1 build --offline; .\t3-run.ps1`.
+**Naslednji korak:** tretji tek T3 → zapis (2) zgoraj.
 
 ---
 

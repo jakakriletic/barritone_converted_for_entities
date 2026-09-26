@@ -29,6 +29,15 @@ Baritone vodi entitete poljubne širine in višine (CNPC size 1–10), ne samo 1
 | A2 | nobena velikost se ne zatakne v 1-blokovni reži, v katero ne gre (FAILED/obhod, ne tavanje) |
 | A3 | golden testi za vse kombinacije zeleni |
 
+## Izid (2026-09-26): zaključen
+
+T3 na dedicated strežniku (`t3-run.ps1`, tretji tek 15:16): **96/100**, A1 najslabše 9/10 za
+vsako velikost, A2 19/19 pričakovanih neuspehov FAILED (0 TIMEOUT), A3 golden 16 velikosti.
+Prva dva teka sta razkrila napaki tečaja (ne jedra): `EntityZombie.setSize` velikosti ne
+uveljavi (`1f4417b`) in T3 mora teči z `movement.largeEntities=true` (`7946c65`).
+Podrobnosti in opažanja (size 1/3 zdrs z lestve, size 10 škoda ob stebrih): `docs/04-STANJE.md`.
+Meritve: `docs/meritve/m8/t3-20260926-151645*.csv`.
+
 ## Stanje (2026-09-25, veja `m8-velikosti` iz `m6-navigator`)
 
 Model in meje: **D-028** (zamenja D-019). Prevedeno in headless preverjeno v oblaku

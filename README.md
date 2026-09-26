@@ -12,9 +12,9 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 
 | | |
 |---|---|
-| Datum zadnje posodobitve | 2026-09-25 |
-| Trenutna faza | **M8 — velikosti entitet** (veja `m8-velikosti`): size-aware premiki (D-028 zamenja D-019), golden testi za 16 velikosti, tečaj T3, 106/106 JUnit; čaka build in T3 na Windowsu. M6: A1–A3 ročno v klientu; M7 čaka stopnjo A (D-027) |
-| Naslednji korak | `.\mod\gradlew.bat --stop; .\dev.ps1 build --offline; .\t3-run.ps1`; podrobno: [`milestones/M8-velikosti-entitet/README.md`](milestones/M8-velikosti-entitet/README.md) |
+| Datum zadnje posodobitve | 2026-09-26 |
+| Trenutna faza | **M8 zaključen** (veja `m8-velikosti`): T3 96/100, A1–A3 izpolnjena za CNPC size 1–10 (D-028, stikalo `movement.largeEntities`), 108/108 JUnit. M6: A1–A3 ročno v klientu; M7 čaka stopnjo A zmogljivosti (D-027) |
+| Naslednji korak | stopnja A zmogljivosti (pogoj za M7): profil glavne niti pri 200 mobih; ali M9 (ladje, neobvezno) — glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |
