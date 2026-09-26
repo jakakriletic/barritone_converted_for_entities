@@ -35,7 +35,7 @@ naslednji problem se razišče hitreje.
 | M3.2 | `DebugSync` + `PathSyncMessage` (format 1): samo OP 2 + mod na klientu (FML seznam modov) + `debug on` ali `syncPathsToOps`, ≤ 128 blokov, ≤ 4 Hz, keepalive 1 s; prevedeno |
 | M3.3 | `client/PathRenderer`: sivo prehojeno, rumeno trenutni premik, rdeče preostanek, magenta naslednji segment, zelen cilj (cian med iskanjem), bela črta NPC → naslednja točka; **A1 preverjen** z `/npcb selftest` (2026-09-26): pot narisana po 2 tickih, po `debug off` izgine v 2,8 s |
 | M3.4 | `PathTrace` (17 stolpcev, glej spodaj); `/npcb course t1 run` samodejno zapiše `t1-<čas>-trace.csv` poleg izidov. **A3 in A4 zelena na dedicated** (695 vrstic, 0 paketov); sled je razkrila dve napaki jedra (glej 04-STANJE, 2026-09-25 (3)), popravka čakata ponovni tek |
-| M3.5 | čaka ročno preverbo (vanilla klient) |
+| M3.5 | **A2 preverjen** (2026-09-26): vanilla 1.12.2 klient na dedicated strežnik z modom, `/npcb selftest` 6/6, `mod_on_client=false`, brez prekinitve (`launcher-test.ps1 -Server`) |
 
 **Stolpci sledi:** `world_tick, entity_id, entity, tag, state, x, y, z, goal, path_len, path_pos, movement, search_us, searches, replans, fail_reason, events`.
 `tag` = odsek tečaja (`T1/3`), `events` = dogodki poti v tem ticku (`CALC_STARTED|…`),

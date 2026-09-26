@@ -39,11 +39,20 @@ Zombi z Baritonom je udaril po 216 tickih (tarčo je izbral šele pri ~140); kon
 45 s tarče ni izbral (vanilla naključje/vidnost, ne naš adapter). Meritve:
 `docs/meritve/klient/selftest-forge-20260926-161900.*`.
 
-**Še ročno:** M3 A2 (vanilla klient na dedicated strežnik z modom): `.\launcher-test.ps1 -Server`
-— prvi poskus se ni povezal, ker strežnik ni bil zagnan (ni `m3-vanilla`, ni "Done").
+**M3 A2 preverjen (16:27–16:28):** vanilla 1.12.2 klient (brez Forge) na dedicated strežnik z
+modom (`launcher-test.ps1 -Server`, selftest ob prijavi brez OP): strežnik pravilno vidi klient
+brez moda (`mod_on_client=false`, debug paketi se ne pošiljajo, D-024), **6/6** (izris 2× SKIP,
+ker ga vanilla klient nima), brez prekinitve povezave do samodejne ustavitve. Zombi po 93 tickih
+(kontrola 139), volk 50 tickov brez teleporta, vaščan v kolibi po 194 (kontrola 96).
+Prvi tek (16:21) je imel 4/6: skript je nastavil `spawn-animals/spawn-npcs=false`, vanilla
+`WorldServer` pa takrat volka in vaščana odstrani v prvem ticku — napaka okolja, popravljena v
+`f50e436` (selftest zdaj odstranitev javi z razlogom). Meritve: `docs/meritve/klient/selftest-vanilla-*`.
 
-**Naslednji korak:** M3 A2 (`.\launcher-test.ps1 -Server`, počakaj na "Done", vanilla 1.12.2 →
-`localhost`); nato stopnja A zmogljivosti (pogoj za M7).
+**Vse ročne preverbe v klientu so zaprte** (M2 A6, D-008, M3 A1/A2, M6 A1–A3). Ostajajo:
+M5 A4 (1 h stres), stopnja A zmogljivosti (pogoj za M7), merge vej v `main`.
+
+**Naslednji korak:** stopnja A (pogoj za M7): profil `baritone.tick()` na glavni niti pri 200
+mobih (`.\t4-run.ps1 -Mobs 200`).
 
 ---
 
