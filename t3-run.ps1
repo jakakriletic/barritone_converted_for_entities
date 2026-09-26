@@ -31,6 +31,21 @@ $eula = Join-Path $run 'eula.txt'
 if (-not ((Test-Path $eula) -and ((Get-Content $eula -Raw) -match 'eula\s*=\s*true'))) {
     throw "mod\run\eula.txt ni sprejet: najprej '.\smoke-server.ps1 -AcceptEula'."
 }
+# Klik v okno konzole (QuickEdit) zamrzne ta skript (glej t4-run.ps1); med tekom ga izklopimo.
+$quickEdit = $null
+try {
+    Add-Type -Namespace Npcb -Name ConsoleMode -MemberDefinition @'
+[DllImport("kernel32.dll")] public static extern System.IntPtr GetStdHandle(int n);
+[DllImport("kernel32.dll")] public static extern bool GetConsoleMode(System.IntPtr h, out uint m);
+[DllImport("kernel32.dll")] public static extern bool SetConsoleMode(System.IntPtr h, uint m);
+'@ -ErrorAction Stop
+    $hIn = [Npcb.ConsoleMode]::GetStdHandle(-10)
+    $mode = [uint32]0
+    if ([Npcb.ConsoleMode]::GetConsoleMode($hIn, [ref]$mode)) {
+        $quickEdit = $mode
+        [void][Npcb.ConsoleMode]::SetConsoleMode($hIn, [uint32](($mode -band (-bnot 0x40)) -bor 0x80))
+    }
+} catch { Write-Host "  (QuickEdit ni bilo mogoče izklopiti: ne klikaj v okno med tekom)" }
 $level = 'm8-t3'
 $worldDir = Join-Path $run $level
 if (Test-Path $worldDir) { Remove-Item $worldDir -Recurse -Force }
@@ -126,4 +141,5 @@ Check "spremenjenih blokov (razen vrat): $($changed.Groups[1].Value) (= 0)" ($ch
 Check 'brez izjem v logu' (-not ($log -match 'Exception in server tick loop|Encountered an unexpected exception|Pathing exception|cannot resize'))
 Write-Output "log: $outLog"
 Write-Output "rezultati: $outDir"
+if ($quickEdit -ne $null) { [void][Npcb.ConsoleMode]::SetConsoleMode($hIn, [uint32]$quickEdit) }
 if (-not $ok -or $fails.Count -gt 0) { exit 1 }
