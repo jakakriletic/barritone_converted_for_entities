@@ -148,22 +148,15 @@ public class PathExecutor implements IPathExecutor, Helper {
                 }
             }
         }
-        Tuple<Double, BlockPos> status = closestPathPos(path);
-        if (possiblyOffPath(status, MAX_DIST_FROM_PATH)) {
-            ticksAway++;
-            logDebug("FAR AWAY FROM PATH FOR " + ticksAway + " TICKS. Current distance: " + status.getFirst() + ". Threshold: " + MAX_DIST_FROM_PATH);
-            if (ticksAway > MAX_TICKS_AWAY) {
-                logDebug("Too far away from path for too long, cancelling path");
-                cancel();
+        // NPC Baritone (stopnja A): noge v veljavnem bloku trenutnega premika → razdalja do središča tega
+        // bloka ≤ 0,94 (s ploščo, ko feetPos vrne blok višje, ≤ 1,78) < MAX_DIST_FROM_PATH, zato nobena od preverb possiblyOffPath (2, 3) ne sproži;
+        // iskanje najbližje točke poti (drugi največji strošek glavne niti) je tedaj odveč.
+        if (movement.getValidPositions().contains(whereAmI)) {
+            ticksAway = 0;
+        } else {
+            if (offPathChecks()) {
                 return false;
             }
-        } else {
-            ticksAway = 0;
-        }
-        if (possiblyOffPath(status, MAX_MAX_DIST_FROM_PATH)) { // ok, stop right away, we're way too far.
-            logDebug("too far from path");
-            cancel();
-            return false;
         }
         PerfProfile.add(PathExecutor.class, PROF_POSITION, prof);
         prof = PerfProfile.start();
@@ -253,6 +246,29 @@ public class PathExecutor implements IPathExecutor, Helper {
         }
         PerfProfile.add(PathExecutor.class, PROF_UPDATE, prof);
         return canCancel; // movement is in progress, but if it reports cancellable, PathingBehavior is good to cut onto the next path
+    }
+
+
+    /** Preverbi oddaljenosti od poti (upstream); true = premik je preklican, onTick vrne false. */
+    private boolean offPathChecks() {
+        Tuple<Double, BlockPos> status = closestPathPos(path);
+        if (possiblyOffPath(status, MAX_DIST_FROM_PATH)) {
+            ticksAway++;
+            logDebug("FAR AWAY FROM PATH FOR " + ticksAway + " TICKS. Current distance: " + status.getFirst() + ". Threshold: " + MAX_DIST_FROM_PATH);
+            if (ticksAway > MAX_TICKS_AWAY) {
+                logDebug("Too far away from path for too long, cancelling path");
+                cancel();
+                return true;
+            }
+        } else {
+            ticksAway = 0;
+        }
+        if (possiblyOffPath(status, MAX_MAX_DIST_FROM_PATH)) { // ok, stop right away, we're way too far.
+            logDebug("too far from path");
+            cancel();
+            return true;
+        }
+        return false;
     }
 
     /**
