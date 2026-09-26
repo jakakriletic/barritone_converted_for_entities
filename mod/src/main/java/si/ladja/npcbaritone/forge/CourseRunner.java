@@ -112,6 +112,27 @@ public final class CourseRunner {
         }
     }
 
+    /**
+     * M8.9: velikost odseka, ki je navigator ne bi vodil (D-019 brez {@code movement.largeEntities}),
+     * bi odsek tiho pokvarila: {@code BaritonePathNavigate.onUpdateNavigation} vsak tick prekliče
+     * Baritonov cilj ({@code dropBaritone}) in odsek konča FAILED v 10 tickih (drugi tek T3,
+     * 2026-09-26 14:10: size 7 in 10). Zato tečaj takega odseka ne začne.
+     *
+     * @return opis prve take velikosti ali {@code null}, če se vse velikosti vodijo
+     */
+    static String sizeNotLed(Course course, BlockPos origin, boolean largeEntities) {
+        for (Course.Segment s : course.segments(origin)) {
+            if (s.npcSize > 0) {
+                EntitySize size = CourseT3.npcSize(s.npcSize);
+                if (!BaritonePathNavigate.fits(size.width, size.height, largeEntities)) {
+                    return course.id() + " size " + s.npcSize + " (" + size.width + " x " + size.height
+                            + ") navigator ne vodi: vklopi movement.largeEntities=true (D-028)";
+                }
+            }
+        }
+        return null;
+    }
+
     public void start(EntityLiving entity, Baritone baritone, ICommandSender sender, Course course, BlockPos origin) {
         if (run != null) {
             throw new IllegalStateException("course already running");

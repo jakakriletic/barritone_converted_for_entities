@@ -46,6 +46,19 @@ try {
         [void][Npcb.ConsoleMode]::SetConsoleMode($hIn, [uint32](($mode -band (-bnot 0x40)) -bor 0x80))
     }
 } catch { Write-Host "  (QuickEdit ni bilo mogoče izklopiti: ne klikaj v okno med tekom)" }
+# T3 preverja D-028, ki velja samo s stikalom movement.largeEntities; brez njega navigator
+# size 7 in 10 ne vodi (drugi tek 2026-09-26). Med tekom stikalo vklopimo, nato vrnemo.
+$cfg = Join-Path $run 'config\npcbaritone.cfg'
+$utf8 = New-Object System.Text.UTF8Encoding($false)
+$cfgOriginal = $null
+if (Test-Path $cfg) {
+    $cfgOriginal = [IO.File]::ReadAllText($cfg, $utf8)
+    if ($cfgOriginal -notmatch 'B:largeEntities=(true|false)') { throw "$cfg nima B:largeEntities" }
+    [IO.File]::WriteAllText($cfg, ($cfgOriginal -replace 'B:largeEntities=false', 'B:largeEntities=true'), $utf8)
+} else {
+    New-Item -ItemType Directory -Force -Path (Split-Path $cfg) | Out-Null
+    [IO.File]::WriteAllText($cfg, "movement {`r`n    B:largeEntities=true`r`n}`r`n", $utf8)
+}
 $level = 'm8-t3'
 $worldDir = Join-Path $run $level
 if (Test-Path $worldDir) { Remove-Item $worldDir -Recurse -Force }
@@ -95,6 +108,7 @@ try {
         Send 'stop'
         if (-not $proc.WaitForExit(120000)) { try { $proc.Kill() } catch { } }
     }
+    if ($cfgOriginal -ne $null) { [IO.File]::WriteAllText($cfg, $cfgOriginal, $utf8) } else { Remove-Item $cfg -Force -ErrorAction SilentlyContinue }
 }
 
 $log = LogText
@@ -138,6 +152,7 @@ if ($csv) {
 }
 $changed = [regex]::Match($log, 'NPCB-COURSE-DONE course=T3 .*?blocks_changed=(\d+)')
 Check "spremenjenih blokov (razen vrat): $($changed.Groups[1].Value) (= 0)" ($changed.Success -and $changed.Groups[1].Value -eq '0')
+Check 'movement.largeEntities vklopljen' ($log -match 'largeEntities=true')
 Check 'brez izjem v logu' (-not ($log -match 'Exception in server tick loop|Encountered an unexpected exception|Pathing exception|cannot resize'))
 Write-Output "log: $outLog"
 Write-Output "rezultati: $outDir"

@@ -20,6 +20,7 @@ package si.ladja.npcbaritone.forge;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.monster.EntityHusk;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
 import org.junit.ClassRule;
 import org.junit.Test;
 import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
@@ -28,6 +29,8 @@ import si.ladja.npcbaritone.harness.BootstrapOnce;
 import java.lang.reflect.Field;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * M8.9: {@link CourseRunner#resize} mora velikost res uveljaviti tudi pri zombijih.
@@ -69,5 +72,16 @@ public class CourseResizeTest {
             AxisAlignedBB bb = husk.getEntityBoundingBox();
             assertEquals("box height, size " + size, s.height, bb.maxY - bb.minY, 1e-5);
         }
+    }
+
+    /** Drugi tek T3: brez movement.largeEntities navigator size 7 in 10 ne vodi — tečaj ne sme začeti. */
+    @Test
+    public void t3RefusesSizesTheNavigatorWouldDrop() {
+        BlockPos origin = new BlockPos(0, 4, 0);
+        String msg = CourseRunner.sizeNotLed(CourseT3.INSTANCE, origin, false);
+        assertNotNull(msg);
+        assertEquals(true, msg.contains("size 7") && msg.contains("largeEntities"));
+        assertNull(CourseRunner.sizeNotLed(CourseT3.INSTANCE, origin, true));
+        assertNull(CourseRunner.sizeNotLed(CourseT1.INSTANCE, origin, false));
     }
 }

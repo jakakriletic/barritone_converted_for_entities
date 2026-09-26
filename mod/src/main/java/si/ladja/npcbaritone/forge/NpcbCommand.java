@@ -274,6 +274,10 @@ public class NpcbCommand extends CommandBase {
                     if (CourseRunner.INSTANCE.isRunning()) {
                         throw new CommandException("Tečaj že teče (/npcb course stop)");
                     }
+                    String notLed = CourseRunner.sizeNotLed(course, origin, NpcBaritoneMod.config().largeEntities);
+                    if (notLed != null) {
+                        throw new CommandException(notLed);
+                    }
                     int n = course.build(e.world, origin);
                     Baritone b = Attach.get(e);
                     if (b == null) {
