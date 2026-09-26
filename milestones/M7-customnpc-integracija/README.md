@@ -43,3 +43,13 @@ Brez te odločitve M7 ne začne (D-005).
 
 **Vrata V4:** A3 in A4 ⇒ Baritone ostane izbiren v CNPC in se dokumentira za uporabnike.
 Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
+
+## Stanje (2026-09-27, veja `m7-cnpc` iz `main`)
+
+| # | Stanje |
+|---|---|
+| pogoj | **izpolnjen**: CNPC D-018 (`customNPC_rework` `30120e5`), stopnja A zmogljivosti (1,64 ms) |
+| M7.1 | **narejeno**: `customNPC_rework/docs/07-BARITONE-OZADJE.md` — 105 klicev, ukrepi U1–U6; adapter popravljen za `getPath()` med iskanjem (`2ee0df2`) |
+| M7.2–M7.3 | čakata API 2 knjižnice (U2 ponovna namestitev, U6 hitrost, U3/U4 vrata na instanco) |
+| M7.4 | čaka CNPC M3.1 (prenos `EntityNPCInterface` v `dev/src/patch`) |
+| M7.5–M7.8 | niso začeti |

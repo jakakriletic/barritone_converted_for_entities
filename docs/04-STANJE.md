@@ -4,6 +4,29 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-27 (2) — merge v `main`; M7 začet: D-018 v CNPC, revizija M7.1 (veja `m7-cnpc`)
+
+**Merge:** `m8-velikosti` → `main` z `--no-ff` (`8748cef`, 79 commitov M2–M6 in M8 ohranjenih);
+drevo `main` = `m8-velikosti`. Push na GitHub mora narediti uporabnik (VM nima prijave).
+
+**M7 (potrdil uporabnik 2026-09-27):**
+- CNPC **D-018** (`customNPC_rework` `30120e5`): stopnja D iz CNPC D-012 se odpre samo kot izbirno
+  ozadje prek te knjižnice; vanilla privzeta, samo `movementType == 0`, sprejem po M2.7 (3 ponovitve).
+- **M7.1** revizija: `customNPC_rework/docs/07-BARITONE-OZADJE.md` — 105 klicev navigatorja v 28
+  datotekah, ukrepi U1–U6. Za knjižnico: **U2** `updateTasks()` v CNPC ob vsaki posodobitvi AI
+  ustvari nov navigator in move helper → API za ponovno namestitev; **U6** hitrost na instanco
+  (`speedMode` je globalen); **U3/U4** vrata na instanco (lesena se odpirajo vedno, železna nikoli);
+  **U1** hibrid `getPathTo*` (vanilla) v `EntityAIAttackTarget.shouldExecute` — odloči A/B.
+- Napaka adapterja, najdena v reviziji (`2ee0df2`): med iskanjem `noPath()=false`, `getPath()=null`
+  → CNPC skriptni `getNavigationPath` NPE. Zdaj ena točka na cilju; `NavPathContractTest`, 114/114.
+
+**Predpogoj v CNPC:** M7.4 potrebuje prenesen `EntityNPCInterface` (CNPC M3.1).
+
+**Naslednji korak:** API 2 (U2 `reinstall`, U6 hitrost, U3/U4 vrata na instanco) na veji
+`m7-cnpc`, nato CNPC M7.2 (`NpcBaritoneBridge`) in M7.3 (globalno stikalo).
+
+---
+
 ## 2026-09-27 — stopnja A izpolnjena: glavna nit p95 1,64 ms pri 200 mobih
 
 **Profil** (`PerfProfile`, `NPCB_PROFILE=1`, `t4-run.ps1 -Profile`; `9dd099c`): pri 200 mobih je bil
