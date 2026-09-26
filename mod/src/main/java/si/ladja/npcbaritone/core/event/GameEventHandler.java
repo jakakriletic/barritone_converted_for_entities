@@ -18,6 +18,9 @@
 
 package si.ladja.npcbaritone.core.event;
 
+import si.ladja.npcbaritone.core.PerfProfile;
+import si.ladja.npcbaritone.core.api.event.events.type.EventState;
+
 import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.event.events.BlockChangeEvent;
 import si.ladja.npcbaritone.core.api.event.events.ChunkEvent;
@@ -52,6 +55,7 @@ public final class GameEventHandler implements IEventBus, Helper {
 
     @Override
     public final void onTick(TickEvent event) {
+        long bsiStart = PerfProfile.start();
         if (event.getType() == TickEvent.Type.IN) {
             try {
                 baritone.bsi = new BlockStateInterface(baritone.getEntityContext());
@@ -61,17 +65,43 @@ public final class GameEventHandler implements IEventBus, Helper {
         } else {
             baritone.bsi = null;
         }
+        PerfProfile.add(BlockStateInterface.class, PerfProfile.ON_TICK, bsiStart);
 
+        if (PerfProfile.enabled) {
+            for (IGameEventListener l : listeners) {
+                long t0 = System.nanoTime();
+                l.onTick(event);
+                PerfProfile.add(l.getClass(), PerfProfile.ON_TICK, t0);
+            }
+            return;
+        }
         listeners.forEach(l -> l.onTick(event));
     }
 
     @Override
     public void onPostTick(TickEvent event) {
+        if (PerfProfile.enabled) {
+            for (IGameEventListener l : listeners) {
+                long t0 = System.nanoTime();
+                l.onPostTick(event);
+                PerfProfile.add(l.getClass(), PerfProfile.POST_TICK, t0);
+            }
+            return;
+        }
         listeners.forEach(l -> l.onPostTick(event));
     }
 
     @Override
     public final void onPlayerUpdate(PlayerUpdateEvent event) {
+        if (PerfProfile.enabled) {
+            int slot = event.getState() == EventState.PRE ? PerfProfile.UPDATE_PRE : PerfProfile.UPDATE_POST;
+            for (IGameEventListener l : listeners) {
+                long t0 = System.nanoTime();
+                l.onPlayerUpdate(event);
+                PerfProfile.add(l.getClass(), slot, t0);
+            }
+            return;
+        }
         listeners.forEach(l -> l.onPlayerUpdate(event));
     }
 

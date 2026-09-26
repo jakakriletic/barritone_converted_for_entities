@@ -10,7 +10,9 @@
 # logi docs\build-logs\m5-t4-<n>-<i>.log.
 # Exit code 0 = A1 stopnja B (p95 glavne niti pri 200 ≤ 5 ms), A2 (posnetek p95 < 100 µs),
 # A3 (0 niti izven bazena), A4 (0 izjem). A1+ (≤ 2 ms, pogoj za M7) se samo poroča.
-param([int[]]$Mobs = @(50, 200), [int]$Repeats = 3, [int]$Seconds = 120, [int]$Radius = 48, [int]$BreakEvery = 5)
+param([int[]]$Mobs = @(50, 200), [int]$Repeats = 3, [int]$Seconds = 120, [int]$Radius = 48, [int]$BreakEvery = 5, [switch]$Profile)
+# -Profile: stopnja A — razčlenitev glavne niti po sestavnih delih (NPCB_PROFILE=1, profile-*.csv); malo dražji tek
+if ($Profile) { $env:NPCB_PROFILE = '1' } else { Remove-Item Env:\NPCB_PROFILE -ErrorAction SilentlyContinue }
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $run  = Join-Path $root 'mod\run'
@@ -102,6 +104,8 @@ function RunOnce([int]$n, [int]$rep) {
     if (-not $csv) { return $null }
     $dest = Join-Path $outDir $csv.Name
     Copy-Item $csv.FullName $dest
+    $prof = Get-ChildItem (Join-Path $run 'npcbaritone\runs') -Filter "profile-$n-*.csv" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
+    if ($Profile -and $prof) { Copy-Item $prof.FullName (Join-Path $outDir $prof.Name); Write-Host "  profil: $(Join-Path $outDir $prof.Name)" }
     $row = Import-Csv $dest | Select-Object -First 1
     $row | Add-Member -NotePropertyName rep -NotePropertyValue $rep
     return $row

@@ -184,6 +184,7 @@ public final class StressRunner {
         if (r.tick == WARMUP_TICKS) {
             SearchStats.reset();
             PerfMeter.INSTANCE.reset();
+            si.ladja.npcbaritone.core.PerfProfile.reset();
             r.goals = r.reached = r.failed = r.timeouts = r.toggles = 0;
             say(r, "T4 ogrevanje končano, meritev teče");
         }
@@ -273,6 +274,22 @@ public final class StressRunner {
             Files.write(out.toPath(), Arrays.asList(HEADER, row), StandardCharsets.UTF_8);
         } catch (IOException e) {
             NpcBaritoneMod.LOG.error("cannot write {}", out, e);
+        }
+        if (si.ladja.npcbaritone.core.PerfProfile.enabled) {
+            long mainNs = 0;
+            for (long v : main) {
+                mainNs += v;
+            }
+            java.util.List<String> prof = si.ladja.npcbaritone.core.PerfProfile.report(PerfMeter.INSTANCE.ticks(), mainNs);
+            File pf = new File("npcbaritone/runs", "profile-" + r.npcs.size() + "-" + stamp + ".csv");
+            try {
+                Files.write(pf.toPath(), prof, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                NpcBaritoneMod.LOG.error("cannot write {}", pf, e);
+            }
+            for (int i = 1; i < Math.min(prof.size(), 16); i++) {
+                NpcBaritoneMod.LOG.info("NPCB-PROFILE {}", prof.get(i));
+            }
         }
         say(r, "T4 končan: " + SearchStats.summary());
         say(r, "T4 " + PerfMeter.INSTANCE.summary());

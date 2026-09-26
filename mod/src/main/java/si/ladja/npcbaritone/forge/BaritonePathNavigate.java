@@ -106,6 +106,17 @@ public class BaritonePathNavigate extends PathNavigateGround {
         return status;
     }
 
+    // stopnja A: reže profila (PerfProfile) za odseke onUpdateNavigation
+    static final int PROF_DEBOUNCE = 0;
+    static final int PROF_FOLLOW = 1;
+    static final int PROF_BARITONE_TICK = 2;
+    static final int PROF_INTERACTIONS = 3;
+
+    static {
+        si.ladja.npcbaritone.core.PerfProfile.label(BaritonePathNavigate.class,
+                "debounce", "follow", "baritone.tick (skupaj)", "interactions");
+    }
+
     /** D-019/D-028: ali Baritone vodi to entiteto (sicer vanilla). */
     public boolean fits() {
         return fits(entity.width, entity.height);
@@ -150,16 +161,25 @@ public class BaritonePathNavigate extends PathNavigateGround {
             return;
         }
         long t0 = System.nanoTime();
+        long p = si.ladja.npcbaritone.core.PerfProfile.start();
         if (debounce.tick(totalTicks, status.state())) {
             baritone.getPathingBehavior().cancelEverything();
             followTarget = null;
         }
         if (debounce.paused()) {
             baritone.getInputOverrideHandler().clearAllKeys(); // stoj, pot ostane
+            si.ladja.npcbaritone.core.PerfProfile.add(BaritonePathNavigate.class, PROF_DEBOUNCE, p);
         } else {
+            si.ladja.npcbaritone.core.PerfProfile.add(BaritonePathNavigate.class, PROF_DEBOUNCE, p);
+            p = si.ladja.npcbaritone.core.PerfProfile.start();
             updateFollow();
+            si.ladja.npcbaritone.core.PerfProfile.add(BaritonePathNavigate.class, PROF_FOLLOW, p);
+            p = si.ladja.npcbaritone.core.PerfProfile.start();
             baritone.tick();
+            si.ladja.npcbaritone.core.PerfProfile.add(BaritonePathNavigate.class, PROF_BARITONE_TICK, p);
+            p = si.ladja.npcbaritone.core.PerfProfile.start();
             interactions.tick(); // M4.1: CLICK_RIGHT → vrata
+            si.ladja.npcbaritone.core.PerfProfile.add(BaritonePathNavigate.class, PROF_INTERACTIONS, p);
         }
         PerfMeter.INSTANCE.add(System.nanoTime() - t0); // M5.6
         fireTransitions();

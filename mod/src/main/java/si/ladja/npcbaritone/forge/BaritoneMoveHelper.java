@@ -47,6 +47,10 @@ public class BaritoneMoveHelper extends EntityMoveHelper {
     private boolean controlling;
     private double savedBaseSpeed = Double.NaN;
 
+    static {
+        si.ladja.npcbaritone.core.PerfProfile.label(BaritoneMoveHelper.class, "update (skupaj)");
+    }
+
     public BaritoneMoveHelper(EntityLiving entity, Baritone baritone, NpcbConfig.SpeedMode speedMode) {
         super(entity);
         this.baritone = baritone;
@@ -56,10 +60,12 @@ public class BaritoneMoveHelper extends EntityMoveHelper {
     @Override
     public void onUpdateMoveHelper() {
         long t0 = System.nanoTime();
+        long p = si.ladja.npcbaritone.core.PerfProfile.start();
         try {
             update();
         } finally {
             PerfMeter.INSTANCE.add(System.nanoTime() - t0); // M5.6
+            si.ladja.npcbaritone.core.PerfProfile.add(BaritoneMoveHelper.class, 0, p);
         }
     }
 
