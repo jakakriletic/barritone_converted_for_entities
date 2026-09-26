@@ -48,7 +48,7 @@ Vrata, voda kot cilj testiranja (samo kot del T1, če je), vanilla AI taski (M6)
 | # | Stanje |
 |---|---|
 | M2.1 | preskočen — `InputOverrideHandler` je že samo stanje vhodov |
-| M2.2–M2.8 | Windows build, JUnit in dedicated T1 zeleni; D-008 preverba brez `puppet` še čaka klient |
+| M2.2–M2.8 | Windows build, JUnit in dedicated T1 zeleni; D-008 preverjen v klientu z `/npcb selftest` (2026-09-26: zombi brez `puppet` udari igralca po 90 tickih) |
 | M2.9 | `CourseT1` + `CourseRunner` + `t1-run.ps1`; 3× dedicated 10/10 pričakovanih izidov |
 | M2.10 | števec v `Telemetry`, stolpec `chunk_loads` v CSV |
 | M2.11 | čaka običajen Forge klient: uradni obfuskirani Baritone jar sesuje ForgeGradle `runClient` pri `MixinStateImplementation` |

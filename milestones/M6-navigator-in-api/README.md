@@ -67,6 +67,12 @@ Obnašanje, ki se razlikuje od vanilla: cilj, do katerega ni poti (npr. vanilla 
 točko za zaprto steno), konča s `FAILED` in `noPath() = true`; vanilla bi naredil nekaj korakov
 proti njej. Ponovni isti cilj je 20 tickov zavrnjen.
 
+**A1–A3 preverjeni v klientu (2026-09-26, `/npcb selftest`, 6/6):** zombi brez `puppet` udari
+igralca za zidom z režo (90 tickov, kontrola 175), ukročen volk pride peš za zidom (51 tickov,
+0 teleportov), vaščan ponoči gre skozi vrata v kolibo (146 tickov, kontrola 130). Pred tem je
+bil popravljen `Attach`: taski s shranjenim navigatorjem (`EntityAIFollowOwner` …) so ukazovali
+staremu navigatorju (`55f4245`). Podrobnosti: `docs/04-STANJE.md`.
+
 **A1–A3 (20:26):** v brezglavem testu vanilla `EntityAIZombieAttack` ne začne niti pri kontroli brez
 Baritona (pot do tarče obstaja) → A1–A3 so **ročna preverba v klientu** (`/npcb attach` na zombija ponoči
 ob igralcu; vaščan domov; ukročen volk sledi). `aitest` ostane kot diagnostika.

@@ -4,6 +4,40 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-26 (3) — ročne preverbe v klientu samodejno: `/npcb selftest` 6/6
+
+**Zakaj:** ročne preverbe (M3 A1, D-008, M6 A1–A3) so bile za uporabnika preveč korakov.
+`/npcb selftest` (`09560c8`) jih izvede sam: igralec stoji v novem superflat svetu, okoli njega
+se postavi arena, koraki tečejo zaporedno, izid v klepetu in CSV; igralec je zaščiten, način,
+težavnost, čas in pravila se vrnejo.
+
+**Napaka, najdena ob pripravi (`55f4245`):** `EntityAIFollowOwner`, `EntityAIAvoidEntity` in
+`EntityAIFollow` si navigator shranijo v konstruktorju (javap). Po `attach` so ukazovali
+staremu vanilla navigatorju, ki ga nihče ne tiktaka — ukročen volk bi stal (in se le
+teleportiral), vaščan ne bi bežal pred zombijem; enako bi veljalo za CNPC taske s shranjenim
+navigatorjem. `Attach` zdaj polja tipa `PathNavigate`, ki kažejo na stari navigator,
+preusmeri na našega (po vrednosti, ne po imenu), ob `detach` nazaj. `AttachRewireTest`
+(mutacija ujeta), 110/110 JUnit.
+
+**Preverjeno (dev klient, 15:48, `docs/meritve/klient/selftest-20260926-154839.*`): 6/6.**
+
+| # | Preverba | Izid |
+|---|---|---|
+| M3 A1 | izris poti z modom na klientu | OK — narisana po 2 tickih |
+| M3 | `status`, `profile list`, `profile walk`, `goto @igralec` | OK — 4/4, husk pri igralcu po 48 tickih |
+| M3 A1 | po `debug off` črte izginejo | OK — 2841 ms (klient pozabi pot po 3 s) |
+| D-008 + M6 A1 | zombi brez `puppet` (vanilla AI + Baritonov navigator) najde in udari igralca za zidom z režo | OK — udarec po 90 tickih, 1 iskanje; kontrola brez Baritona po 175 |
+| M6 A3 | ukročen volk 11 blokov za zidom pride peš | OK — 51 tickov, 1 iskanje, 0 teleportov |
+| M6 A2 | vaščan ponoči skozi vrata v kolibo | OK — 146 tickov; kontrola 130 |
+
+**Še ročno (potrebujeta launcher):** M2 A6 (pravi Baritone 1.2.19 + naš izdani jar v Forge
+profilu — hkrati preveri SRG imena izdanega jarja, R-14) in M3 A2 (vanilla klient na
+dedicated strežnik z modom).
+
+**Naslednji korak:** M2 A6 in M3 A2 v launcherju; nato stopnja A zmogljivosti (pogoj za M7).
+
+---
+
 ## 2026-09-26 (2) — M8 zaključen: tretji tek T3 96/100
 
 **Preverjeno (15:08–15:16, `7946c65`, `movement.largeEntities=true` samo med tekom — v logu
