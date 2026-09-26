@@ -1,0 +1,31 @@
+component,us_per_tick,share_of_main,calls_per_tick,ns_per_call
+BaritonePathNavigate.baritone.tick (skupaj),3243.3,0.890,200.0,16216
+PathingBehavior.onTick,2872.9,0.789,200.0,14364
+BaritoneMoveHelper.update (skupaj),310.6,0.085,200.0,1552
+BaritonePathNavigate.debounce,41.4,0.011,200.0,206
+LookBehavior.onPlayerUpdate PRE,26.7,0.007,200.0,133
+BaritonePathNavigate.interactions,13.7,0.004,200.0,68
+BlockStateInterface.onTick,12.0,0.003,200.0,60
+LookBehavior.onPlayerUpdate POST,8.4,0.002,200.0,41
+.onTick,8.2,0.002,200.0,41
+NavStatus.onTick,6.2,0.002,200.0,30
+PathingBehavior.onPlayerUpdate POST,6.1,0.002,200.0,30
+LookBehavior.onPostTick,6.1,0.002,200.0,30
+LookBehavior.onTick,6.0,0.002,200.0,30
+InventoryBehavior.onTick,6.0,0.002,200.0,29
+PathingBehavior.onPlayerUpdate PRE,5.9,0.002,200.0,29
+NavStatus.onPlayerUpdate POST,5.9,0.002,200.0,29
+InventoryBehavior.onPlayerUpdate POST,5.9,0.002,200.0,29
+.onPlayerUpdate POST,5.8,0.002,200.0,28
+InputOverrideHandler.onPlayerUpdate POST,5.8,0.002,200.0,28
+InputOverrideHandler.onTick,5.7,0.002,200.0,28
+.onPlayerUpdate PRE,5.7,0.002,200.0,28
+NavStatus.onPostTick,5.7,0.002,200.0,28
+InventoryBehavior.onPlayerUpdate PRE,5.7,0.002,200.0,28
+.onPostTick,5.7,0.002,200.0,28
+NavStatus.onPlayerUpdate PRE,5.7,0.002,200.0,28
+InputOverrideHandler.onPostTick,5.7,0.002,200.0,28
+InventoryBehavior.onPostTick,5.7,0.002,200.0,28
+PathingBehavior.onPostTick,5.7,0.002,200.0,28
+InputOverrideHandler.onPlayerUpdate PRE,5.6,0.002,200.0,28
+BaritonePathNavigate.follow,5.5,0.002,200.0,27

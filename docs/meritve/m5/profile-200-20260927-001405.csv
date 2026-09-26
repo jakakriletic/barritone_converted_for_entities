@@ -1,0 +1,36 @@
+component,us_per_tick,share_of_main,calls_per_tick,ns_per_call
+BaritonePathNavigate.baritone.tick (skupaj),2271.7,0.858,200.0,11358
+PathingBehavior.onTick,1905.6,0.720,200.0,9527
+PathExecutor.onTick (skupaj),1815.5,0.686,243.7,7448
+PathExecutor.položaj + razdalja do poti,1056.0,0.399,243.7,4333
+BaritoneMoveHelper.update (skupaj),290.7,0.110,200.0,1453
+PathExecutor.movement.update + sprint,283.7,0.107,197.8,1433
+PathExecutor.preverba cen,160.4,0.061,243.7,658
+PathExecutor.predpomnilnik blokov,82.0,0.031,243.7,336
+BaritonePathNavigate.debounce,38.2,0.014,200.0,190
+LookBehavior.onPlayerUpdate PRE,30.1,0.011,200.0,150
+BaritonePathNavigate.interactions,13.3,0.005,200.0,66
+LookBehavior.onPlayerUpdate POST,11.4,0.004,200.0,56
+BlockStateInterface.onTick,11.2,0.004,200.0,55
+.onTick,7.0,0.003,200.0,35
+PathingBehavior.onPlayerUpdate POST,6.1,0.002,200.0,30
+InventoryBehavior.onTick,6.0,0.002,200.0,29
+LookBehavior.onTick,5.9,0.002,200.0,29
+InventoryBehavior.onPlayerUpdate POST,5.9,0.002,200.0,29
+LookBehavior.onPostTick,5.9,0.002,200.0,29
+.onPlayerUpdate POST,5.9,0.002,200.0,29
+PathingBehavior.onPlayerUpdate PRE,5.8,0.002,200.0,28
+NavStatus.onPlayerUpdate POST,5.8,0.002,200.0,28
+InventoryBehavior.onPostTick,5.8,0.002,200.0,28
+InputOverrideHandler.onPlayerUpdate POST,5.8,0.002,200.0,28
+NavStatus.onTick,5.7,0.002,200.0,28
+InputOverrideHandler.onTick,5.7,0.002,200.0,28
+InputOverrideHandler.onPlayerUpdate PRE,5.7,0.002,200.0,28
+NavStatus.onPlayerUpdate PRE,5.7,0.002,200.0,28
+.onPlayerUpdate PRE,5.7,0.002,200.0,28
+NavStatus.onPostTick,5.7,0.002,200.0,28
+InputOverrideHandler.onPostTick,5.7,0.002,200.0,28
+PathingBehavior.onPostTick,5.6,0.002,200.0,28
+.onPostTick,5.6,0.002,200.0,28
+InventoryBehavior.onPlayerUpdate PRE,5.6,0.002,200.0,28
+BaritonePathNavigate.follow,5.5,0.002,200.0,27

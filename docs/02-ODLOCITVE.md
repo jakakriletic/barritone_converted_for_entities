@@ -245,6 +245,9 @@ entiteta nima. Automatone `3216de48`, `b1899f30` sta popravljala prav to.
 
 ### D-019 — Velikost entitete do M8: en stolpec 1×2
 
+**Status: zamenjana z D-028 (2026-09-25).** Velja še kot privzeto obnašanje navigatorja
+(stikalo `movement.largeEntities = false`).
+
 **Odločitev.** Do M8 Baritone vodi samo entitete s `width ≤ 1,0` in `height ≤ 2,0`.
 Za večje navigator zavrne in pusti vanilla. M8 prenese Automatonove "size-aware"
 premike (9 commitov, `324bd259` … `a9c929f0`).
@@ -253,6 +256,38 @@ premike (9 commitov, `324bd259` … `a9c929f0`).
 dimenzije vpeljal šele v `CalculationContext` (`width`, `height`, `requiredSideSpace`).
 CNPC NPC velikosti 1–10 skalirajo `width`/`height` z `size/5` (`EntityNPCInterface`
 vr. 1086–1087): privzeti NPC (size 5) je 0,6 × 1,8 in pade v okvir.
+
+### D-028 — Velikosti entitet: okvir blokov na sredini, meje 3 stolpci × 4 bloki (M8)
+
+**Vprašanje.** Kako Baritone vodi entitete, ki niso 1×2 (CNPC size 1–10, pajek, golem),
+in do katere velikosti mu zaupamo?
+
+**Odločitev.**
+- **Model:** entiteta je okvir blokov na sredini bloka nog: `heightBlocks = ⌈višina⌉`,
+  `sideSpace = ⌈(širina − 1) / 2⌉` dodatnih stolpcev na vsako stran (0 za širino ≤ 1,
+  1 za širino ≤ 3). Premik preveri samo bloke, v katere okvir vstopi (Automatone
+  `324bd259` … `a9c929f0`), in ciljni stolpec.
+- **Standardna velikost** (`sideSpace 0`, `heightBlocks 2`: igralec, zombi, CNPC size 3–5)
+  ostane na upstream veji premikov; splošna veja zanjo računa enako (test).
+- **Spust/padec široke entitete:** kolizija jo porine naprej, zato se preverijo stolpci
+  pred ciljem (`forwardSpan`), ne simetrični okvir. Dovoljeno samo za širino < 2 (sredina
+  ostane v ciljnem stolpcu); širina ≥ 2 se ne spušča.
+- **Omejitve:** široke entitete ne hodijo diagonalno, ne plezajo po lestvah in trtah, ne
+  skačejo (parkour samo 1×2); nič se ne ruši ali postavlja (D-015). Model je konservativen:
+  entiteta širine 1,2 ne gre skozi režo širine 2 (potrebuje 3 stolpce).
+- **Meje navigatorja:** `sideSpace ≤ 1` in `heightBlocks ≤ 4` (do 3,0 × 4,0). Večje dobijo
+  vanilla navigacijo. Stikalo `movement.largeEntities` (privzeto false = D-019) — obnašanje
+  porabnika se brez njega ne spremeni; ukazi `/npcb` in tečaji velikosti ne preverjajo.
+
+**Dokaz.** Automatone je dimenzije vpeljal v 9 commitih (M8 v `AUTOMATONE-ROADMAP.md`) in
+za spust ni naredil ničesar; simetrični okvir pri spustu za širino 1,2 zadene blok, s
+katerega entiteta stopi (G6 bi padel). `SizeAwareEquivalenceTest`: 1,2 M primerjav premikov
+na naključnih terenih, splošna veja = upstream za 0,6 × 1,8. `GoldenSizeTest`: G1–G14 za
+16 velikosti (0,3–2,0 × 0,9–3,6). `CourseT3PathTest`: T1 + T2 za CNPC size 1/3/5/7/10,
+9 pričakovanih neuspehov z razlogom (hodnik 1×2 za višino 2,52, vrata za širino 1,2, lestve …).
+
+**Preverba.** M8: `t3-run.ps1` — za vsako velikost T1 ≥ 9/10 in T2 ≥ 9/10 odsekov
+pričakovanega izida, noben pričakovan neuspeh ne konča s TIMEOUT (A2).
 
 ---
 
@@ -329,6 +364,24 @@ posamezne vrednosti. Brez Automatonovih polnih kaskadnih nastavitev in ukaza `/s
 **Dokaz.** 1.12.2 kliče `Baritone.settings()` statično; Automatone je to rešil v treh
 commitih (`89b1174a`, `7bd582c2`, `a1bb2422`; skupaj ~90 datotek dotaknjenih) — mi
 potrebujemo samo profil + prepis.
+
+### D-027 — Dve stopnji meje zmogljivosti (M5)
+
+**Odločitev.** Merilo M5 A1 (prispevek glavne niti pri 200 mobih) ima dve stopnji:
+- **Stopnja B — zdaj:** p95 ≤ **5 ms/tick**. Vrata V3 za M6 in za prvega porabnika, drug mod,
+  ki ne rabi toliko entitet.
+- **Stopnja A — odprta:** p95 ≤ **2 ms/tick**. Pogoj za integracijo v CustomNPC rework (M7),
+  kjer bo NPC-jev veliko. Do M7 ostane zapisana kot cilj, ne blokira M5/M6.
+
+Obe se merita z istim tečajem T4 in se poročata ločeno; stopnja A, ki ni dosežena, je
+zapisana kot odprta naloga pred M7 (manj niti, krajše časovne omejitve, več deljenja ali
+omejitev števila NPC-jev z Baritonom pri CNPC).
+
+**Dokaz.** Uporabnik 2026-09-25: "opcija 1 (2 ms) odprta za kasnejšo integracijo s
+CustomNPC, opcija 2 (5 ms) za drug mod".
+
+**Preverba.** M5 tabela 50/200 mobov z obema mejama; M7 se ne začne brez stopnje A ali
+izrecne nove odločitve.
 
 ---
 
@@ -440,7 +493,7 @@ klientom — vanilla klient bi bil zavrnjen, kar krši D-024.
 | D-016 | 2026-09-24 | Profili nastavitev na instanco | velja |
 | D-017 | 2026-09-24 | Omejen executor, vrsta, deljenje, meritve | velja, številke iz M5 |
 | D-018 | 2026-09-24 | `PathNavigate` pogodba pri asinhronosti | velja, preverba M6 |
-| D-019 | 2026-09-24 | Velikost 1×2 do M8 | velja |
+| D-019 | 2026-09-24 | Velikost 1×2 do M8 | zamenjana z D-028 (privzeto stikalo) |
 | D-020 | 2026-09-24 | Obseg ohranjenih funkcij | velja |
 | D-021 | 2026-09-24 | Referenčni okvir v kontekstu | velja |
 | D-022 | 2026-09-24 | Tri ravni testov | velja |
@@ -448,3 +501,5 @@ klientom — vanilla klient bi bil zavrnjen, kar krši D-024.
 | D-024 | 2026-09-24 | Samo strežnik, klient izbiren | velja |
 | D-025 | 2026-09-24 | Testi na vanilla mobih | velja |
 | D-026 | 2026-09-24 | Prvi commit = nespremenjen upstream | velja |
+| D-027 | 2026-09-25 | Dve stopnji meje zmogljivosti (5 ms zdaj, 2 ms pred M7) | velja |
+| D-028 | 2026-09-25 | Velikosti: okvir blokov, meje 3 stolpci × 4 bloki, stikalo `largeEntities` | velja, preverba M8 T3 |

@@ -12,9 +12,9 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 
 | | |
 |---|---|
-| Datum zadnje posodobitve | 2026-09-24 |
-| Trenutna faza | **M1 zaključen:** Baritonovo jedro teče na strežniku nad `EntityLiving`, golden testi G1–G12 zeleni (oblak + Windows); **M2 — noge** na vrsti |
-| Naslednji korak | **M2 — noge** ([`milestones/M2-noge`](milestones/M2-noge/README.md)); stanje v [`docs/04-STANJE.md`](docs/04-STANJE.md) |
+| Datum zadnje posodobitve | 2026-09-27 |
+| Trenutna faza | **M8 zaključen**, ročne preverbe v klientu zaprte, **stopnja A zmogljivosti izpolnjena** (200 mobov: glavna nit p95 1,64 ms, D-027) — M7 odprt |
+| Naslednji korak | merge vej `m1`…`m8` v `main`, nato M7 (CustomNPC: stikalo na NPC, A/B); glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |
@@ -41,7 +41,7 @@ morajo priti daleč, čez zahteven teren ali zanesljivo (D-005).
 | **README.md** (ta datoteka) | pregled, status, kazalo | vedno prvo |
 | [`docs/04-STANJE.md`](docs/04-STANJE.md) | **živ dnevnik** — kaj je narejeno, kaj teče, kaj je blokirano | vedno drugo |
 | [`docs/01-ARHITEKTURA.md`](docs/01-ARHITEKTURA.md) | zgradba knjižnice, tok enega ticka, meje modulov | preden pišeš kodo |
-| [`docs/02-ODLOCITVE.md`](docs/02-ODLOCITVE.md) | **26 težkih vprašanj, vsako z odločitvijo, dokazom in preverbo** | preden karkoli spremeniš |
+| [`docs/02-ODLOCITVE.md`](docs/02-ODLOCITVE.md) | **28 težkih vprašanj, vsako z odločitvijo, dokazom in preverbo** | preden karkoli spremeniš |
 | [`docs/03-FAZE.md`](docs/03-FAZE.md) | milestoni M0–M10, odvisnosti, izhodni kriteriji | ko načrtuješ sejo |
 | [`docs/05-SEJA-PROTOKOL.md`](docs/05-SEJA-PROTOKOL.md) | kako seja začne, dela, preverja in zaključi | vedno, tudi na koncu seje |
 | [`docs/06-RAZISKAVA.md`](docs/06-RAZISKAVA.md) | izmerjena dejstva: prevod, velikosti, Automatone časovnica, CNPC API | ko dvomiš v odločitev |

@@ -76,6 +76,20 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
 
     private final LinkedBlockingQueue<PathEvent> toDispatch = new LinkedBlockingQueue<>();
 
+    /**
+     * M3: začetek in cilj zadnjega neuspelega načrtovanja naprej. Upstream po
+     * {@code NEXT_CALC_FAILED} poskusi znova naslednji tick z istega začetka proti istemu cilju
+     * (izmerjeno: 48 iskanj v 49 tickih na nedosegljivem cilju T1/10). Ponovi se šele, ko se
+     * začetek ali cilj spremeni; ko se trenutni segment konča, se tako ali tako začne polno iskanje.
+     */
+    private BlockPos planAheadFailedFrom;
+    private Goal planAheadFailedGoal;
+
+    // M3.4: telemetrija zadnjega iskanja (pišejo iskalne niti, bere strežniška nit)
+    private volatile long lastSearchMicros = -1;
+    private volatile String lastSearchResult = "none";
+    private volatile long searchesStarted;
+
     public PathingBehavior(Baritone baritone) {
         super(baritone);
     }
@@ -214,6 +228,10 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                     // and this path doesn't get us all the way there
                     return;
                 }
+                if (current.getPath().getDest().equals(planAheadFailedFrom) && Objects.equals(goal, planAheadFailedGoal)) {
+                    // enako načrtovanje je že spodletelo (M3)
+                    return;
+                }
                 if (ticksRemainingInSegment(false).get() < baritone.getSettings().planningTickLookahead.value) {
                     // and this path has 7.5 seconds or less left
                     // don't include the current movement so a very long last movement (e.g. descend) doesn't trip it up
@@ -307,10 +325,28 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
     public boolean cancelEverything() {
         boolean doIt = isSafeToCancel();
         if (doIt) {
-            secretInternalSegmentCancel();
+            segmentCancel(true);
         }
         baritone.getPathingControlManager().cancelEverything(); // regardless of if we can stop the current segment, we can still stop the processes
         return doIt;
+    }
+
+    /** M3.4: trajanje zadnjega končanega iskanja v µs (-1 = še nobenega). */
+    public long lastSearchMicros() {
+        return lastSearchMicros;
+    }
+
+    /**
+     * M3.4: izid zadnjega iskanja: {@code none}, {@code success_to_goal}, {@code success_segment},
+     * {@code failure}, {@code cancellation}, {@code exception} ali {@code queue_full}.
+     */
+    public String lastSearchResult() {
+        return lastSearchResult;
+    }
+
+    /** M3.4: število začetih iskanj (vključno z načrtovanjem naprej). */
+    public long searchesStarted() {
+        return searchesStarted;
     }
 
     public boolean calcFailedLastTick() { // NOT exposed on public api
@@ -332,14 +368,32 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
 
     // just cancel the current path
     public void secretInternalSegmentCancel() {
-        queuePathEvent(PathEvent.CANCELED);
+        segmentCancel(false);
+    }
+
+    /**
+     * M3: {@code PathingControlManager.preTick} brez procesa vsak tick prekliče segment. Upstream
+     * je vsakič oddal {@code CANCELED}, tudi ko ni bilo ničesar za preklicati — pri mirujočem NPC-ju
+     * to pomeni dogodek na tick in izgubljeno stanje "prispel/neuspel" v poslušalcih. Dogodek se
+     * zdaj odda samo, če je bila pot, naslednji segment ali iskanje, ali ob izrecnem preklicu
+     * ({@link #cancelEverything()}).
+     */
+    private void segmentCancel(boolean explicit) {
+        boolean hadSomething;
         synchronized (pathPlanLock) {
-            getInProgress().ifPresent(AbstractNodeCostSearch::cancel);
+            AbstractNodeCostSearch search = inProgress;
+            hadSomething = current != null || next != null || search != null;
+            if (search != null) {
+                search.cancel();
+            }
             if (current != null) {
                 current = null;
                 next = null;
                 baritone.getInputOverrideHandler().clearAllKeys();
             }
+        }
+        if (hadSomething || explicit) {
+            queuePathEvent(PathEvent.CANCELED);
         }
     }
 
@@ -473,11 +527,14 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
             logDebug("Simplifying " + goal.getClass() + " to GoalXZ due to distance");
         }
         inProgress = pathfinder;
+        searchesStarted++;
         try {
-            Baritone.getExecutor().execute(() -> runSearch(pathfinder, start, goal, talkAboutIt, primaryTimeout, failureTimeout));
+            Baritone.submitSearch(() -> runSearch(pathfinder, start, goal, talkAboutIt, primaryTimeout, failureTimeout), searchPriority());
         } catch (RejectedExecutionException ex) {
             // M1.11: vrsta iskanj je polna; iskanje se šteje kot neuspelo, naslednji tick poskusi znova
             inProgress = null;
+            lastSearchMicros = 0;
+            lastSearchResult = "queue_full";
             queuePathEvent(PathEvent.CALC_FAILED);
             logDebug("Search queue full, path calculation rejected");
         }
@@ -489,7 +546,13 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                 logDebug("Starting to search for path from " + start + " to " + goal);
             }
 
+            long t0 = System.nanoTime();
             PathCalculationResult calcResult = pathfinder.calculate(primaryTimeout, failureTimeout);
+            lastSearchMicros = (System.nanoTime() - t0) / 1000L;
+            lastSearchResult = calcResult.getType().name().toLowerCase(java.util.Locale.ROOT);
+            if (calcResult.getType() == PathCalculationResult.Type.FAILURE || calcResult.getType() == PathCalculationResult.Type.EXCEPTION) {
+                si.ladja.npcbaritone.core.SearchStats.FAILED.incrementAndGet();
+            }
             synchronized (pathPlanLock) {
                 Optional<PathExecutor> executor = calcResult.getPath().map(p -> new PathExecutor(PathingBehavior.this, p));
                 if (current == null) {
@@ -517,6 +580,8 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                                 logDebug("Warning: discarding orphan next segment with incorrect start");
                             }
                         } else {
+                            planAheadFailedFrom = start;
+                            planAheadFailedGoal = goal;
                             queuePathEvent(PathEvent.NEXT_CALC_FAILED);
                         }
                     } else {
@@ -553,7 +618,24 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
             GoalXZ g = (GoalXZ) goal;
             bounds = ChunkSnapshot.Bounds.around(start.getX(), start.getZ(), g.getX(), g.getZ(), margin);
         }
-        return new CalculationContext(baritone, bounds);
+        long t0 = System.nanoTime();
+        CalculationContext c = new CalculationContext(baritone, bounds);
+        si.ladja.npcbaritone.core.SearchStats.SNAPSHOT_NANOS.add(System.nanoTime() - t0);
+        si.ladja.npcbaritone.core.SearchStats.SNAPSHOT_CHUNKS.add(c.bsi.loadedChunkCount());
+        return c;
+    }
+
+    /**
+     * M5.1: prednost iskanja = kvadrat razdalje do najbližjega igralca (bližji prej); brez
+     * igralcev vsi enako (FIFO).
+     */
+    private long searchPriority() {
+        net.minecraft.entity.EntityLiving e = ctx.entity();
+        double best = Double.MAX_VALUE;
+        for (net.minecraft.entity.player.EntityPlayer p : e.world.playerEntities) {
+            best = Math.min(best, p.getDistanceSq(e));
+        }
+        return best == Double.MAX_VALUE ? Long.MAX_VALUE / 2 : (long) Math.min(best, Long.MAX_VALUE / 4);
     }
 
     private static AbstractNodeCostSearch createPathfinder(BlockPos start, Goal goal, IPath previous, CalculationContext context) {

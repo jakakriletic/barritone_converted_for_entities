@@ -26,3 +26,6 @@ docs/build-logs/
 # OS
 Thumbs.db
 .DS_Store
+
+# Profila launcherja za ročni preverbi (launcher-test.ps1)
+launcher-test/

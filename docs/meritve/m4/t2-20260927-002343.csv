@@ -1,0 +1,11 @@
+course,segment,name,expect,result,pass,ticks,meters,max_fall,chunk_loads,yaw_jitter,forbidden_entered,damage,openables_closed,nav_state,npc_size,width,height
+T2,1,"lesena vrata",REACH,REACHED,true,75,19.59,0.00,0,0,false,0.0,true,ARRIVED,0,0.60,1.95
+T2,2,"železna vrata (FAILED)",FAIL,FAILED,true,35,8.88,0.00,0,0,false,0.0,,FAILED,0,0.60,1.95
+T2,3,"ograjna vrata",REACH,REACHED,true,73,19.59,0.00,0,0,false,0.0,true,ARRIVED,0,0.60,1.95
+T2,4,"lestev gor 5",REACH,REACHED,true,97,14.70,0.15,0,0,false,0.0,,ARRIVED,0,0.60,1.95
+T2,5,"lestev dol 5",REACH,REACHED,true,124,22.17,0.15,0,10,false,0.0,,ARRIVED,0,0.60,1.95
+T2,6,"voda 1 globoko",REACH,REACHED,true,110,19.79,0.31,0,0,false,0.0,,ARRIVED,0,0.60,1.95
+T2,7,"voda 3 globoko (plavanje)",REACH,REACHED,true,124,19.83,0.31,0,0,false,0.0,,ARRIVED,0,0.60,1.95
+T2,8,"lava z mostom ob strani",REACH,REACHED,true,83,22.53,0.00,0,0,false,0.0,,ARRIVED,0,0.60,1.95
+T2,9,"kaktusi z režami",REACH,REACHED,true,74,20.03,0.00,0,0,false,0.0,,ARRIVED,0,0.60,1.95
+T2,10,"padec 10 v vodo",REACH,REACHED,true,130,16.06,9.67,0,15,false,0.0,,ARRIVED,0,0.60,1.95

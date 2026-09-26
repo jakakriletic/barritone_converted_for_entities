@@ -25,6 +25,7 @@ import si.ladja.npcbaritone.core.api.utils.Rotation;
 import si.ladja.npcbaritone.core.api.utils.RotationUtils;
 import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.MovementState;
@@ -45,8 +46,57 @@ public class MovementDescend extends Movement {
     private int numTicks = 0;
     public boolean forceSafeMode = false;
 
-    public MovementDescend(IBaritone baritone, BetterBlockPos start, BetterBlockPos end) {
-        super(baritone, start, end, new BetterBlockPos[]{end.up(2), end.up(), end}, end.down());
+    public MovementDescend(IBaritone baritone, BetterBlockPos start, BetterBlockPos end, EntitySize size) {
+        super(baritone, start, end,
+                size.isStandard() ? new BetterBlockPos[]{end.up(2), end.up(), end} : buildPositionsToBreak(size, start, end),
+                end.down(), size);
+    }
+
+    /** Število stolpcev pred ciljem (vključno s ciljem - 1), ki jih zasede okvir pri spustu (M8). */
+    static int forwardColumns(EntitySize size) {
+        return Math.max(size.sideSpace, size.forwardSpan);
+    }
+
+    /**
+     * M8: prostor za spust — stolpci {@code dest + smer * k}, {@code k = 0..forwardColumns},
+     * po širini {@code ±sideSpace}, od ciljne višine do vrha entitete na izhodiščni višini.
+     * Za standardno velikost {end.up(2), end.up(), end}.
+     */
+    public static BetterBlockPos[] buildPositionsToBreak(EntitySize size, BetterBlockPos start, BetterBlockPos end) {
+        int dx = end.x - start.x;
+        int dz = end.z - start.z;
+        int s = size.sideSpace;
+        int f = forwardColumns(size);
+        int h = size.heightBlocks;
+        BetterBlockPos[] ret = new BetterBlockPos[(f + 1) * (2 * s + 1) * (h + 1)];
+        int i = 0;
+        for (int k = 0; k <= f; k++) {
+            for (int b = -s; b <= s; b++) {
+                for (int dy = h; dy >= 0; dy--) {
+                    ret[i++] = new BetterBlockPos(end.x + dx * k + dz * b, end.y + dy, end.z + dz * k + dx * b);
+                }
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * M8: ali je vrsta {@code y} okvira pri spustu/padcu prehodna (vsi stolpci {@code k = 0..f},
+     * {@code ±sideSpace}). Za standardno velikost je to samo ciljni stolpec.
+     */
+    static boolean rowPassable(CalculationContext context, int x, int z, int destX, int destZ, int y) {
+        int s = context.requiredSideSpace;
+        int f = forwardColumns(context.size);
+        int dx = destX - x;
+        int dz = destZ - z;
+        for (int k = 0; k <= f; k++) {
+            for (int b = -s; b <= s; b++) {
+                if (!MovementHelper.canWalkThrough(context, destX + dx * k + dz * b, y, destZ + dz * k + dx * b)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @Override
@@ -81,17 +131,39 @@ public class MovementDescend extends Movement {
     public static void cost(CalculationContext context, int x, int y, int z, int destX, int destZ, MutableMoveResult res) {
         double totalCost = 0;
         IBlockState destDown = context.get(destX, y - 1, destZ);
-        totalCost += MovementHelper.getMiningDurationTicks(context, destX, y - 1, destZ, destDown, false);
-        if (totalCost >= COST_INF) {
-            return;
-        }
-        totalCost += MovementHelper.getMiningDurationTicks(context, destX, y, destZ, false);
-        if (totalCost >= COST_INF) {
-            return;
-        }
-        totalCost += MovementHelper.getMiningDurationTicks(context, destX, y + 1, destZ, true); // only the top block in the 3 we need to mine needs to consider the falling blocks above
-        if (totalCost >= COST_INF) {
-            return;
+        if (context.sizeAware) {
+            // M8: okvir od y - 1 do vrha entitete; stolpci pred ciljem za široke entitete
+            if (!context.size.canDescend()) {
+                return;
+            }
+            int s = context.requiredSideSpace;
+            int f = forwardColumns(context.size);
+            int top = y + context.height - 1;
+            int dx = destX - x;
+            int dz = destZ - z;
+            for (int k = 0; k <= f; k++) {
+                for (int b = -s; b <= s; b++) {
+                    for (int yy = y - 1; yy <= top; yy++) {
+                        totalCost += MovementHelper.getMiningDurationTicks(context, destX + dx * k + dz * b, yy, destZ + dz * k + dx * b, yy == top);
+                        if (totalCost >= COST_INF) {
+                            return;
+                        }
+                    }
+                }
+            }
+        } else {
+            totalCost += MovementHelper.getMiningDurationTicks(context, destX, y - 1, destZ, destDown, false);
+            if (totalCost >= COST_INF) {
+                return;
+            }
+            totalCost += MovementHelper.getMiningDurationTicks(context, destX, y, destZ, false);
+            if (totalCost >= COST_INF) {
+                return;
+            }
+            totalCost += MovementHelper.getMiningDurationTicks(context, destX, y + 1, destZ, true); // only the top block in the 3 we need to mine needs to consider the falling blocks above
+            if (totalCost >= COST_INF) {
+                return;
+            }
         }
 
         Block fromDown = context.get(x, y - 1, z).getBlock();
@@ -136,7 +208,7 @@ public class MovementDescend extends Movement {
     }
 
     public static boolean dynamicFallCost(CalculationContext context, int x, int y, int z, int destX, int destZ, double frontBreak, IBlockState below, MutableMoveResult res) {
-        if (frontBreak != 0 && context.get(destX, y + 2, destZ).getBlock() instanceof BlockFalling) {
+        if (frontBreak != 0 && context.get(destX, y + (context.sizeAware ? context.height : 2), destZ).getBlock() instanceof BlockFalling) {
             // if frontBreak is 0 we can actually get through this without updating the falling block and making it actually fall
             // but if frontBreak is nonzero, we're breaking blocks in front, so don't let anything fall through this column,
             // and potentially replace the water we're going to fall into
@@ -144,6 +216,9 @@ public class MovementDescend extends Movement {
         }
         if (!MovementHelper.canWalkThrough(context, destX, y - 2, destZ, below)) {
             return false;
+        }
+        if (context.sizeAware && !rowPassable(context, x, z, destX, destZ, y - 2)) {
+            return false; // M8: del okvira bi obvisel na robu
         }
         double costSoFar = 0;
         int effectiveStartHeight = y;
@@ -160,6 +235,9 @@ public class MovementDescend extends Movement {
             double tentativeCost = WALK_OFF_BLOCK_COST + FALL_N_BLOCKS_COST[unprotectedFallHeight] + frontBreak + costSoFar;
             if (reachedMinimum && MovementHelper.isWater(ontoBlock.getBlock())) {
                 if (!MovementHelper.canWalkThrough(context, destX, newY, destZ, ontoBlock)) {
+                    return false;
+                }
+                if (context.sizeAware && !rowPassable(context, x, z, destX, destZ, newY)) {
                     return false;
                 }
                 if (context.assumeWalkOnWater) {
@@ -196,6 +274,9 @@ public class MovementDescend extends Movement {
                 continue;
             }
             if (MovementHelper.canWalkThrough(context, destX, newY, destZ, ontoBlock)) {
+                if (context.sizeAware && !rowPassable(context, x, z, destX, destZ, newY)) {
+                    return false; // M8: okvir bi zadel blok ob padcu
+                }
                 continue;
             }
             if (!MovementHelper.canWalkOn(context, destX, newY, destZ, ontoBlock)) {

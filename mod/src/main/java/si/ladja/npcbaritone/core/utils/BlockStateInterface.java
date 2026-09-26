@@ -108,6 +108,11 @@ public class BlockStateInterface {
         this.access = new BlockStateInterfaceAccessWrapper(this, worldType);
     }
 
+    /** M5.6: število chunkov v tem pogledu (velikost posnetka pri iskanju). */
+    public int loadedChunkCount() {
+        return loadedChunks.size();
+    }
+
     public boolean worldContainsLoadedChunk(int blockX, int blockZ) {
         return loadedChunks.containsKey(ChunkPos.asLong(blockX >> 4, blockZ >> 4));
     }

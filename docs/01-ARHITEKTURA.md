@@ -31,6 +31,8 @@ si.ladja.npcbaritone
 │   ├── behavior            PathingBehavior, LookBehavior     ← ADAPT
 │   ├── process             CustomGoalProcess                 ← ADAPT
 │   ├── context             IEntityContext, EntityContext     ← REWRITE (D-006)
+│   ├── SearchExecutor      prednostni bazen z mejo, start/stop (M5.1, D-017)
+│   ├── SearchStats         µs iskanja, vrsta, posnetek (M5.6)
 │   ├── world               BlockStateInterface, ChunkSnapshot← ADAPT (D-012, D-013)
 │   ├── input               InputState (namesto InputOverrideHandler) ← REWRITE (D-010)
 │   └── settings            Settings, profili                 ← ADAPT (D-016)
@@ -40,15 +42,32 @@ si.ladja.npcbaritone
 │   ├── BaritoneJumpHelper      extends EntityJumpHelper
 │   ├── Attach                  refleksija za tuje entitete (D-008)
 │   ├── SearchExecutor          omejen bazen, vrsta, deljenje (D-017)
-│   ├── Telemetry               števci, CSV (M3/M5)
-│   ├── NpcbCommand             /npcb (M3)
-│   └── NpcBaritoneMod          @Mod, config, NetworkCheckHandler (D-024)
+│   ├── Telemetry               števci, speedtest (M2/M5)
+│   ├── PerfMeter               µs knjižnice na tick (M5 A1), MSPT
+│   ├── StressRunner            tečaj T4: N mobov, naključni cilji, rušenje (M5.7/8)
+│   ├── EntityInteractions      CLICK_RIGHT → lesena/ograjna vrata, zapiranje za NPC-jem (M4.1)
+│   ├── Course, CourseT1, CourseT2, CourseRunner   tečaji, CSV, škoda, podpis blokov (M2.9, M4.8/9)
+│   ├── NavStatus               stanje IDLE/SEARCHING/MOVING/ARRIVED/FAILED iz PathEvent (M3)
+│   ├── PathTrace               sled na tick v CSV (M3.4)
+│   ├── DebugSync               pošiljanje poti OP-jem z modom, 4 Hz (M3.2)
+│   ├── net/PathSyncMessage     paket poti (format 1)
+│   ├── CommonProxy             strežniški @SidedProxy
+│   ├── NpcbCommand             /npcb (M2, M3.1)
+│   └── NpcBaritoneMod          @Mod, config, kanal, NetworkCheckHandler (D-024)
 └── client/                 samo klient, neobvezno (M3): izris poti iz paketa
+    ├── ClientProxy             prejem paketa na glavni niti
+    ├── ClientPaths             zadnja pot po ID entitete, poteče po 3 s
+    └── PathRenderer            RenderWorldLastEvent: črte + cilj skozi bloke
 ```
 
 Stanje po M1: Baritonovi razredi so ohranili svoje podpakete (`core/utils/BlockStateInterface`,
 `core/utils/InputOverrideHandler`, `core/api/...`); nov je `core/world/ChunkSnapshot`. BSI nosi
 profil nastavitev instance (`bsi.settings`, D-016), `IEntityContext.baritone()` vodi do instance.
+
+Stanje po M3: `client/` doseže samo `@SidedProxy` z nizom imena razreda; lint test preveri,
+da ga izven `client/` nihče ne uvozi (dedicated strežnik ga nikoli ne naloži).
+Paket poti gre samo igralcem, ki imajo mod po FML seznamu iz rokovanja, zato vanilla klient
+nikoli ne dobi neznanega kanala (D-024).
 
 Pravilo meje: `core` ne uvaža `forge` in nikoli `net.minecraft.client`. `api` ne uvaža
 `core` razen ciljev. Test v M1 preveri uvoze (ArchUnit-lite: skeniranje izvornih
@@ -138,7 +157,8 @@ IDLE ──tryMoveTo──► SEARCHING ──pot najdena──► MOVING ──
 | `profile.default.*` | NPC vrednosti iz §8 raziskave | — | profil (D-016) |
 | `movement.speedMode` | `player` | `player`/`own` | D-010 |
 | `movement.maxTurnDegrees` | 30 | 5–180 | D-011 |
-| `debug.syncPathsToOps` | false | — | M3 |
+| `profile.named` | `walk`, `parkour`, `cautious` | seznam `ime: nastavitev=vrednost, …` | poimenovani profili (D-016, M3.1); `default` vedno obstaja |
+| `debug.syncPathsToOps` | false | — | M3: poti vsem OP-jem z modom; sicer samo z `/npcb debug on` |
 
 Nesmiselne vrednosti se obrežejo (vzorec `FleetCommandLimits` iz `ladja_mod`).
 
@@ -171,6 +191,6 @@ false in vse ostane vanilla (D-005).
 
 - igralci (fake player ali pravi) — to je Baritone sam
 - leteči in plavajoči NPC-ji (`movementType` 1, 2) — ostanejo vanilla/CNPC
-- entitete večje od 1×2 do M8 (D-019)
+- entitete večje od 3 stolpcev × 4 blokov; od 1×2 do te meje samo s stikalom `movement.largeEntities` (D-028, prej D-019)
 - rušenje, postavljanje, inventar do M10 (D-015)
 - hoja po nenaloženem svetu (D-014)

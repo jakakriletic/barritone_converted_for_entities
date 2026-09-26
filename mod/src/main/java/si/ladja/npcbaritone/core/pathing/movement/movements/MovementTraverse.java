@@ -27,6 +27,7 @@ import si.ladja.npcbaritone.core.api.utils.RotationUtils;
 import si.ladja.npcbaritone.core.api.utils.VecUtils;
 import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.MovementState;
@@ -48,8 +49,28 @@ public class MovementTraverse extends Movement {
      */
     private boolean wasTheBridgeBlockAlwaysThere = true;
 
-    public MovementTraverse(IBaritone baritone, BetterBlockPos from, BetterBlockPos to) {
-        super(baritone, from, to, new BetterBlockPos[]{to.up(), to}, to.down());
+    public MovementTraverse(IBaritone baritone, BetterBlockPos from, BetterBlockPos to, EntitySize size) {
+        super(baritone, from, to, size.isStandard() ? new BetterBlockPos[]{to.up(), to} : buildPositionsToBreak(size, from, to), to.down(), size);
+    }
+
+    /**
+     * M8.2 (Automatone {@code 324bd259}, {@code 943ae1be}): bloki, v katere entiteta vstopi ob
+     * premiku za en blok — prednja ploskev okvira ({@code dest + smer * sideSpace}, po širini
+     * {@code ±sideSpace}, po višini {@code heightBlocks}). Za standardno velikost {to.up(), to}.
+     */
+    public static BetterBlockPos[] buildPositionsToBreak(EntitySize size, BetterBlockPos from, BetterBlockPos to) {
+        int dx = to.x - from.x;
+        int dz = to.z - from.z;
+        int s = size.sideSpace;
+        int h = size.heightBlocks;
+        BetterBlockPos[] ret = new BetterBlockPos[(2 * s + 1) * h];
+        int i = 0;
+        for (int b = -s; b <= s; b++) {
+            for (int dy = h - 1; dy >= 0; dy--) {
+                ret[i++] = new BetterBlockPos(to.x + dx * s + dz * b, to.y + dy, to.z + dz * s + dx * b);
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -69,6 +90,9 @@ public class MovementTraverse extends Movement {
     }
 
     public static double cost(CalculationContext context, int x, int y, int z, int destX, int destZ) {
+        if (context.sizeAware) {
+            return costSized(context, x, y, z, destX, destZ);
+        }
         IBlockState pb0 = context.get(destX, y + 1, destZ);
         IBlockState pb1 = context.get(destX, y, destZ);
         IBlockState destOn = context.get(destX, y - 1, destZ);
@@ -162,11 +186,117 @@ public class MovementTraverse extends Movement {
         }
     }
 
+    /**
+     * M8.2: {@link #cost} za poljubno velikost (Automatone {@code 324bd259}). Za standardno
+     * velikost vrne isto kot upstream veja (test {@code SizeAwareEquivalenceTest}); mostu
+     * (postavljanja bloka) ne podpira, ker NPC nima inventarja (D-015).
+     *
+     * <p>Ker entiteta že stoji na izhodišču, je prostor okoli nje prost; ob premiku za en blok
+     * vstopi samo v prednjo ploskev okvira: stolpci {@code dest + smer * sideSpace ± sideSpace}
+     * po višini {@code heightBlocks}.
+     */
+    static double costSized(CalculationContext context, int x, int y, int z, int destX, int destZ) {
+        int s = context.requiredSideSpace;
+        int h = context.height;
+        int dx = destX - x;
+        int dz = destZ - z;
+        IBlockState destOn = context.get(destX, y - 1, destZ);
+        IBlockState srcDown = context.get(x, y - 1, z);
+        Block srcDownBlock = srcDown.getBlock();
+        boolean standingOnABlock = MovementHelper.mustBeSolidToWalkOn(context, x, y - 1, z, srcDown);
+        boolean frostWalker = standingOnABlock && !context.assumeWalkOnWater && MovementHelper.canUseFrostWalker(context, destOn);
+        if (!frostWalker && !MovementHelper.canWalkOn(context, destX, y - 1, destZ, destOn)) {
+            return COST_INF; // most: zahteva postavljanje bloka
+        }
+        double WC = WALK_ONE_BLOCK_COST;
+        boolean water = false;
+        for (int dy = 0; dy < h; dy++) {
+            if (MovementHelper.isWater(context.getBlock(destX, y + dy, destZ))) {
+                WC = context.waterWalkSpeed;
+                water = true;
+                break;
+            }
+        }
+        if (!water) {
+            if (destOn.getBlock() == Blocks.SOUL_SAND) {
+                WC += (WALK_ONE_OVER_SOUL_SAND_COST - WALK_ONE_BLOCK_COST) / 2;
+            } else if (frostWalker) {
+                // with frostwalker we can walk on water without the penalty
+            } else if (destOn.getBlock() == Blocks.WATER) {
+                WC += context.walkOnWaterOnePenalty;
+            }
+            if (srcDownBlock == Blocks.SOUL_SAND) {
+                WC += (WALK_ONE_OVER_SOUL_SAND_COST - WALK_ONE_BLOCK_COST) / 2;
+            }
+        }
+        double hardness = 0;
+        int fx = destX + dx * s;
+        int fz = destZ + dz * s;
+        for (int b = -s; b <= s; b++) {
+            for (int dy = 0; dy < h; dy++) {
+                // only include falling on the uppermost block to break
+                hardness += MovementHelper.getMiningDurationTicks(context, fx + dz * b, y + dy, fz + dx * b, dy == h - 1);
+                if (hardness >= COST_INF) {
+                    return COST_INF;
+                }
+            }
+        }
+        if (s > 0) {
+            // ciljni stolpec: entiteta, ki stoji v prostoru, kamor ne gre (npr. zagon v ozkem
+            // hodniku), sicer ne bi videla stene ob sebi (GoldenSizeTest G9)
+            for (int dy = 0; dy < h; dy++) {
+                hardness += MovementHelper.getMiningDurationTicks(context, destX, y + dy, destZ, dy == h - 1);
+                if (hardness >= COST_INF) {
+                    return COST_INF;
+                }
+            }
+        }
+        if (hardness == 0) {
+            if (!water && context.canSprint) {
+                WC *= SPRINT_MULTIPLIER;
+            }
+            return WC;
+        }
+        if (srcDownBlock == Blocks.LADDER || srcDownBlock == Blocks.VINE) {
+            hardness *= 5;
+        }
+        return WC + hardness;
+    }
+
+    /**
+     * M4.2: zahteva odpiranje lesenih vrat ali ograjnih vrat na {@code doorPos}, če zapirajo
+     * pot iz {@code from}. Vhod {@code CLICK_RIGHT} izvede forge plast ({@code EntityInteractions})
+     * neposredno na bloku, zato ni treba, da je blok v dosegu pogleda (za razliko od igralca).
+     */
+    private boolean tryOpenDoors(MovementState state, IBlockState bs, BlockPos doorPos, BlockPos from) {
+        if (bs.getBlock() instanceof BlockDoor) {
+            boolean notPassable = !MovementHelper.isDoorPassable(ctx, doorPos, from);
+            // Automatone b1899f30: odpirajo se samo lesena vrata
+            boolean canOpen = bs.getMaterial() == net.minecraft.block.material.Material.WOOD;
+            if (notPassable && canOpen) {
+                state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(new BlockStateInterface(ctx).access, doorPos), ctx.entityRotations()), true))
+                        .setInput(Input.CLICK_RIGHT, true);
+                return true;
+            }
+        } else if (bs.getBlock() instanceof BlockFenceGate) {
+            BlockPos blocked = !MovementHelper.isGatePassable(ctx, doorPos.up(), from.up()) ? doorPos.up()
+                    : !MovementHelper.isGatePassable(ctx, doorPos, from) ? doorPos
+                    : null;
+            if (blocked != null) {
+                state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(new BlockStateInterface(ctx).access, blocked), ctx.entityRotations()), true))
+                        .setInput(Input.CLICK_RIGHT, true);
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public MovementState updateState(MovementState state) {
         super.updateState(state);
-        IBlockState pb0 = BlockStateInterface.get(ctx, positionsToBreak[0]);
-        IBlockState pb1 = BlockStateInterface.get(ctx, positionsToBreak[1]);
+        // M8 (Automatone a9c929f0): pri velikih entitetah positionsToBreak ni {dest.up(), dest}
+        IBlockState pb0 = BlockStateInterface.get(ctx, dest.up());
+        IBlockState pb1 = BlockStateInterface.get(ctx, dest);
         if (state.getStatus() != MovementStatus.RUNNING) {
             // if the setting is enabled
             if (!baritone.getSettings().walkWhileBreaking.value) {
@@ -213,27 +343,15 @@ public class MovementTraverse extends Movement {
         Block fd = BlockStateInterface.get(ctx, src.down()).getBlock();
         boolean ladder = fd == Blocks.LADDER || fd == Blocks.VINE;
 
-        if (pb0.getBlock() instanceof BlockDoor || pb1.getBlock() instanceof BlockDoor) {
-
-            boolean notPassable = pb0.getBlock() instanceof BlockDoor && !MovementHelper.isDoorPassable(ctx, src, dest) || pb1.getBlock() instanceof BlockDoor && !MovementHelper.isDoorPassable(ctx, dest, src);
-            boolean canOpen = !(Blocks.IRON_DOOR.equals(pb0.getBlock()) || Blocks.IRON_DOOR.equals(pb1.getBlock()));
-
-            if (notPassable && canOpen) {
-                return state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(new BlockStateInterface(ctx).access, positionsToBreak[0]), ctx.entityRotations()), true))
-                        .setInput(Input.CLICK_RIGHT, true);
-            }
+        // M4.2 (Automatone 3216de48): vrata na cilju premika in na izhodišču (entiteta stoji v
+        // odprtini). Upstream 1.12.2 je klical isDoorPassable(ctx, src, dest) z zamenjanima
+        // argumentoma in zato zaprtih vrat pred sabo nikoli ni odprl. FACING/OPEN ima samo
+        // spodnja polovica vrat, zato se bere dest (pb1), ne dest.up().
+        if (tryOpenDoors(state, pb1, dest, src)) {
+            return state;
         }
-
-        if (pb0.getBlock() instanceof BlockFenceGate || pb1.getBlock() instanceof BlockFenceGate) {
-            BlockPos blocked = !MovementHelper.isGatePassable(ctx, positionsToBreak[0], src.up()) ? positionsToBreak[0]
-                    : !MovementHelper.isGatePassable(ctx, positionsToBreak[1], src) ? positionsToBreak[1]
-                    : null;
-            if (blocked != null) {
-                Optional<Rotation> rotation = RotationUtils.reachable(ctx, blocked);
-                if (rotation.isPresent()) {
-                    return state.setTarget(new MovementState.MovementTarget(rotation.get(), true)).setInput(Input.CLICK_RIGHT, true);
-                }
-            }
+        if (tryOpenDoors(state, BlockStateInterface.get(ctx, src), src, dest)) {
+            return state;
         }
 
         boolean isTheBridgeBlockThere = MovementHelper.canWalkOn(ctx, positionToPlace) || ladder || MovementHelper.canUseFrostWalker(ctx, positionToPlace);
@@ -268,7 +386,7 @@ public class MovementTraverse extends Movement {
             }
 
             IBlockState destDown = BlockStateInterface.get(ctx, dest.down());
-            BlockPos against = positionsToBreak[0];
+            BlockPos against = dest.up();
             if (feet.getY() != dest.getY() && ladder && (destDown.getBlock() == Blocks.VINE || destDown.getBlock() == Blocks.LADDER)) {
                 against = destDown.getBlock() == Blocks.VINE ? MovementPillar.getAgainst(new CalculationContext(baritone), dest.down()) : dest.offset(destDown.getValue(BlockLadder.FACING).getOpposite());
                 if (against == null) {
@@ -346,7 +464,7 @@ public class MovementTraverse extends Movement {
                 }
                 return state;
             }
-            MovementHelper.moveTowards(ctx, state, positionsToBreak[0]);
+            MovementHelper.moveTowards(ctx, state, dest.up());
             return state;
             // TODO MovementManager.moveTowardsBlock(to); // move towards not look at because if we are bridging for a couple blocks in a row, it is faster if we dont spin around and walk forwards then spin around and place backwards for every block
         }

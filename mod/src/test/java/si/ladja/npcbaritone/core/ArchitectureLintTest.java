@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue;
  *     <li>D-012: {@code core} ne kliče sveta mimo {@code BlockStateInterface} (klici, ki na
  *     strežniku naložijo ali generirajo chunk), razen v dovoljenih razredih.</li>
  *     <li>D-024: nobena datoteka izven {@code client/} ne uvaža {@code net.minecraft.client}.</li>
- *     <li>Meje paketov: {@code core} ne uvaža {@code forge}.</li>
+ *     <li>Meje paketov: {@code core} ne uvaža {@code forge}; izven {@code client/} nihče ne uvaža {@code client} (M3).</li>
  *     <li>D-002: v {@code mod/src/main} ni Elytre.</li>
  * </ul>
  * Test bere izvorne datoteke, zato mu ni mar za prevod; lovi besedilo, ne tipov.
@@ -73,6 +73,14 @@ public class ArchitectureLintTest {
     public void coreDoesNotImportForge() throws IOException {
         List<String> hits = grep(core(), Pattern.compile("^import\\s+si\\.ladja\\.npcbaritone\\.forge\\."), java.util.Collections.emptyList());
         assertEquals("core -> forge imports:\n" + String.join("\n", hits), 0, hits.size());
+    }
+
+    /** M3: {@code client} doseže samo {@code @SidedProxy} kot niz; drugače bi dedicated strežnik naložil klientske razrede. */
+    @Test
+    public void nothingOutsideClientImportsClientPackage() throws IOException {
+        List<String> hits = grep(mainJava(), Pattern.compile("^import\\s+si\\.ladja\\.npcbaritone\\.client\\."),
+                java.util.Collections.singletonList("si/ladja/npcbaritone/client/"));
+        assertEquals("client imports outside client/:\n" + String.join("\n", hits), 0, hits.size());
     }
 
     @Test

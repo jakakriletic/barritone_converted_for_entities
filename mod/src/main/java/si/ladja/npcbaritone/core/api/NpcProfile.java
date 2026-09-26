@@ -54,6 +54,8 @@ public final class NpcProfile {
         s.freeLook.value = false;
         s.antiCheatCompatibility.value = false;
         s.disconnectOnArrival.value = false;
+        // M5: brez sporočila ob vsakem prihodu (pri 200 NPC-jih ~20 vrstic/s na glavni niti)
+        s.notificationOnPathComplete.value = false;
         return s;
     }
 }

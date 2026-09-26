@@ -1,0 +1,9 @@
+[16:27:34] [Server thread/INFO] [net.minecraft.server.management.PlayerList]: jakakriletic[/127.0.0.1:58683] logged in with entity id 0 at (297.5, 4.0, 1682.5)
+[16:27:39] [Server thread/INFO] [npcbaritone]: NPCB-SELFTEST-CLIENT player=jakakriletic mod_on_client=false dedicated=true spawn_animals=true spawn_npcs=true
+[16:27:39] [Server thread/INFO] [npcbaritone]: NPCB-SELFTEST-STEP 1 M3 A1 izris OK ticks=1 SKIP: ni klienta v tem procesu (dedicated) — preveri na očeh
+[16:27:41] [Server thread/INFO] [npcbaritone]: NPCB-SELFTEST-STEP 2 M3 ukazi OK ticks=52 4/4 ukazi OK, husk pri tebi po 52 tickih (profil walk)
+[16:27:41] [Server thread/INFO] [npcbaritone]: NPCB-SELFTEST-STEP 3 M3 A1 debug off OK ticks=1 SKIP: ni klienta v tem procesu
+[16:27:48] [Server thread/INFO] [npcbaritone]: NPCB-SELFTEST-STEP 4 D-008 + M6 A1 zombi OK ticks=140 Baritone: udarec po 93 tickih, klicev navigatorja 22, iskanj 1; kontrola: udarec po 139 tickih
+[16:27:51] [Server thread/INFO] [npcbaritone]: NPCB-SELFTEST-STEP 5 M6 A3 volk OK ticks=50 pri tebi po 50 tickih; klicev navigatorja 5, iskanj 1, teleportov 0
+[16:28:01] [Server thread/INFO] [npcbaritone]: NPCB-SELFTEST-STEP 6 M6 A2 vaščan OK ticks=194 vas zaznana po 2 tickih; Baritone: v kolibi po 194 tickih (klicev navigatorja 1, iskanj 1); kontrola: v kolibi po 96 tickih
+[16:28:01] [Server thread/INFO] [npcbaritone]: NPCB-SELFTEST-DONE passed=6 total=6 csv=C:\Users\jakak\Desktop\barittone_for_npc_rework\mod\run\npcbaritone\runs\selftest-20260926-162801.csv

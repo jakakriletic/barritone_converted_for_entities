@@ -27,6 +27,7 @@ import si.ladja.npcbaritone.core.api.utils.RotationUtils;
 import si.ladja.npcbaritone.core.api.utils.VecUtils;
 import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.MovementState;
@@ -43,8 +44,8 @@ import java.util.Set;
 
 public class MovementPillar extends Movement {
 
-    public MovementPillar(IBaritone baritone, BetterBlockPos start, BetterBlockPos end) {
-        super(baritone, start, end, new BetterBlockPos[]{start.up(2)}, start);
+    public MovementPillar(IBaritone baritone, BetterBlockPos start, BetterBlockPos end, EntitySize size) {
+        super(baritone, start, end, new BetterBlockPos[]{start.up(size.heightBlocks)}, start, size);
     }
 
     @Override
@@ -58,6 +59,11 @@ public class MovementPillar extends Movement {
     }
 
     public static double cost(CalculationContext context, int x, int y, int z) {
+        // M8.6 (Automatone 3a08d43e): lestve in trte so široke en blok; višina iz konteksta
+        if (context.sizeAware && context.requiredSideSpace > 0) {
+            return COST_INF;
+        }
+        int h = context.sizeAware ? context.height : 2;
         IBlockState fromState = context.get(x, y, z);
         Block from = fromState.getBlock();
         boolean ladder = from == Blocks.LADDER || from == Blocks.VINE;
@@ -73,14 +79,14 @@ public class MovementPillar extends Movement {
         if (from == Blocks.VINE && !hasAgainst(context, x, y, z)) { // TODO this vine can't be climbed, but we could place a pillar still since vines are replacable, no? perhaps the pillar jump would be impossible because of the slowdown actually.
             return COST_INF;
         }
-        IBlockState toBreak = context.get(x, y + 2, z);
+        IBlockState toBreak = context.get(x, y + h, z);
         Block toBreakBlock = toBreak.getBlock();
         if (toBreakBlock instanceof BlockFenceGate) { // see issue #172
             return COST_INF;
         }
         Block srcUp = null;
         if (MovementHelper.isWater(toBreakBlock) && MovementHelper.isWater(from)) { // TODO should this also be allowed if toBreakBlock is air?
-            srcUp = context.get(x, y + 1, z).getBlock();
+            srcUp = context.get(x, y + h - 1, z).getBlock();
             if (MovementHelper.isWater(srcUp)) {
                 return LADDER_UP_ONE_COST; // allow ascending pillars of water, but only if we're already in one
             }
@@ -106,7 +112,7 @@ public class MovementPillar extends Movement {
             // to ascend here we'd have to break the block we are standing on
             return COST_INF;
         }
-        double hardness = MovementHelper.getMiningDurationTicks(context, x, y + 2, z, toBreak, true);
+        double hardness = MovementHelper.getMiningDurationTicks(context, x, y + h, z, toBreak, true);
         if (hardness >= COST_INF) {
             return COST_INF;
         }
@@ -114,11 +120,11 @@ public class MovementPillar extends Movement {
             if (toBreakBlock == Blocks.LADDER || toBreakBlock == Blocks.VINE) {
                 hardness = 0; // we won't actually need to break the ladder / vine because we're going to use it
             } else {
-                IBlockState check = context.get(x, y + 3, z); // the block on top of the one we're going to break, could it fall on us?
+                IBlockState check = context.get(x, y + h + 1, z); // the block on top of the one we're going to break, could it fall on us?
                 if (check.getBlock() instanceof BlockFalling) {
                     // see MovementAscend's identical check for breaking a falling block above our head
                     if (srcUp == null) {
-                        srcUp = context.get(x, y + 1, z).getBlock();
+                        srcUp = context.get(x, y + h - 1, z).getBlock();
                     }
                     if (!(toBreakBlock instanceof BlockFalling) || !(srcUp instanceof BlockFalling)) {
                         return COST_INF;

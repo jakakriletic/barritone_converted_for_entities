@@ -39,7 +39,6 @@ import si.ladja.npcbaritone.core.utils.InputOverrideHandler;
 import si.ladja.npcbaritone.core.utils.PathingControlManager;
 import si.ladja.npcbaritone.core.utils.player.EntityContext;
 
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 /**
@@ -71,6 +70,8 @@ public class Baritone implements IBaritone {
 
     private int tickCount;
 
+    private boolean postTickPending;
+
     Baritone(EntityLiving entity) {
         this(entity, BaritoneAPI.getSettings());
     }
@@ -100,6 +101,11 @@ public class Baritone implements IBaritone {
      * D-009): obdelava poti, izbira premika, vhodi in ciljni yaw.
      */
     public void tick() {
+        if (this.postTickPending) {
+            // POST prejšnjega ticka: entiteta nima kljuke po travel(), zato ga sprožimo tu
+            postTick();
+        }
+        this.postTickPending = true;
         TickEvent event = new TickEvent(EventState.PRE, TickEvent.Type.IN, this.tickCount++);
         this.gameEventHandler.onTick(event);
         this.gameEventHandler.onPlayerUpdate(new PlayerUpdateEvent(EventState.PRE));
@@ -109,6 +115,7 @@ public class Baritone implements IBaritone {
      * Po premiku entitete v istem ticku.
      */
     public void postTick() {
+        this.postTickPending = false;
         this.gameEventHandler.onPlayerUpdate(new PlayerUpdateEvent(EventState.POST));
         this.gameEventHandler.onPostTick(new TickEvent(EventState.POST, TickEvent.Type.IN, this.tickCount - 1));
     }
@@ -181,7 +188,8 @@ public class Baritone implements IBaritone {
         this.settings = java.util.Objects.requireNonNull(settings);
     }
 
-    public static Executor getExecutor() {
-        return SearchExecutor.INSTANCE;
+    /** M5.1: iskanja gredo prek {@link SearchExecutor#submit} (prednost, zgornja meja). */
+    public static void submitSearch(Runnable search, long priority) {
+        SearchExecutor.submit(search, priority);
     }
 }

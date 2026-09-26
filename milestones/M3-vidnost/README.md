@@ -26,3 +26,35 @@ naslednji problem se razišče hitreje.
 | A2 | vanilla klient se poveže in vidi zombija hoditi (D-024) |
 | A3 | `trace dump` zapiše CSV z vsemi stolpci; en tek T1 = ena datoteka |
 | A4 | debug paketi se ne pošiljajo, ko je debug izklopljen (števec 0) |
+
+## Stanje (2026-09-25, veja `m3-vidnost`)
+
+| # | Stanje |
+|---|---|
+| M3.1 | `/npcb attach <e> [puppet] [profil]`, `goto <e> <x y z \| cilj-entiteta>`, `status [e]`, `profile list \| <e> <profil>`, `debug [on\|off]`, `trace on [e] \| off \| dump`; prevedeno, JUnit zelen |
+| M3.2 | `DebugSync` + `PathSyncMessage` (format 1): samo OP 2 + mod na klientu (FML seznam modov) + `debug on` ali `syncPathsToOps`, ≤ 128 blokov, ≤ 4 Hz, keepalive 1 s; prevedeno |
+| M3.3 | `client/PathRenderer`: sivo prehojeno, rumeno trenutni premik, rdeče preostanek, magenta naslednji segment, zelen cilj (cian med iskanjem), bela črta NPC → naslednja točka; **A1 preverjen** z `/npcb selftest` (2026-09-26): pot narisana po 2 tickih, po `debug off` izgine v 2,8 s |
+| M3.4 | `PathTrace` (17 stolpcev, glej spodaj); `/npcb course t1 run` samodejno zapiše `t1-<čas>-trace.csv` poleg izidov. **A3 in A4 zelena na dedicated** (695 vrstic, 0 paketov); sled je razkrila dve napaki jedra (glej 04-STANJE, 2026-09-25 (3)), popravka čakata ponovni tek |
+| M3.5 | **A2 preverjen** (2026-09-26): vanilla 1.12.2 klient na dedicated strežnik z modom, `/npcb selftest` 6/6, `mod_on_client=false`, brez prekinitve (`launcher-test.ps1 -Server`) |
+
+**Stolpci sledi:** `world_tick, entity_id, entity, tag, state, x, y, z, goal, path_len, path_pos, movement, search_us, searches, replans, fail_reason, events`.
+`tag` = odsek tečaja (`T1/3`), `events` = dogodki poti v tem ticku (`CALC_STARTED|…`),
+`search_us` = trajanje zadnjega končanega iskanja, `fail_reason` = `no_path | queue_full | exception`.
+
+**Poimenovani profili** (`config/npcbaritone.cfg`, `profile { S:named < … > }`):
+`walk` (brez sprinta), `parkour` (skoki čez reže; v `speedMode=own` vedno izklopljen),
+`cautious` (padec ≤ 2, brez sprinta). Neznana nastavitev v profilu da napako ob `attach`/`profile`.
+
+### Preverbe pri uporabniku
+
+1. **Windows build + dedicated (A3, A4):** `.\dev.ps1 build --offline; .\t1-run.ps1` → poleg
+   M2 vrstic še `M3 A3 sled: 17 stolpcev`, `pokrije vse odseke: 10/10`, `M3 A4 … 0 (= 0)`.
+2. **Klient z modom (A1):** `.\dev.ps1 runClient --offline`, enoigralski svet s cheati,
+   `/npcb course t1 build`, `/summon husk ~2 ~ ~`, `/npcb debug on`,
+   `/npcb course t1 run @e[type=husk,c=1]` → vidiš črte poti in zeleno škatlo cilja; po
+   `/npcb debug off` črte izginejo v ≤ 3 s.
+3. **Ukazi:** `/npcb status @e[type=husk,c=1]` (stanje, pot, µs iskanja), `/npcb profile list`,
+   `/npcb profile @e[type=husk,c=1] walk`, `/npcb goto @e[type=husk,c=1] @p`.
+4. **Vanilla klient (A2, M3.5):** dedicated strežnik z modom (`.\smoke-server.ps1`, nato ročno
+   `runServer`), vanilla 1.12.2 klient se poveže, OP na strežniku da `/npcb attach` + `goto` →
+   husk hodi, klient nima napak v logu.

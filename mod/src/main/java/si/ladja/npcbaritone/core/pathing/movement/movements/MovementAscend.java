@@ -24,6 +24,7 @@ import si.ladja.npcbaritone.core.api.pathing.movement.MovementStatus;
 import si.ladja.npcbaritone.core.api.utils.BetterBlockPos;
 import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.MovementState;
@@ -40,8 +41,43 @@ public class MovementAscend extends Movement {
 
     private int ticksWithoutPlacement = 0;
 
-    public MovementAscend(IBaritone baritone, BetterBlockPos src, BetterBlockPos dest) {
-        super(baritone, src, dest, new BetterBlockPos[]{dest, src.up(2), dest.up()}, dest.down());
+    public MovementAscend(IBaritone baritone, BetterBlockPos src, BetterBlockPos dest, EntitySize size) {
+        super(baritone, src, dest,
+                size.isStandard() ? new BetterBlockPos[]{dest, src.up(2), dest.up()} : buildPositionsToBreak(size, src, dest),
+                size.isStandard() ? dest.down() : placePos(size, src, dest), size);
+    }
+
+    /** M8.4: blok, na katerega entiteta skoči — pod prednjim robom okvira. */
+    private static BetterBlockPos placePos(EntitySize size, BetterBlockPos src, BetterBlockPos dest) {
+        int dx = dest.x - src.x;
+        int dz = dest.z - src.z;
+        return new BetterBlockPos(dest.x + dx * size.sideSpace, src.y, dest.z + dz * size.sideSpace);
+    }
+
+    /**
+     * M8.4 (Automatone {@code 39da8286}): strop nad celim okvirom na izhodišču (višina
+     * {@code heightBlocks}) in prednja ploskev okvira na cilju.
+     */
+    public static BetterBlockPos[] buildPositionsToBreak(EntitySize size, BetterBlockPos src, BetterBlockPos dest) {
+        int s = size.sideSpace;
+        int h = size.heightBlocks;
+        int dx = dest.x - src.x;
+        int dz = dest.z - src.z;
+        BetterBlockPos[] ret = new BetterBlockPos[(2 * s + 1) * (2 * s + 1) + (2 * s + 1) * h];
+        int i = 0;
+        for (int ox = -s; ox <= s; ox++) {
+            for (int oz = -s; oz <= s; oz++) {
+                ret[i++] = new BetterBlockPos(src.x + ox, src.y + h, src.z + oz);
+            }
+        }
+        int px = dest.x + dx * s;
+        int pz = dest.z + dz * s;
+        for (int b = -s; b <= s; b++) {
+            for (int dy = 0; dy < h; dy++) {
+                ret[i++] = new BetterBlockPos(px + dz * b, dest.y + dy, pz + dx * b);
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -67,6 +103,9 @@ public class MovementAscend extends Movement {
     }
 
     public static double cost(CalculationContext context, int x, int y, int z, int destX, int destZ) {
+        if (context.sizeAware) {
+            return costSized(context, x, y, z, destX, destZ);
+        }
         IBlockState toPlace = context.get(destX, y, destZ);
         double additionalPlacementCost = 0;
         if (!MovementHelper.canWalkOn(context, destX, y, destZ, toPlace)) {
@@ -156,6 +195,90 @@ public class MovementAscend extends Movement {
         return totalCost;
     }
 
+    /**
+     * M8.4: {@link #cost} za poljubno velikost (Automatone {@code 39da8286}). Brez postavljanja
+     * (D-015). Entiteta skoči na blok pod prednjim robom okvira ({@code dest + smer * sideSpace}),
+     * potrebuje prost strop nad celim okvirom na višini {@code heightBlocks} in prosto prednjo
+     * ploskev okvira od {@code y + 1} do {@code y + heightBlocks}.
+     */
+    static double costSized(CalculationContext context, int x, int y, int z, int destX, int destZ) {
+        int s = context.requiredSideSpace;
+        int h = context.height;
+        int dx = destX - x;
+        int dz = destZ - z;
+        int px = destX + dx * s;
+        int pz = destZ + dz * s;
+        IBlockState toPlace = context.get(px, y, pz);
+        if (!MovementHelper.canWalkOn(context, px, y, pz, toPlace)) {
+            return COST_INF; // postavljanje ni podprto
+        }
+        double ceiling = 0;
+        int y1 = y + h;
+        for (int ox = -s; ox <= s; ox++) {
+            for (int oz = -s; oz <= s; oz++) {
+                int x1 = x + ox;
+                int z1 = z + oz;
+                IBlockState up = context.get(x1, y1, z1);
+                if (context.get(x1, y1 + 1, z1).getBlock() instanceof BlockFalling
+                        && (MovementHelper.canWalkThrough(context, x1, y1 - 1, z1) || !(up.getBlock() instanceof BlockFalling))) {
+                    return COST_INF; // it would fall on us and possibly suffocate us (see upstream branch)
+                }
+                ceiling += MovementHelper.getMiningDurationTicks(context, x1, y1, z1, up, false);
+                if (ceiling >= COST_INF) {
+                    return COST_INF;
+                }
+            }
+        }
+        IBlockState srcDown = context.get(x, y - 1, z);
+        if (srcDown.getBlock() == Blocks.LADDER || srcDown.getBlock() == Blocks.VINE) {
+            return COST_INF;
+        }
+        boolean jumpingFromBottomSlab = MovementHelper.isBottomSlab(srcDown);
+        boolean jumpingToBottomSlab = MovementHelper.isBottomSlab(toPlace);
+        if (jumpingFromBottomSlab && !jumpingToBottomSlab) {
+            return COST_INF;
+        }
+        double walk;
+        if (jumpingToBottomSlab) {
+            if (jumpingFromBottomSlab) {
+                walk = Math.max(JUMP_ONE_BLOCK_COST, WALK_ONE_BLOCK_COST);
+                walk += context.jumpPenalty;
+            } else {
+                walk = WALK_ONE_BLOCK_COST;
+            }
+        } else {
+            if (toPlace.getBlock() == Blocks.SOUL_SAND) {
+                walk = WALK_ONE_OVER_SOUL_SAND_COST;
+            } else {
+                walk = Math.max(JUMP_ONE_BLOCK_COST, WALK_ONE_BLOCK_COST);
+            }
+            walk += context.jumpPenalty;
+        }
+        double totalCost = walk + ceiling;
+        if (totalCost >= COST_INF) {
+            return COST_INF;
+        }
+        for (int b = -s; b <= s; b++) {
+            for (int dy = 1; dy <= h; dy++) {
+                // only include falling for uppermost block
+                totalCost += MovementHelper.getMiningDurationTicks(context, px + dz * b, y + dy, pz + dx * b, dy == h);
+                if (totalCost >= COST_INF) {
+                    return COST_INF;
+                }
+            }
+        }
+        if (s > 0) {
+            // ciljni stolpec (glej MovementTraverse.costSized)
+            for (int dy = 0; dy < h; dy++) {
+                totalCost += MovementHelper.getMiningDurationTicks(context, destX, y + dy, destZ, false);
+                if (totalCost >= COST_INF) {
+                    return COST_INF;
+                }
+            }
+        }
+        return totalCost;
+    }
+
     @Override
     public MovementState updateState(MovementState state) {
         if (ctx.feetPos().y < src.y) {
@@ -224,7 +347,7 @@ public class MovementAscend extends Movement {
     }
 
     public boolean headBonkClear() {
-        BetterBlockPos startUp = src.up(2);
+        BetterBlockPos startUp = src.up(size.heightBlocks); // M8.4
         for (int i = 0; i < 4; i++) {
             BetterBlockPos check = startUp.offset(EnumFacing.getHorizontal(i));
             if (!MovementHelper.canWalkThrough(ctx, check)) {

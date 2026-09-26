@@ -1,0 +1,7 @@
+step,name,result,ticks,detail
+1,"M3 A1 izris",OK,1,"SKIP: ni klienta v tem procesu (dedicated) — preveri na očeh"
+2,"M3 ukazi",OK,54,"4/4 ukazi OK, husk pri tebi po 54 tickih (profil walk)"
+3,"M3 A1 debug off",OK,1,"SKIP: ni klienta v tem procesu"
+4,"D-008 + M6 A1 zombi",OK,306,"Baritone: udarec po 105 tickih, klicev navigatorja 75, iskanj 1; kontrola: NI udarca"
+5,"M6 A3 volk",NAPAKA,401,"ni prišel v 20 s: razdalja 11.0, klicev navigatorja 1, iskanj 1, teleportov 0"
+6,"M6 A2 vaščan",NAPAKA,1801,"vas zaznana po 2 tickih; Baritone: NI v kolibi v 90 s (klicev navigatorja 0, iskanj 0); kontrola: NI v kolibi"

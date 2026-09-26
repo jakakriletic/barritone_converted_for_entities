@@ -24,6 +24,7 @@ import si.ladja.npcbaritone.core.api.pathing.movement.MovementStatus;
 import si.ladja.npcbaritone.core.api.utils.BetterBlockPos;
 import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.MovementState;
@@ -47,8 +48,8 @@ public class MovementParkour extends Movement {
     private final int dist;
     private final boolean ascend;
 
-    private MovementParkour(IBaritone baritone, BetterBlockPos src, int dist, EnumFacing dir, boolean ascend) {
-        super(baritone, src, src.offset(dir, dist).up(ascend ? 1 : 0), EMPTY, src.offset(dir, dist).down(ascend ? 0 : 1));
+    private MovementParkour(IBaritone baritone, BetterBlockPos src, int dist, EnumFacing dir, boolean ascend, EntitySize size) {
+        super(baritone, src, src.offset(dir, dist).up(ascend ? 1 : 0), EMPTY, src.offset(dir, dist).down(ascend ? 0 : 1), size);
         this.direction = dir;
         this.dist = dist;
         this.ascend = ascend;
@@ -58,11 +59,15 @@ public class MovementParkour extends Movement {
         MutableMoveResult res = new MutableMoveResult();
         cost(context, src.x, src.y, src.z, direction, res);
         int dist = Math.abs(res.x - src.x) + Math.abs(res.z - src.z);
-        return new MovementParkour(context.getBaritone(), src, dist, direction, res.y > src.y);
+        return new MovementParkour(context.getBaritone(), src, dist, direction, res.y > src.y, context.size);
     }
 
     public static void cost(CalculationContext context, int x, int y, int z, EnumFacing dir, MutableMoveResult res) {
         if (!context.allowParkour) {
+            return;
+        }
+        if (!context.size.isStandard()) {
+            // M8.5 (Automatone 5d9ddabe): skoki so izmerjeni za igralca; druge velikosti ne skačejo
             return;
         }
         if (y == 256 && !context.allowJumpAt256) {

@@ -18,6 +18,7 @@
 
 package si.ladja.npcbaritone.core.pathing.path;
 
+import si.ladja.npcbaritone.core.PerfProfile;
 import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.core.api.pathing.calc.IPath;
 import si.ladja.npcbaritone.core.api.pathing.movement.ActionCosts;
@@ -29,6 +30,7 @@ import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.behavior.PathingBehavior;
 import si.ladja.npcbaritone.core.pathing.calc.AbstractNodeCostSearch;
 import si.ladja.npcbaritone.core.pathing.movement.CalculationContext;
+import si.ladja.npcbaritone.core.pathing.movement.EntitySize;
 import si.ladja.npcbaritone.core.pathing.movement.Movement;
 import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.pathing.movement.movements.*;
@@ -69,10 +71,6 @@ public class PathExecutor implements IPathExecutor, Helper {
     private Double currentMovementOriginalCostEstimate;
     private Integer costEstimateIndex;
     private boolean failed;
-    private boolean recalcBP = true;
-    private HashSet<BlockPos> toBreak = new HashSet<>();
-    private HashSet<BlockPos> toPlace = new HashSet<>();
-    private HashSet<BlockPos> toWalkInto = new HashSet<>();
 
     private final PathingBehavior behavior;
     private final IEntityContext ctx;
@@ -93,6 +91,28 @@ public class PathExecutor implements IPathExecutor, Helper {
      * not sneaking out over lava), false otherwise
      */
     public boolean onTick() {
+        long prof = PerfProfile.start();
+        try {
+            return tickInner();
+        } finally {
+            PerfProfile.add(PathExecutor.class, PROF_TOTAL, prof);
+        }
+    }
+
+    // stopnja A: reže profila (PerfProfile)
+    static final int PROF_TOTAL = 0;
+    static final int PROF_POSITION = 1;
+    static final int PROF_BLOCK_CACHE = 2;
+    static final int PROF_COST = 3;
+    static final int PROF_UPDATE = 4;
+
+    static {
+        PerfProfile.label(PathExecutor.class, "onTick (skupaj)", "položaj + razdalja do poti", "predpomnilnik blokov",
+                "preverba cen", "movement.update + sprint");
+    }
+
+    private boolean tickInner() {
+        long prof = PerfProfile.start();
         if (pathPosition == path.length() - 1) {
             pathPosition++;
         }
@@ -128,63 +148,33 @@ public class PathExecutor implements IPathExecutor, Helper {
                 }
             }
         }
-        Tuple<Double, BlockPos> status = closestPathPos(path);
-        if (possiblyOffPath(status, MAX_DIST_FROM_PATH)) {
-            ticksAway++;
-            System.out.println("FAR AWAY FROM PATH FOR " + ticksAway + " TICKS. Current distance: " + status.getFirst() + ". Threshold: " + MAX_DIST_FROM_PATH);
-            if (ticksAway > MAX_TICKS_AWAY) {
-                logDebug("Too far away from path for too long, cancelling path");
-                cancel();
+        // NPC Baritone (stopnja A): noge v veljavnem bloku trenutnega premika → razdalja do središča tega
+        // bloka ≤ 0,94 (s ploščo, ko feetPos vrne blok višje, ≤ 1,78) < MAX_DIST_FROM_PATH, zato nobena od preverb possiblyOffPath (2, 3) ne sproži;
+        // iskanje najbližje točke poti (drugi največji strošek glavne niti) je tedaj odveč.
+        if (movement.getValidPositions().contains(whereAmI)) {
+            ticksAway = 0;
+        } else {
+            if (offPathChecks()) {
                 return false;
             }
-        } else {
-            ticksAway = 0;
         }
-        if (possiblyOffPath(status, MAX_MAX_DIST_FROM_PATH)) { // ok, stop right away, we're way too far.
-            logDebug("too far from path");
-            cancel();
-            return false;
-        }
-        //long start = System.nanoTime() / 1000000L;
+        PerfProfile.add(PathExecutor.class, PROF_POSITION, prof);
+        prof = PerfProfile.start();
+        // NPC Baritone (stopnja A, D-027): upstream je vsak tick za okno 20 premikov dvakrat izračunal
+        // toBreak/toPlace/toWalkInto in iz njih zbirne množice, ki jih nihče ne bere (~90 % glavne niti pri
+        // 200 NPC-jih je bil PathingBehavior.onTick). Predpomnilnik toBreakCached bereta samo overrideFall
+        // (trenutni premik) in sprintableAscend (naslednji) — osvežita se samo ta dva, vsak tick kot prej;
+        // zbirne množice se izračunajo ob klicu toBreak()/toPlace()/toWalkInto().
         BlockStateInterface bsi = new BlockStateInterface(ctx);
-        for (int i = pathPosition - 10; i < pathPosition + 10; i++) {
-            if (i < 0 || i >= path.movements().size()) {
-                continue;
-            }
+        for (int i = pathPosition; i <= pathPosition + 1 && i < path.movements().size(); i++) {
             Movement m = (Movement) path.movements().get(i);
-            List<BlockPos> prevBreak = m.toBreak(bsi);
-            List<BlockPos> prevPlace = m.toPlace(bsi);
-            List<BlockPos> prevWalkInto = m.toWalkInto(bsi);
             m.resetBlockCache();
-            if (!prevBreak.equals(m.toBreak(bsi))) {
-                recalcBP = true;
-            }
-            if (!prevPlace.equals(m.toPlace(bsi))) {
-                recalcBP = true;
-            }
-            if (!prevWalkInto.equals(m.toWalkInto(bsi))) {
-                recalcBP = true;
-            }
+            m.toBreak(bsi);
+            m.toPlace(bsi);
+            m.toWalkInto(bsi);
         }
-        if (recalcBP) {
-            HashSet<BlockPos> newBreak = new HashSet<>();
-            HashSet<BlockPos> newPlace = new HashSet<>();
-            HashSet<BlockPos> newWalkInto = new HashSet<>();
-            for (int i = pathPosition; i < path.movements().size(); i++) {
-                Movement m = (Movement) path.movements().get(i);
-                newBreak.addAll(m.toBreak(bsi));
-                newPlace.addAll(m.toPlace(bsi));
-                newWalkInto.addAll(m.toWalkInto(bsi));
-            }
-            toBreak = newBreak;
-            toPlace = newPlace;
-            toWalkInto = newWalkInto;
-            recalcBP = false;
-        }
-        /*long end = System.nanoTime() / 1000000L;
-        if (end - start > 0) {
-            System.out.println("Recalculating break and place took " + (end - start) + "ms");
-        }*/
+        PerfProfile.add(PathExecutor.class, PROF_BLOCK_CACHE, prof);
+        prof = PerfProfile.start();
         if (pathPosition < path.movements().size() - 1) {
             IMovement next = path.movements().get(pathPosition + 1);
             if (!behavior.baritone.bsi.worldContainsLoadedChunk(next.getDest().x, next.getDest().z)) {
@@ -219,6 +209,8 @@ public class PathExecutor implements IPathExecutor, Helper {
             cancel();
             return true;
         }
+        PerfProfile.add(PathExecutor.class, PROF_COST, prof);
+        prof = PerfProfile.start();
         if (shouldPause()) {
             logDebug("Pausing since current best path is a backtrack");
             clearKeys();
@@ -252,13 +244,54 @@ public class PathExecutor implements IPathExecutor, Helper {
                 return true;
             }
         }
+        PerfProfile.add(PathExecutor.class, PROF_UPDATE, prof);
         return canCancel; // movement is in progress, but if it reports cancellable, PathingBehavior is good to cut onto the next path
     }
 
+
+    /** Preverbi oddaljenosti od poti (upstream); true = premik je preklican, onTick vrne false. */
+    private boolean offPathChecks() {
+        Tuple<Double, BlockPos> status = closestPathPos(path);
+        if (possiblyOffPath(status, MAX_DIST_FROM_PATH)) {
+            ticksAway++;
+            logDebug("FAR AWAY FROM PATH FOR " + ticksAway + " TICKS. Current distance: " + status.getFirst() + ". Threshold: " + MAX_DIST_FROM_PATH);
+            if (ticksAway > MAX_TICKS_AWAY) {
+                logDebug("Too far away from path for too long, cancelling path");
+                cancel();
+                return true;
+            }
+        } else {
+            ticksAway = 0;
+        }
+        if (possiblyOffPath(status, MAX_MAX_DIST_FROM_PATH)) { // ok, stop right away, we're way too far.
+            logDebug("too far from path");
+            cancel();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * NPC Baritone (stopnja A): najprej okno ±{@value #NEAR_WINDOW} premikov okoli {@code pathPosition}. Če je
+     * entiteta tam največ {@link #MAX_DIST_FROM_PATH} od poti, je izid obeh preverb {@code possiblyOffPath}
+     * (praga 2 in 3) enak kot pri pregledu cele poti; sicer se pregleda cela pot kot upstream.
+     */
     private Tuple<Double, BlockPos> closestPathPos(IPath path) {
+        Tuple<Double, BlockPos> near = closestPathPos(path, pathPosition - NEAR_WINDOW, pathPosition + NEAR_WINDOW);
+        if (near.getFirst() >= 0 && near.getFirst() <= MAX_DIST_FROM_PATH) {
+            return near;
+        }
+        return closestPathPos(path, 0, Integer.MAX_VALUE);
+    }
+
+    static final int NEAR_WINDOW = 20;
+
+    private Tuple<Double, BlockPos> closestPathPos(IPath path, int from, int to) {
         double best = -1;
         BlockPos bestPos = null;
-        for (IMovement movement : path.movements()) {
+        List<IMovement> movements = path.movements();
+        for (int mi = Math.max(0, from); mi < movements.size() && mi <= to; mi++) {
+            IMovement movement = movements.get(mi);
             for (BlockPos pos : ((Movement) movement).getValidPositions()) {
                 double dist = VecUtils.entityDistanceToCenter(ctx.entity(), pos);
                 if (dist < best || best == -1) {
@@ -354,6 +387,11 @@ public class PathExecutor implements IPathExecutor, Helper {
         // (NPC Baritone: mobi nimajo lakote; brez novega CalculationContext vsak tick)
         if (!behavior.baritone.getSettings().allowSprint.value) {
             return false;
+        }
+        if (!EntitySize.isStandard(ctx.entity().width, ctx.entity().height)) {
+            // M8: bližnjice spodaj (preskok na ascend, sprint iz descend, podaljšan padec)
+            // preverjajo prostor za entiteto 1x2; druge velikosti tečejo samo, ko premik to zahteva
+            return requested;
         }
         IMovement current = path.movements().get(pathPosition);
 
@@ -650,16 +688,27 @@ public class PathExecutor implements IPathExecutor, Helper {
         return pathPosition >= path.length();
     }
 
+    /** NPC Baritone (stopnja A): zbirne množice se izračunajo ob klicu (prej vsak tick); samo glavna nit. */
     public Set<BlockPos> toBreak() {
-        return Collections.unmodifiableSet(toBreak);
+        return Collections.unmodifiableSet(aggregate(0));
     }
 
     public Set<BlockPos> toPlace() {
-        return Collections.unmodifiableSet(toPlace);
+        return Collections.unmodifiableSet(aggregate(1));
     }
 
     public Set<BlockPos> toWalkInto() {
-        return Collections.unmodifiableSet(toWalkInto);
+        return Collections.unmodifiableSet(aggregate(2));
+    }
+
+    private Set<BlockPos> aggregate(int kind) {
+        BlockStateInterface bsi = new BlockStateInterface(ctx);
+        HashSet<BlockPos> out = new HashSet<>();
+        for (int i = Math.max(0, pathPosition); i < path.movements().size(); i++) {
+            Movement m = (Movement) path.movements().get(i);
+            out.addAll(kind == 0 ? m.toBreak(bsi) : kind == 1 ? m.toPlace(bsi) : m.toWalkInto(bsi));
+        }
+        return out;
     }
 
     public boolean isSprinting() {

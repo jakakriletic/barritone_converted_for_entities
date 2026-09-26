@@ -42,3 +42,19 @@ bi ga igralec z Baritonom: s pravo hitrostjo, skoki in brez tresenja.
 ## Ni v obsegu
 
 Vrata, voda kot cilj testiranja (samo kot del T1, če je), vanilla AI taski (M6), izris (M3).
+
+## Stanje (2026-09-25, veja `m2-noge`)
+
+| # | Stanje |
+|---|---|
+| M2.1 | preskočen — `InputOverrideHandler` je že samo stanje vhodov |
+| M2.2–M2.8 | Windows build, JUnit in dedicated T1 zeleni; D-008 preverjen v klientu z `/npcb selftest` (2026-09-26: zombi brez `puppet` udari igralca po 90 tickih) |
+| M2.9 | `CourseT1` + `CourseRunner` + `t1-run.ps1`; 3× dedicated 10/10 pričakovanih izidov |
+| M2.10 | števec v `Telemetry`, stolpec `chunk_loads` v CSV |
+| M2.11 | **A6 preverjen** (2026-09-26): Forge 14.23.5.2859 (CurseForge) s pravim Baritone 1.2.19 + naš izdani jar, `/npcb selftest` 6/6, brez `LinkageError` (v dev `runClient` Baritonov obfuskirani jar ne deluje — `MixinStateImplementation`) |
+| M2.12 | `t1-run.ps1` trikrat exit 0 na dedicated strežniku (A1–A5, A7) |
+
+### Ročni preverbi v klientu
+
+1. **D-008:** `/summon zombie ~3 ~ ~` (noč ali `/difficulty easy`), `/npcb attach @e[type=zombie,c=1]` (brez `puppet`) → zombi te še vedno napade.
+2. **M2.11 / A6:** v `mod/run/mods` daj pravi Baritone 1.2.19 za Forge, `.\dev.ps1 runClient --offline`, enoigralski svet, `/npcb attach @e[type=husk,c=1] puppet`, `/npcb goto @e[type=husk,c=1] ~10 ~ ~` → husk hodi, v logu ni `LinkageError`.

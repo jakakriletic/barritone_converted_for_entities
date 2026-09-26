@@ -17,19 +17,26 @@
 
 package si.ladja.npcbaritone.forge;
 
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
+import si.ladja.npcbaritone.core.SearchExecutor;
 import net.minecraftforge.fml.common.network.NetworkCheckHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import si.ladja.npcbaritone.core.api.BaritoneAPI;
 
 import java.util.Map;
 
 /**
- * Vstopna točka moda. M0: samo nalaganje, konfiguracija in sprejem povezav brez moda.
+ * Vstopna točka moda: config, skupni NPC profil, telemetrija, ukaz {@code /npcb} (M2),
+ * sled in debug prikaz poti (M3).
  *
  * <p>D-024: vse delovanje je na strežniku; {@link #acceptRemote} sprejme vsako drugo
  * stran, zato se vanilla klient poveže na strežnik z modom in obratno. Mod ne
@@ -39,12 +46,18 @@ import java.util.Map;
 public final class NpcBaritoneMod {
 
     public static final String MODID = "npcbaritone";
+    @Mod.Instance(MODID)
+    public static NpcBaritoneMod INSTANCE;
     public static final String NAME = "NPC Baritone";
     public static final String VERSION = "@VERSION@";
     /** Izvor jedra (D-001, D-026). */
     public static final String UPSTREAM = "cabaletta/baritone v1.2.19 (d9cb2d9)";
 
     public static final Logger LOG = LogManager.getLogger(MODID);
+
+    /** M3.3: klient riše poti; forge paket klientskega razreda ne uvozi (D-024). */
+    @SidedProxy(clientSide = "si.ladja.npcbaritone.client.ClientProxy", serverSide = "si.ladja.npcbaritone.forge.CommonProxy")
+    public static CommonProxy proxy = new CommonProxy();
 
     private static NpcbConfig config = NpcbConfig.defaults();
 
@@ -56,12 +69,41 @@ public final class NpcBaritoneMod {
     public void preInit(FMLPreInitializationEvent event) {
         Configuration cfg = new Configuration(event.getSuggestedConfigurationFile());
         config = NpcbConfig.load(cfg);
+        config.applyTo(BaritoneAPI.getSettings()); // skupni NPC profil (D-016)
+        // Vozovnice so samo za tekoči speedtest; po ponovnem zagonu ne ohranimo nobene.
+        ForgeChunkManager.setForcedChunkLoadingCallback(this, (tickets, world) ->
+                tickets.forEach(ForgeChunkManager::releaseTicket));
+        MinecraftForge.EVENT_BUS.register(Telemetry.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(CourseRunner.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(PathTrace.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(DebugSync.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(PerfMeter.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(StressRunner.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(AiTestRunner.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(SelfTestRunner.INSTANCE);
+        si.ladja.npcbaritone.api.NpcBaritone.setProvider(ApiProvider.INSTANCE); // M6.7
+        DebugSync.INSTANCE.register();
+        proxy.preInit();
         LOG.info("{} {} loaded (side={}, upstream={}); {}", NAME, VERSION, event.getSide(), UPSTREAM, config);
     }
 
     @Mod.EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
-        LOG.info("{} ready on server (dedicated={})", MODID, event.getServer().isDedicatedServer());
+        event.registerServerCommand(new NpcbCommand());
+        // M5.1: bazen iz configa (D-017)
+        SearchExecutor.start(config.searchThreads, config.searchQueueLimit);
+        LOG.info("{} ready on server (dedicated={}, search threads={}, queue={})", MODID, event.getServer().isDedicatedServer(),
+                config.searchThreads, config.searchQueueLimit);
+    }
+
+    /** M5.5: tečaji in stres se končajo, čakajoča iskanja se zavržejo, bazen se zapre. */
+    @Mod.EventHandler
+    public void serverStopping(FMLServerStoppingEvent event) {
+        StressRunner.INSTANCE.abort("strežnik se ustavlja");
+        CourseRunner.INSTANCE.abort();
+        SelfTestRunner.INSTANCE.abort("strežnik se ustavlja");
+        int dropped = SearchExecutor.stop();
+        LOG.info("{} search pool stopped ({} queued searches dropped)", MODID, dropped);
     }
 
     /**
