@@ -4,6 +4,31 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-26 — M8: prvi tek T3; velikost se ni uveljavila
+
+**Preverjeno (13:29–13:37):** `dev.ps1 build --offline` zelen, T3 v 7,5 min: **91/100**,
+`blocks_changed=0`, 0 izjem, noben TIMEOUT. A1 po velikostih: 1, 3, 5 → 10/10 + 10/10;
+7 → 9 + 9; 10 → 8 + 5. Vseh 9 "neuspehov" je pričakovanih neuspehov, ki so **dosegli cilj**
+(s7 T1/6, T2/1; s10 T1/5, T1/6, T2/1, T2/3, T2/4, T2/5, T2/9).
+
+**Vzrok:** CSV ima za vse velikosti `width,height = 0.60,1.95` — husk velikosti nikoli ni
+spremenil. `EntityZombie.setSize` (javap) si po prvem klicu (konstruktor) velikost samo
+zapomni (`zombieWidth/Height`), uveljavi jo šele `multiplySize`. Tveganje iz (16) se je
+uresničilo. Tek zato o velikostih ne pove ničesar; potrdi pa, da je standardna veja na T1+T2
+petkrat zapored pravilna (vseh 10 FAILED pričakovanih izidov za 1×2 je FAILED).
+
+**Popravek (`1f4417b`):** `CourseRunner.resize` za zombije pokliče še `multiplySize(1)`
+(SRG `func_146069_a`, sicer edina `(float)` metoda razreda) in preveri uveljavljeno velikost
+— če se ne ujema, tečaj pade z izjemo namesto tihega teka. `CourseResizeTest` (husk prek
+`Unsafe`, brez sveta) je najprej padel (0,6 namesto 0,12), zdaj 107/107. `t3-run.ps1` med
+tekom izklopi QuickEdit (`e40ad21`).
+
+Meritve prvega teka: `docs/meritve/m8/t3-20260926-133727*.csv` (ostanejo kot dokaz napake).
+
+**Naslednji korak:** `.\mod\gradlew.bat --stop; .\dev.ps1 build --offline; .\t3-run.ps1`.
+
+---
+
 ## 2026-09-25 (16) — M8: velikosti entitet (veja `m8-velikosti`)
 
 **Namen seje:** M8 do točke, ko ostaneta build in tek T3 na Windowsu.
