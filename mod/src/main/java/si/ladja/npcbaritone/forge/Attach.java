@@ -119,7 +119,10 @@ public final class Attach {
             saved.tasks.forEach(t -> entity.tasks.removeTask(t.action));
             saved.targetTasks.forEach(t -> entity.targetTasks.removeTask(t.action));
         }
-        set(F_NAVIGATOR, entity, new BaritonePathNavigate(entity, entity.world, baritone, saved.interactions, saved.status));
+        BaritonePathNavigate ours = new BaritonePathNavigate(entity, entity.world, baritone, saved.interactions, saved.status);
+        set(F_NAVIGATOR, entity, ours);
+        // taski, ki so si navigator shranili v konstruktorju (EntityAIFollowOwner, EntityAIAvoidEntity, ...)
+        rewireNavigators(actions(entity), saved.navigator, ours);
         set(F_MOVE_HELPER, entity, move);
         set(F_JUMP_HELPER, entity, new BaritoneJumpHelper(entity, baritone));
         ATTACHED.put(entity, saved);
@@ -137,6 +140,7 @@ public final class Attach {
         saved.ourMove.release();
         saved.interactions.release();
         entity.setJumping(false);
+        rewireNavigators(actions(entity), entity.getNavigator(), saved.navigator);
         set(F_NAVIGATOR, entity, saved.navigator);
         set(F_MOVE_HELPER, entity, saved.moveHelper);
         set(F_JUMP_HELPER, entity, saved.jumpHelper);
@@ -226,6 +230,50 @@ public final class Attach {
             s.allowParkour.value = false;
         }
         return s;
+    }
+
+    private static List<Object> actions(EntityLiving entity) {
+        List<Object> out = new ArrayList<>();
+        for (EntityAITasks.EntityAITaskEntry t : entity.tasks.taskEntries) {
+            out.add(t.action);
+        }
+        for (EntityAITasks.EntityAITaskEntry t : entity.targetTasks.taskEntries) {
+            out.add(t.action);
+        }
+        return out;
+    }
+
+    /**
+     * Vanilla {@code EntityAIFollowOwner}, {@code EntityAIAvoidEntity} in {@code EntityAIFollow}
+     * (in marsikateri modded task) si navigator shranijo v konstruktorju. Po zamenjavi bi
+     * ukazovali navigatorju, ki ga nihče ne tiktaka (volk bi stal in se samo teleportiral).
+     * Vsako nestatično polje tipa {@link PathNavigate}, ki kaže na {@code from}, preusmeri na
+     * {@code to} — po vrednosti, ne po imenu, zato deluje z SRG in MCP imeni ter z modded taski.
+     *
+     * @return število preusmerjenih polj
+     */
+    static int rewireNavigators(Iterable<?> actions, PathNavigate from, PathNavigate to) {
+        int n = 0;
+        for (Object action : actions) {
+            for (Class<?> c = action.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+                for (Field f : c.getDeclaredFields()) {
+                    if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) || !PathNavigate.class.isAssignableFrom(f.getType())
+                            || !f.getType().isInstance(to)) {
+                        continue;
+                    }
+                    try {
+                        f.setAccessible(true);
+                        if (f.get(action) == from) {
+                            f.set(action, to);
+                            n++;
+                        }
+                    } catch (IllegalAccessException | RuntimeException e) {
+                        NpcBaritoneMod.LOG.warn("cannot rewire navigator in {}.{}: {}", c.getName(), f.getName(), e.toString());
+                    }
+                }
+            }
+        }
+        return n;
     }
 
     private static Field field(String[] names) {
