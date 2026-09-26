@@ -67,4 +67,10 @@ husk-i kot puppet, naključni cilj v polmeru 48 vsakič, ko NPC miruje ≥ 10 ti
 
 ### Rezultat (2026-09-25 17:15)
 
-**Stopnja B izpolnjena:** 200 mobov, glavna nit p95 mediana 3,27 ms [3,15–4,08] v 3 ponovitvah; A2, A3, A5 da; A4 (1 h) čaka; A1+ (2 ms) odprto do M7. Podrobnosti v `docs/04-STANJE.md` (10).
+**Stopnja B izpolnjena:** 200 mobov, glavna nit p95 mediana 3,27 ms [3,15–4,08] v 3 ponovitvah; A2, A3, A5 da; A1+ (2 ms) odprto do M7. Podrobnosti v `docs/04-STANJE.md` (10).
+
+**A4 izpolnjen (2026-09-26, 16:34–17:34):** `.\t4-run.ps1 -Mobs 200 -Repeats 1 -Seconds 3600` —
+**0 izjem** v 72 046 tickih, 84 754 iskanj (23,5/s, 0 zavrnjenih, 7308 neuspelih = nedosegljivi
+cilji), 1440 preklopov blokov (rušenje), 2 niti; glavna nit µs/tick p50 2884, **p95 3895**, p99 6256,
+max 59 532 (en tick); MSPT p95 6,35 ms; doseženih ciljev 95 % (69 819 / 73 492). Stopnja B drži tudi
+po 1 h. Meritve: `docs/meritve/m5/t4-200-20260926-173405.csv`, `t4-summary-20260926-173410.csv`.
