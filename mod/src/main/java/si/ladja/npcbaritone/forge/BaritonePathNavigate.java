@@ -386,6 +386,23 @@ public class BaritonePathNavigate extends PathNavigateGround {
         return s == NavStatus.State.IDLE || s == NavStatus.State.ARRIVED || s == NavStatus.State.FAILED;
     }
 
+    /**
+     * M7.1: pot med iskanjem (Baritone še nima poti, {@code noPath()} je false) — ena točka na
+     * cilju (ali pri entiteti, če cilj nima položaja), nezaključena, da jo bralci vanilla
+     * {@link Path} razumejo kot "na poti proti".
+     */
+    static Path placeholder(BlockPos goal, Entity entity) {
+        BlockPos p = goal != null ? goal : new BlockPos(entity);
+        return new Path(new PathPoint[]{new PathPoint(p.getX(), p.getY(), p.getZ())});
+    }
+
+    static BlockPos goalPos(Goal goal) {
+        if (goal instanceof si.ladja.npcbaritone.core.api.utils.interfaces.IGoalRenderPos) {
+            return ((si.ladja.npcbaritone.core.api.utils.interfaces.IGoalRenderPos) goal).getGoalPos();
+        }
+        return null;
+    }
+
     /** M6.4: vanilla pogled na Baritonovo pot (točke blokov, indeks = trenutni premik). */
     @Override
     public Path getPath() {
@@ -394,7 +411,9 @@ public class BaritonePathNavigate extends PathNavigateGround {
         }
         PathExecutor cur = baritone.getPathingBehavior().getCurrent();
         if (cur == null) {
-            return null;
+            // M7.1: vanilla velja "!noPath() ⇒ getPath() != null"; CNPC skriptni API
+            // (EntityLivingWrapper.getNavigationPath) to predpostavi in bi med iskanjem padel z NPE.
+            return noPath() ? null : placeholder(goalPos(status.goal()), entity);
         }
         if (cur != cachedFor) {
             List<? extends BlockPos> pos = cur.getPath().positions();
