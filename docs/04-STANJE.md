@@ -4,6 +4,42 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-27 — stopnja A izpolnjena: glavna nit p95 1,64 ms pri 200 mobih
+
+**Profil** (`PerfProfile`, `NPCB_PROFILE=1`, `t4-run.ps1 -Profile`; `9dd099c`): pri 200 mobih je bil
+`PathingBehavior.onTick` 2,87 ms od 3,24 ms/tick (89 %) — izvajalec poti. Vzroka:
+(1) vsak tick za okno 20 premikov dvakrat `toBreak/toPlace/toWalkInto` in zbirne množice, ki jih
+nihče ne bere; (2) razdalja do vseh točk cele poti (`closestPathPos`).
+
+**Optimizacije (enako obnašanje, dokaz v komentarjih kode):**
+
+| Commit | Kaj |
+|---|---|
+| `c9d5238` | predpomnilnik blokov samo za trenutni in naslednji premik (edina bralca `toBreakCached`: `overrideFall`, `sprintableAscend`); zbirne množice ob klicu; `closestPathPos` najprej okno ±20 |
+| `8deda36` | noge v veljavnem bloku trenutnega premika → razdalja ≤ 0,94 (s ploščo ≤ 1,78) < 2 → brez iskanja najbližje točke |
+
+**Napaka okolja (`4bb37ca`):** T2 00:11 je dal 8/10 (T2/8, T2/9) — strežnik brez igralca je med
+odsekom razložil chunk, BSI ga bere kot zrak ("future movement impossible", novo iskanje brez
+ciljnega chunka → `no_path`). Odvisno od časa; T1/T2 zdaj prisilita chunke kot T3.
+
+**Preverjeno (00:21–00:31):** T1 **10/10** (hoja 4,317, sprint 5,612 m/s — nespremenjeno),
+T2 **10/10**, T4 200 mobov × 3 ponovitve × 120 s brez profila, 0 izjem:
+
+| 200 mobov | pred (2026-09-25) | zdaj |
+|---|---|---|
+| glavna nit µs/tick p95 — mediana [razpon] | 3265 [3154, 4084] | **1641 [1556, 1664]** |
+| p50 / p99 | 2472 / 5083 | 1370 / 2120 |
+| MSPT p95 | 4,65 ms | 3,30 ms |
+| doseženih ciljev | 95 % | 95 % (2302–2314 / 2430–2441) |
+
+**M5 A1+ (stopnja A, ≤ 2 ms p95 pri 200) izpolnjen** — tudi najslabša ponovitev 1,66 ms.
+Pogoj D-027 za M7 je odprt. Preostanek glavne niti (profil): `movement.update` + move helper
+~0,6 ms, preverba cen ~0,16 ms, ostali poslušalci ~0,2 ms.
+
+**Naslednji korak:** merge vej (`m1`…`m8`) v `main`, nato M7 (CustomNPC: stikalo na NPC, A/B).
+
+---
+
 ## 2026-09-26 (3) — ročne preverbe v klientu samodejno: `/npcb selftest` 6/6
 
 **Zakaj:** ročne preverbe (M3 A1, D-008, M6 A1–A3) so bile za uporabnika preveč korakov.

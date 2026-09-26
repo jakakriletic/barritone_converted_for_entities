@@ -12,9 +12,9 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 
 | | |
 |---|---|
-| Datum zadnje posodobitve | 2026-09-26 |
-| Trenutna faza | **M8 zaključen**, **vse ročne preverbe v klientu zaprte** (`/npcb selftest` 6/6 v dev klientu, Forge profilu s pravim Baritonom in vanilla klientu). M7 čaka stopnjo A zmogljivosti (D-027) |
-| Naslednji korak | stopnja A zmogljivosti (pogoj za M7): profil glavne niti pri 200 mobih (`.\t4-run.ps1 -Mobs 200`); glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
+| Datum zadnje posodobitve | 2026-09-27 |
+| Trenutna faza | **M8 zaključen**, ročne preverbe v klientu zaprte, **stopnja A zmogljivosti izpolnjena** (200 mobov: glavna nit p95 1,64 ms, D-027) — M7 odprt |
+| Naslednji korak | merge vej `m1`…`m8` v `main`, nato M7 (CustomNPC: stikalo na NPC, A/B); glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |

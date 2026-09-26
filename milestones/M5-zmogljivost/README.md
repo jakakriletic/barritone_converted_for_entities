@@ -25,7 +25,7 @@ nikoli ne čaka na iskanje.
 | # | Merilo | Meja (D-027) |
 |---|---|---|
 | A1 | prispevek glavne niti pri 200 mobih — **stopnja B (zdaj)** | p95 ≤ 5 ms/tick |
-| A1+ | isto — **stopnja A (odprta, pogoj za M7)** | p95 ≤ 2 ms/tick |
+| A1+ | isto — **stopnja A (izpolnjena 2026-09-27: 1,64 ms)**, pogoj za M7 | p95 ≤ 2 ms/tick |
 | A2 | µs kopije posnetka pri robu 8 | p95 < 100 µs |
 | A3 | niti izven bazena | 0 |
 | A4 | izjeme v 1 h stresa z rušenjem | 0 |
@@ -67,7 +67,13 @@ husk-i kot puppet, naključni cilj v polmeru 48 vsakič, ko NPC miruje ≥ 10 ti
 
 ### Rezultat (2026-09-25 17:15)
 
-**Stopnja B izpolnjena:** 200 mobov, glavna nit p95 mediana 3,27 ms [3,15–4,08] v 3 ponovitvah; A2, A3, A5 da; A1+ (2 ms) odprto do M7. Podrobnosti v `docs/04-STANJE.md` (10).
+**Stopnja B izpolnjena:** 200 mobov, glavna nit p95 mediana 3,27 ms [3,15–4,08] v 3 ponovitvah; A2, A3, A5 da. Podrobnosti v `docs/04-STANJE.md` (10).
+
+**Stopnja A izpolnjena (2026-09-27):** po profilu (`t4-run.ps1 -Profile`) in dveh optimizacijah
+izvajalca poti z enakim obnašanjem (`c9d5238`, `8deda36`): 200 mobov, glavna nit p95 mediana
+**1,64 ms [1,56–1,66]** v 3 ponovitvah (prej 3,27), p50 1,37 ms, MSPT p95 3,3 ms; T1 in T2 10/10.
+Meritve: `docs/meritve/m5/t4-200-20260927-00{2609,2837,3104}.csv`, `t4-summary-20260927-003110.csv`,
+profila `profile-200-20260926-233438.csv` (pred) in `profile-200-20260927-001405.csv` (po prvi).
 
 **A4 izpolnjen (2026-09-26, 16:34–17:34):** `.\t4-run.ps1 -Mobs 200 -Repeats 1 -Seconds 3600` —
 **0 izjem** v 72 046 tickih, 84 754 iskanj (23,5/s, 0 zavrnjenih, 7308 neuspelih = nedosegljivi
