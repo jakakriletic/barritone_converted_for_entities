@@ -13,8 +13,8 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 | | |
 |---|---|
 | Datum zadnje posodobitve | 2026-09-27 |
-| Trenutna faza | **M8 zaključen**, **stopnja A zmogljivosti izpolnjena** (200 mobov: glavna nit p95 1,64 ms). **M7.2–M7.4 v CNPC preverjeni na dedicated strežniku**; M7.5 delno, M7.6–M7.8 odprti. Načrt worker plasti M11–M15 zapisan. |
-| Naslednji korak | M7.5: domet `NpcNavRange` na instanco; nato M7.6 ponovljiv A/B scenarij z Baritonovo telemetrijo. Glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
+| Trenutna faza | **M8 zaključen**, **stopnja A zmogljivosti izpolnjena** (200 mobov: glavna nit p95 1,64 ms). **M7.2–M7.4 v CNPC preverjeni na dedicated strežniku**; M7.5 v knjižnici prevedeno (D-040 voda, D-041 doseg), M7.6–M7.8 odprti. Načrt worker plasti M11–M15 zapisan. |
+| Naslednji korak | `.\dev.ps1 build` + `.\t2-run.ps1` + `/npcb selftest` za D-040/D-041, nato M7.6 ponovljiv A/B scenarij. Glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |
@@ -47,7 +47,7 @@ ozadje** za NPC-je, ki morajo priti daleč, čez zahteven teren ali zanesljivo (
 | **README.md** (ta datoteka) | pregled, status, kazalo | vedno prvo |
 | [`docs/04-STANJE.md`](docs/04-STANJE.md) | **živ dnevnik** — kaj je narejeno, kaj teče, kaj je blokirano | vedno drugo |
 | [`docs/01-ARHITEKTURA.md`](docs/01-ARHITEKTURA.md) | zgradba knjižnice, tok enega ticka, meje modulov | preden pišeš kodo |
-| [`docs/02-ODLOCITVE.md`](docs/02-ODLOCITVE.md) | **39 težkih vprašanj, vsako z odločitvijo, dokazom in preverbo** | preden karkoli spremeniš |
+| [`docs/02-ODLOCITVE.md`](docs/02-ODLOCITVE.md) | **41 težkih vprašanj, vsako z odločitvijo, dokazom in preverbo** | preden karkoli spremeniš |
 | [`docs/03-FAZE.md`](docs/03-FAZE.md) | milestoni M0–M15, faza 0, tečaji T1–T9, testna politika | ko načrtuješ sejo |
 | [`docs/05-SEJA-PROTOKOL.md`](docs/05-SEJA-PROTOKOL.md) | kako seja začne, dela, preverja in zaključi | vedno, tudi na koncu seje |
 | [`docs/06-RAZISKAVA.md`](docs/06-RAZISKAVA.md) | izmerjena dejstva: prevod, velikosti, Automatone časovnica, CNPC API | ko dvomiš v odločitev |

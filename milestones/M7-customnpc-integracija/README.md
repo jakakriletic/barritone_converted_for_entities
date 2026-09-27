@@ -1,6 +1,6 @@
 # M7 — Integracija v CustomNPC rework
 
-**Velikost:** M · **Odvisen od:** M6 · **Odločitve:** D-005, D-018, D-019, D-039; v CNPC: D-007, D-012, D-016, M2.7
+**Velikost:** M · **Odvisen od:** M6 · **Odločitve:** D-005, D-018, D-019, D-039, D-040, D-041; v CNPC: D-007, D-012, D-016, M2.7
 
 ## Cilj
 
@@ -53,5 +53,5 @@ Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 | API 2 | **Windows build + 125 JUnit + T2 10/10** (2026-09-27). Dodan profil `avoid_water` za CNPC U5. |
 | M7.2–M7.3 | CNPC most + globalni config `RwNavBackend=0` + NBT ključ na NPC; dedicated smoke brez knjižnice in z njo (izklopljeno/vklopljeno), NBT preživi restart. |
 | M7.4 | `updateTasks()` po gradnji taskov znova namesti navigator; kopenski NPC se pripne, leteči odklopi in po vrnitvi znova pripne (dedicated preverba). Formacije in jahači so izključeni po politiki, v svetu še ne preverjeni. |
-| M7.5 | hitrost `OWN`, vrata `NONE`/`WOODEN`, `avoidsWater` → profil `avoid_water` (dedicated preverba profila); `NpcNavRange` na instanco še odprt. |
+| M7.5 | hitrost `OWN`, vrata `NONE`/`WOODEN`, `avoidsWater` → profil `avoid_water` (dedicated preverba profila). **2026-09-27 (5):** `avoid_water` popravljen (D-040, prej brez učinka), doseg `NpcNavRange` = `FOLLOW_RANGE` za vanilla zahteve (D-041) — prevedeno + JUnit, čaka build in igro. |
 | M7.6–M7.8 | A/B scenarij in meritve še niso narejeni; jahanje samo enotno testirano. |

@@ -4,6 +4,34 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-27 (5) — ocena stanja M7; U5 popravljen (D-040), doseg iskanja (D-041)
+
+**Ocena ob začetku.** Seja (4) je API 2 preverila na Windowsu (build, 125 JUnit, T2 10/10) in
+CNPC most M7.2–M7.4 na dedicated strežniku, spremembe knjižnice pa ostale necommitane — zdaj
+`d488583`. Pregled je našel **napako v U5**: profil `avoid_water` (`walkOnWaterOnePenalty=20`)
+ni spremenil nobene poti — kazen velja samo za hojo po gladini, Baritone pa reko prebrede ali
+preplava (sonda A*: reka globine 1 in 2, suh obvoz 10 blokov → 5 mokrih točk pri 3 in pri 20).
+Odprto je ostalo M7.5 `NpcNavRange`.
+
+**Narejeno (prevedeno + JUnit v oblaku 132/132; čaka `.\dev.ps1 build` in zagon v igri):**
+
+| Commit | Kaj |
+|---|---|
+| `fecfae4` | **D-040**: `npcWaterPenalty` (privzeto 0) na vseh premikih v vodo; `avoid_water` = 8 × hoja (vanilla `PathNodeType.WATER` = 8, javap). `WaterAvoidanceTest` najprej padel (5 mokrih točk) |
+| `ab4e608` | **D-041**: vanilla zahteve prek adapterja vidijo entiteta ± (`FOLLOW_RANGE` + 8), cilj dlje → segment do meje (D-014); API/ukazi/tečaji brez dosega (`setGoal` ponastavi). Stikalo `npcRespectFollowRange`. API 2 nespremenjen — CNPC doseg nastavlja z atributom `FOLLOW_RANGE`. `SearchRangeTest` (mutacija ujeta) |
+
+**Za CNPC:** `NpcNavRange` → atribut `FOLLOW_RANGE` (če ga CNPC že tako nastavlja, ni dela);
+`avoid_water` se ne preimenuje, zato most ostane enak.
+
+**Odprto:** `DoorMode.ALL` nima CNPC izbire (ni treba za M7); M7.6–M7.7 A/B tečaj; M7.8
+jahanje/formacije v igri; M5 A4 (1 h stres). Novo tveganje **R-23** (segment na meji dosega).
+
+**Naslednji korak:** `.\dev.ps1 build --offline; .\t2-run.ps1` (vrata, voda — privzeti profil
+mora ostati 10/10), nato `/npcb selftest` (vanilla AI z dosegom: zombi, volk, vaščan) in CNPC
+M7.6 scenarij z `avoid_water` NPC-jem ob reki.
+
+---
+
 ## 2026-09-27 (4) — M7 API 2 na Windowsu in CNPC most v igri
 
 **Namen seje:** dokončati preverbo API 2 ter M7.2–M7.4 v CNPC, nato čim več M7.5.

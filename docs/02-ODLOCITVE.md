@@ -737,6 +737,51 @@ fiksna v `MovementHelper.canWalkThroughBlockState` in `EntityInteractions` (lese
 pade); `ApiJarTest` prevede porabnika API 2 samo proti API jarju. V igri: CNPC M7.4 (U2) in
 M7.5 (U3/U4/U6).
 
+### D-040 — Malus vode na instanco (CNPC U5 `avoidsWater`)
+
+**Vprašanje.** CNPC `setAvoidsWater(true)` postavi vanilla `PathNodeType.WATER` na privzeto
+prioriteto, `false` na 0. Profil `avoid_water` iz seje 2026-09-27 (4) je nastavil
+`walkOnWaterOnePenalty=20` — ali to NPC-ja res odvrne od vode?
+
+**Odločitev.** Ne; `walkOnWaterOnePenalty` velja samo za hojo po gladini (`destOn == WATER`
+brez vode v nogah), Baritone pa reko prebrede ali preplava z nogami v vodi (`waterWalkSpeed`).
+Nova NPC nastavitev jedra **`npcWaterPenalty`** (privzeto 0 — Baritone nespremenjen) se prišteje
+vsakemu premiku, pri katerem so noge ali glava v vodi ali je cilj gladina: `Traverse` (obe veji
+in velike entitete), `Diagonal`, padec v vodo (`Descend`), plavanje navzgor (`Pillar`). Profil
+**`avoid_water: npcWaterPenalty=37.06`** = 8 × `WALK_ONE_BLOCK_COST`, kar je vanilla malus 8 na
+blok. Malus, ne prepoved: pri zelo dolgem obvozu gre NPC čez vodo, kot vanilla.
+
+**Dokaz.** Sonda A* (reka x = 10..14 globine 1 in 2, suh prehod 10 blokov stran): s
+`walkOnWaterOnePenalty` 3 in 20 enako 5 mokrih točk. `javap net.minecraft.pathfinding.PathNodeType`:
+`WATER` = `8.0f`.
+
+**Preverba.** `WaterAvoidanceTest` (najprej padel): privzeto prebrede, `avoid_water` gre čez suh
+prehod, pri obvozu 45 blokov prečka. Golden in T2 testi nespremenjeni. V igri: CNPC M7.6 A/B.
+
+### D-041 — Doseg iskanja za vanilla zahteve: `FOLLOW_RANGE` (CNPC M7.5 `NpcNavRange`)
+
+**Vprašanje.** Vanilla `PathNavigate.getPathToPos` vidi samo `ChunkCache` entiteta ±
+(`FOLLOW_RANGE` + 8) in pot dolžine do `FOLLOW_RANGE`; Baritone doseg prezre (M7.1). Kako
+dati CNPC-ju domet na instanco brez spremembe API 2?
+
+**Odločitev.**
+- Zahteve prek adapterja `PathNavigate` (`tryMoveToXYZ`, `tryMoveToEntityLiving`, `setPath`,
+  sledenje po njih) nastavijo **doseg iskanja = ⌈`getPathSearchRange()`⌉**; posnetek chunkov se
+  preseka s kvadratom začetek ± (doseg + 8). Cilj zunaj je za iskalnik nenaložen, zato je pot
+  **segment do meje** (D-014); naslednji segment se išče od konca prejšnjega. Porabnik (CNPC)
+  doseg nastavlja kot doslej prek atributa `FOLLOW_RANGE` — brez nove metode API.
+- API `goTo`/`follow`, ukazi `/npcb` in tečaji dosega nimajo: `CustomGoalProcess.setGoal` ga
+  ponastavi na 0, adapter ga nastavi šele za tem.
+- Profilno stikalo `npcRespectFollowRange` (privzeto `true`) ga izklopi.
+- Stranski učinek: cilji brez položaja pri vanilla zahtevah ne kopirajo več vseh chunkov (D-013).
+
+**Dokaz.** Vanilla 1.12.2 `PathNavigate.getPathToPos`: `ChunkCache(world, pos ± (range + 8))`,
+`PathFinder.findPath(..., maxDistance = range)`. CNPC revizija M7.1: "domet iskanja
+(`NpcNavRange`, `FOLLOW_RANGE`) — Baritone ga ne bere".
+
+**Preverba.** `SearchRangeTest` (pravokotniki, segment do meje pri dosegu 1, mutacija ujeta).
+V igri: vanilla zahteva s ciljem dlje od dosega mora priti v segmentih (R-23), CNPC M7.6.
+
 ---
 
 ## Dnevnik odločitev
@@ -782,3 +827,5 @@ M7.5 (U3/U4/U6).
 | D-037 | 2026-09-26 | Gradnja: programske sheme, datoteke, več workerjev; kaj se ne prenese | velja, preverba M14 |
 | D-038 | 2026-09-26 | Stopnja W: 20 workerjev ≤ 1 ms p95 dodatno (predlog) | potrdi uporabnik ob M12 |
 | D-039 | 2026-09-27 | Navigacijski API 2: `reinstall`, hitrost in vrata na instanco (CNPC U2–U6) | velja, preverba M7.4/M7.5 |
+| D-040 | 2026-09-27 | Malus vode `npcWaterPenalty`; `avoid_water` = vanilla malus 8 (CNPC U5) | velja, preverba M7.6 |
+| D-041 | 2026-09-27 | Doseg iskanja vanilla zahtev = `FOLLOW_RANGE` + 8 (CNPC M7.5), brez spremembe API | velja, preverba v igri (R-23) |
