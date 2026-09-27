@@ -33,15 +33,21 @@ okna — natanko toliko, kolikor klient hrani pot (`ClientPaths.EXPIRE_MS = 3000
 pri 2841 ms, zdaj je čas potekel pri 81 tickih brez opisa. Napaka testa, ne izrisa: rok
 110 tickov (3,5 s merilo + rezerva) in opis ob izteku. Meritev: `docs/meritve/klient/selftest-20260927-161208.csv`.
 
+**Ponovitev (16:27, jar z `aafa0bb`): `/npcb selftest` 6/6.** Debug off 2847 ms (77 tickov),
+zombi udari po 117 tickih (kontrola 179), volk 50 tickov brez teleporta, vaščan v kolibi po
+119 (kontrola v 16 s ni prišla — vanilla naključje). Meritev:
+`docs/meritve/klient/selftest-20260927-162749.csv`. **D-040/D-041 v knjižnici preverjena**
+(build, T2 10/10, selftest 6/6); R-23 ostaja odprt do scenarija s ciljem dlje od dosega (M7.6).
+
 **Za CNPC:** `NpcNavRange` → atribut `FOLLOW_RANGE` (če ga CNPC že tako nastavlja, ni dela);
 `avoid_water` se ne preimenuje, zato most ostane enak.
 
 **Odprto:** `DoorMode.ALL` nima CNPC izbire (ni treba za M7); M7.6–M7.7 A/B tečaj; M7.8
 jahanje/formacije v igri; M5 A4 (1 h stres). Novo tveganje **R-23** (segment na meji dosega).
 
-**Naslednji korak:** `.\dev.ps1 build --offline; .\t2-run.ps1` (vrata, voda — privzeti profil
-mora ostati 10/10), nato `/npcb selftest` (vanilla AI z dosegom: zombi, volk, vaščan) in CNPC
-M7.6 scenarij z `avoid_water` NPC-jem ob reki.
+**Naslednji korak:** CNPC M7.6 — ponovljiv A/B scenarij (`nav-run.ps1 -Ozadje baritone`) z
+NPC-jem `avoid_water` ob reki in ciljem dlje od `FOLLOW_RANGE` (R-23); v CNPC je treba nov jar
+knjižnice (`mod\build\libs`) kopirati v `dev/run-m7/mods`.
 
 ---
 

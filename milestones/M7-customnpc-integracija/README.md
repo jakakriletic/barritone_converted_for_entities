@@ -53,5 +53,5 @@ Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 | API 2 | **Windows build + 125 JUnit + T2 10/10** (2026-09-27). Dodan profil `avoid_water` za CNPC U5. |
 | M7.2–M7.3 | CNPC most + globalni config `RwNavBackend=0` + NBT ključ na NPC; dedicated smoke brez knjižnice in z njo (izklopljeno/vklopljeno), NBT preživi restart. |
 | M7.4 | `updateTasks()` po gradnji taskov znova namesti navigator; kopenski NPC se pripne, leteči odklopi in po vrnitvi znova pripne (dedicated preverba). Formacije in jahači so izključeni po politiki, v svetu še ne preverjeni. |
-| M7.5 | hitrost `OWN`, vrata `NONE`/`WOODEN`, `avoidsWater` → profil `avoid_water` (dedicated preverba profila). **2026-09-27 (5):** `avoid_water` popravljen (D-040, prej brez učinka), doseg `NpcNavRange` = `FOLLOW_RANGE` za vanilla zahteve (D-041) — prevedeno + JUnit, čaka build in igro. |
+| M7.5 | hitrost `OWN`, vrata `NONE`/`WOODEN`, `avoidsWater` → profil `avoid_water` (dedicated preverba profila). **2026-09-27 (5):** `avoid_water` popravljen (D-040, prej brez učinka), doseg `NpcNavRange` = `FOLLOW_RANGE` za vanilla zahteve (D-041) — build, T2 10/10, selftest 6/6 (2026-09-27); v CNPC še ne preizkušeno. |
 | M7.6–M7.8 | A/B scenarij in meritve še niso narejeni; jahanje samo enotno testirano. |

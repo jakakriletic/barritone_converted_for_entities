@@ -14,7 +14,7 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 |---|---|
 | Datum zadnje posodobitve | 2026-09-27 |
 | Trenutna faza | **M8 zaključen**, **stopnja A zmogljivosti izpolnjena** (200 mobov: glavna nit p95 1,64 ms). **M7.2–M7.4 v CNPC preverjeni na dedicated strežniku**; M7.5 v knjižnici prevedeno (D-040 voda, D-041 doseg), M7.6–M7.8 odprti. Načrt worker plasti M11–M15 zapisan. |
-| Naslednji korak | `.\dev.ps1 build` + `.\t2-run.ps1` + `/npcb selftest` za D-040/D-041, nato M7.6 ponovljiv A/B scenarij. Glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
+| Naslednji korak | CNPC M7.6: ponovljiv A/B scenarij (D-040/D-041 v knjižnici preverjena: T2 10/10, selftest 6/6). Glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |
