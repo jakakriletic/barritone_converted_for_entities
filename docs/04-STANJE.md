@@ -20,6 +20,12 @@ Odprto je ostalo M7.5 `NpcNavRange`.
 | `fecfae4` | **D-040**: `npcWaterPenalty` (privzeto 0) na vseh premikih v vodo; `avoid_water` = 8 × hoja (vanilla `PathNodeType.WATER` = 8, javap). `WaterAvoidanceTest` najprej padel (5 mokrih točk) |
 | `ab4e608` | **D-041**: vanilla zahteve prek adapterja vidijo entiteta ± (`FOLLOW_RANGE` + 8), cilj dlje → segment do meje (D-014); API/ukazi/tečaji brez dosega (`setGoal` ponastavi). Stikalo `npcRespectFollowRange`. API 2 nespremenjen — CNPC doseg nastavlja z atributom `FOLLOW_RANGE`. `SearchRangeTest` (mutacija ujeta) |
 
+**Preverjeno na Windowsu (16:06–16:07):** `.\dev.ps1 build` z `ab4e608` zelen (jar vsebuje
+`npcWaterPenalty`/`npcRespectFollowRange`), `.\t2-run.ps1` **10/10**, spremenjenih blokov 0,
+brez izjem — privzeti profil (vrata, voda 1 in 3 globoko, padec v vodo) nespremenjen.
+Meritev: `docs/meritve/m4/t2-20260927-160716.csv`. Čaka: `/npcb selftest` v igri (D-041 pri
+vanilla AI).
+
 **Za CNPC:** `NpcNavRange` → atribut `FOLLOW_RANGE` (če ga CNPC že tako nastavlja, ni dela);
 `avoid_water` se ne preimenuje, zato most ostane enak.
 
