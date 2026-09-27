@@ -605,11 +605,12 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
     }
 
     /**
-     * D-013: svež kontekst z omejenim posnetkom chunkov okoli začetka in cilja
-     * (rob {@code npcSnapshotMarginChunks}). Cilji brez položaja dobijo celoten posnetek.
+     * D-013, D-041: pravokotnik posnetka — začetek ∪ cilj z robom {@code margin} chunkov; pri
+     * {@code rangeBlocks > 0} presekan s kvadratom začetek ± (doseg + 8) blokov kot vanilla
+     * {@code ChunkCache}. Cilj zunaj preseka je za iskalnik nenaložen: pot je segment do meje
+     * (D-014), naslednji segment se išče od tam.
      */
-    private CalculationContext newSearchContext(BlockPos start, Goal goal) {
-        int margin = baritone.getSettings().npcSnapshotMarginChunks.value;
+    public static ChunkSnapshot.Bounds searchBounds(BlockPos start, Goal goal, int margin, int rangeBlocks) {
         ChunkSnapshot.Bounds bounds = ChunkSnapshot.Bounds.ALL;
         if (goal instanceof IGoalRenderPos) {
             BlockPos g = ((IGoalRenderPos) goal).getGoalPos();
@@ -618,6 +619,36 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
             GoalXZ g = (GoalXZ) goal;
             bounds = ChunkSnapshot.Bounds.around(start.getX(), start.getZ(), g.getX(), g.getZ(), margin);
         }
+        if (rangeBlocks > 0) {
+            bounds = bounds.intersect(ChunkSnapshot.Bounds.radius(start.getX(), start.getZ(), rangeBlocks + VANILLA_RANGE_PAD));
+        }
+        return bounds;
+    }
+
+    /** Vanilla {@code PathNavigate.getPathToPos}: {@code ChunkCache} je doseg + 8 blokov okoli entitete. */
+    public static final int VANILLA_RANGE_PAD = 8;
+
+    /**
+     * D-041: doseg iskanja v blokih (0 = brez omejitve). Nastavi ga {@code PathNavigate} adapter
+     * po vsaki vanilla zahtevi ({@code FOLLOW_RANGE}); vsak nov cilj prek
+     * {@code CustomGoalProcess.setGoal} ga ponastavi na 0 (API, ukazi, tečaji).
+     */
+    public void setSearchRange(int blocks) {
+        searchRangeBlocks = Math.max(0, blocks);
+    }
+
+    public int searchRange() {
+        return searchRangeBlocks;
+    }
+
+    private volatile int searchRangeBlocks;
+
+    /**
+     * D-013: svež kontekst z omejenim posnetkom chunkov okoli začetka in cilja
+     * (rob {@code npcSnapshotMarginChunks}). Cilji brez položaja dobijo celoten posnetek.
+     */
+    private CalculationContext newSearchContext(BlockPos start, Goal goal) {
+        ChunkSnapshot.Bounds bounds = searchBounds(start, goal, baritone.getSettings().npcSnapshotMarginChunks.value, searchRangeBlocks);
         long t0 = System.nanoTime();
         CalculationContext c = new CalculationContext(baritone, bounds);
         si.ladja.npcbaritone.core.SearchStats.SNAPSHOT_NANOS.add(System.nanoTime() - t0);

@@ -438,6 +438,13 @@ public final class Settings {
     public final Setting<Double> npcWaterPenalty = new Setting<>(0.0D);
 
     /**
+     * NPC Baritone (D-041, CNPC M7.5): zahteve prek vanilla {@code PathNavigate} (AI taski) vidijo
+     * samo entiteta ± ({@code FOLLOW_RANGE} + 8) blokov, kot vanilla; dlje gre pot v segmentih.
+     * API {@code goTo}/{@code follow} in ukazi dosega nimajo.
+     */
+    public final Setting<Boolean> npcRespectFollowRange = new Setting<>(true);
+
+    /**
      * Set to 1.0 to effectively disable this feature
      *
      * @see <a href="https://github.com/cabaletta/baritone/issues/18">Issue #18</a>

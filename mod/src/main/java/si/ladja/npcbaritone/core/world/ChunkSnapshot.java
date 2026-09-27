@@ -54,6 +54,26 @@ public final class ChunkSnapshot {
                     (Math.max(ax, bx) >> 4) + m, (Math.max(az, bz) >> 4) + m);
         }
 
+        /**
+         * D-041: chunki, ki pokrivajo kvadrat {@code x ± blocks, z ± blocks} (vanilla
+         * {@code PathNavigate} vidi {@code ChunkCache} entiteta ± (doseg + 8)).
+         */
+        public static Bounds radius(int x, int z, int blocks) {
+            int b = Math.max(0, blocks);
+            return new Bounds((x - b) >> 4, (z - b) >> 4, (x + b) >> 4, (z + b) >> 4);
+        }
+
+        /** Presek; {@code ALL} je nevtralen element. Prazen presek ni mogoč (oba vsebujeta začetek). */
+        public Bounds intersect(Bounds o) {
+            if (o.isAll()) {
+                return this;
+            }
+            if (isAll()) {
+                return o;
+            }
+            return new Bounds(Math.max(minX, o.minX), Math.max(minZ, o.minZ), Math.min(maxX, o.maxX), Math.min(maxZ, o.maxZ));
+        }
+
         public boolean isAll() {
             return this == ALL;
         }

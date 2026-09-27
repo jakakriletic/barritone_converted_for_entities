@@ -58,4 +58,12 @@ public class NavPathContractTest {
         assertNull(BaritonePathNavigate.goalPos(new GoalXZ(7, 8)));
         assertNull(BaritonePathNavigate.goalPos(null));
     }
+
+    /** D-041: FOLLOW_RANGE → doseg iskanja (navzgor, vsaj 1 blok). */
+    @Test
+    public void followRangeToSearchRange() {
+        assertEquals(35, BaritonePathNavigate.searchRangeBlocks(35.0F));
+        assertEquals(17, BaritonePathNavigate.searchRangeBlocks(16.2F));
+        assertEquals(1, BaritonePathNavigate.searchRangeBlocks(0.0F));
+    }
 }
