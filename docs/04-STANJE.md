@@ -45,9 +45,15 @@ zombi udari po 117 tickih (kontrola 179), volk 50 tickov brez teleporta, vašča
 **Odprto:** `DoorMode.ALL` nima CNPC izbire (ni treba za M7); M7.6–M7.7 A/B tečaj; M7.8
 jahanje/formacije v igri; M5 A4 (1 h stres). Novo tveganje **R-23** (segment na meji dosega).
 
-**Naslednji korak:** CNPC M7.6 — ponovljiv A/B scenarij (`nav-run.ps1 -Ozadje baritone`) z
-NPC-jem `avoid_water` ob reki in ciljem dlje od `FOLLOW_RANGE` (R-23); v CNPC je treba nov jar
-knjižnice (`mod\build\libs`) kopirati v `dev/run-m7/mods`.
+**Nadaljevanje (ista seja, CNPC):** delo seje (4) v CNPC commitano (`3e458aa`); **M7.6 v kodi**
+(CNPC `325a745`): `nav-run.ps1 -Ozadje baritone` naloži knjižnico iz `mod\build\classes`
+(`-PnpcBaritoneDev`, jar v `mods` ni potreben), pripne 16 hodečih (`/rwnav on NAV_Walk`, novo
+`pripetih=`), veličini 5/6 za Baritona iz `/npcb perf`. Scenarij ima cilj znotraj dosega in
+brez vode — D-040/R-23 tam nista preverjena.
+
+**Naslednji korak:** v CNPC `.\testworld.ps1`, nato `.\nav-run.ps1 -Ozadje baritone` (B1–B5 +
+N1–N15); ko je zelen, seriji `.\ponovitve-run.ps1 -Scenarij nav` in
+`.\ponovitve-run.ps1 -Scenarij nav -Dodatno @('-Ozadje','baritone')` (M7.7).
 
 ---
 

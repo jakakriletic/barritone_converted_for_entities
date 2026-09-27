@@ -54,4 +54,6 @@ Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 | M7.2–M7.3 | CNPC most + globalni config `RwNavBackend=0` + NBT ključ na NPC; dedicated smoke brez knjižnice in z njo (izklopljeno/vklopljeno), NBT preživi restart. |
 | M7.4 | `updateTasks()` po gradnji taskov znova namesti navigator; kopenski NPC se pripne, leteči odklopi in po vrnitvi znova pripne (dedicated preverba). Formacije in jahači so izključeni po politiki, v svetu še ne preverjeni. |
 | M7.5 | hitrost `OWN`, vrata `NONE`/`WOODEN`, `avoidsWater` → profil `avoid_water` (dedicated preverba profila). **2026-09-27 (5):** `avoid_water` popravljen (D-040, prej brez učinka), doseg `NpcNavRange` = `FOLLOW_RANGE` za vanilla zahteve (D-041) — build, T2 10/10, selftest 6/6 (2026-09-27); v CNPC še ne preizkušeno. |
-| M7.6–M7.8 | A/B scenarij in meritve še niso narejeni; jahanje samo enotno testirano. |
+| M7.2–M7.4 commit | CNPC `3e458aa` (veja `codex/m7-cnpc-integration`; prej necommitano) |
+| M7.6 | **v kodi** (CNPC `325a745`): `nav-run.ps1 -Ozadje baritone`, merila B1–B5, `bar.*` iz `/npcb perf`; [scenarij](../../../customNPC_rework/docs/scenariji/M7.6-ab-baritone.md). Čaka na zagon |
+| M7.7–M7.8 | serije A/B (3+3) in jahanje/formacije v igri odprti; veličina 2 za Baritona še ni merjena |
