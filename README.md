@@ -13,8 +13,8 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 | | |
 |---|---|
 | Datum zadnje posodobitve | 2026-09-27 |
-| Trenutna faza | **M8 zaključen**, ročne preverbe v klientu zaprte, **stopnja A zmogljivosti izpolnjena** (200 mobov: glavna nit p95 1,64 ms, D-027) — **M7 teče: navigacijski API 2 za CNPC prevedeno** (D-039). **Načrt worker plasti M11–M15 zapisan** (D-029–D-038) |
-| Naslednji korak | `.\dev.ps1 build` + `.\t2-run.ps1` za API 2 (D-039), nato CNPC M7.2–M7.3; glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
+| Trenutna faza | **M8 zaključen**, **stopnja A zmogljivosti izpolnjena** (200 mobov: glavna nit p95 1,64 ms). **M7.2–M7.4 v CNPC preverjeni na dedicated strežniku**; M7.5 delno, M7.6–M7.8 odprti. Načrt worker plasti M11–M15 zapisan. |
+| Naslednji korak | M7.5: domet `NpcNavRange` na instanco; nato M7.6 ponovljiv A/B scenarij z Baritonovo telemetrijo. Glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
 | Licenca | LGPL-3.0 (podedovano od Baritona), glej `docs/02-ODLOCITVE.md` D-004 |

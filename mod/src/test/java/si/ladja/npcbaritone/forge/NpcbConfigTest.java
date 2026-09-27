@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import si.ladja.npcbaritone.harness.BootstrapOnce;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -63,6 +64,14 @@ public class NpcbConfigTest {
         assertEquals(NpcbConfig.SpeedMode.PLAYER, d.speedMode);
         assertEquals(30, d.maxTurnDegrees);
         assertFalse(d.syncPathsToOps);
+    }
+
+    @Test
+    public void avoidWaterProfilePenalizesSurfaceWaterOnlyWhenSelected() {
+        BootstrapOnce.ensure();
+        NpcbConfig config = NpcbConfig.defaults();
+        assertEquals(3.0, Attach.profileFor(config, "default").walkOnWaterOnePenalty.value, 0.001);
+        assertEquals(20.0, Attach.profileFor(config, "avoid_water").walkOnWaterOnePenalty.value, 0.001);
     }
 
     @Test

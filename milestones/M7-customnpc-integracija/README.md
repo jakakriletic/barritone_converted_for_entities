@@ -50,7 +50,8 @@ Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 |---|---|
 | pogoj | **izpolnjen**: CNPC D-022 (`customNPC_rework` `0cd2fa8`), stopnja A zmogljivosti (1,64 ms) |
 | M7.1 | **narejeno**: `customNPC_rework/docs/07-BARITONE-OZADJE.md` — 105 klicev, ukrepi U1–U7 (U7 formacije); adapter popravljen za `getPath()` med iskanjem (`2ee0df2`) |
-| API 2 | **prevedeno + JUnit** (D-039, `593a9b4`–`640b956`): `reinstall` (U2), hitrost (U6) in vrata (U3/U4) na instanco; čaka build na Windowsu in T2 |
-| M7.2–M7.3 | odblokirani (API 2); niso začeti |
-| M7.4 | predpogoj izpolnjen (CNPC M3.1 na `origin`); `reinstall()` po `updateTasks()` |
-| M7.5–M7.8 | niso začeti |
+| API 2 | **Windows build + 125 JUnit + T2 10/10** (2026-09-27). Dodan profil `avoid_water` za CNPC U5. |
+| M7.2–M7.3 | CNPC most + globalni config `RwNavBackend=0` + NBT ključ na NPC; dedicated smoke brez knjižnice in z njo (izklopljeno/vklopljeno), NBT preživi restart. |
+| M7.4 | `updateTasks()` po gradnji taskov znova namesti navigator; kopenski NPC se pripne, leteči odklopi in po vrnitvi znova pripne (dedicated preverba). Formacije in jahači so izključeni po politiki, v svetu še ne preverjeni. |
+| M7.5 | hitrost `OWN`, vrata `NONE`/`WOODEN`, `avoidsWater` → profil `avoid_water` (dedicated preverba profila); `NpcNavRange` na instanco še odprt. |
+| M7.6–M7.8 | A/B scenarij in meritve še niso narejeni; jahanje samo enotno testirano. |

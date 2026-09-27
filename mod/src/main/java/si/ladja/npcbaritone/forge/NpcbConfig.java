@@ -65,6 +65,7 @@ public final class NpcbConfig {
             "walk: allowSprint=false",
             "parkour: allowParkour=true",
             "cautious: maxFallHeightNoWater=2, allowSprint=false",
+            "avoid_water: walkOnWaterOnePenalty=20",
     };
 
     NpcbConfig(int searchThreads, int searchQueueLimit, int snapshotMarginChunks, int shareRadiusChunks,

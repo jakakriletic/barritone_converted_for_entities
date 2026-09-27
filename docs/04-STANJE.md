@@ -4,6 +4,40 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-27 (4) — M7 API 2 na Windowsu in CNPC most v igri
+
+**Namen seje:** dokončati preverbo API 2 ter M7.2–M7.4 v CNPC, nato čim več M7.5.
+
+**Preverjeno v knjižnici:** `.\dev.ps1 build --offline` (125/125 JUnit, reobf/API jar),
+`.\t2-run.ps1` (10/10, železna vrata FAILED, škoda 0, spremenjenih blokov 0).
+Profil `avoid_water` je dodan kot opt-in (`walkOnWaterOnePenalty=20`, privzeti profil ostane 3);
+nov JUnit je najprej padel za neznani profil in nato uspel.
+
+**CNPC veja `codex/m7-cnpc-integration`:** `NpcBaritoneBridge` kliče samo API 2,
+`RwNavBackend` izbere le kopenskega NPC-ja z globalnim configom in njegovim NBT ključem 1;
+oba sta privzeto 0. Po `updateTasks()` knjižnica znova namesti šive in preusmeri nove AI
+taske. `/rwnav on|off|status <predpona>` omogoča izbiro NPC-jev v testu. `SpeedMode.OWN`,
+vrata 2→`NONE`, 0/1→`WOODEN`, `avoidsWater`→profil `avoid_water`; član formacije in jahač
+ostaneta vanilla. API jar je samo `compileOnly`, CNPC jar ne vsebuje `si/ladja/npcbaritone`.
+
+**CNPC preverba:** `buildPatchedMod` (192/192 JUnit, 31/31 `testOriginal`) in
+`verify-package` (62 pričakovanih zamenjanih razredov) zelena. Dedicated test v ločeni
+`dev/run-m7` mapi (port 25567): brez knjižnice se mod zažene in NBT ključ preživi restart;
+z knjižnico, globalno 0, izbrani NPC ni pripet; z globalno 1 se pripne, `/rwnav off/on`
+odklopi/pripne. Ob prisilno naloženih chunkih je sprememba `AvoidsWater` dala
+`profil=avoid_water`, `MovementType=1` odklop in `MovementType=0` ponovno pripenjanje.
+Podrobnosti: CNPC `docs/scenariji/M7-npcbaritone-smoke.md`.
+
+**Odprto:** M7.5 `NpcNavRange` še ni na instanco (API 2 nima nastavitve dometa), `ALL`
+vrata nimajo obstoječe CNPC izbire; M7.6–M7.7 zahtevata ponovljiv Baritone A/B tečaj
+in meritve, M7.8 jahanje/formacije še potrebujeta igralni scenarij. M5 A4 (1 h stres)
+ni tekel, ker je drug CNPC baseline strežnik tekel sočasno in bi popačil meritev.
+
+**Naslednji korak:** M7.5 — odločiti in implementirati domet iskanja na instanco brez
+spreminjanja pogodbe API 2, nato M7.6 A/B tečaj.
+
+---
+
 ## 2026-09-27 (3) — API 2 za CNPC: `reinstall`, hitrost in vrata na instanco (veja `m7-cnpc`)
 
 **Namen seje:** D-039 in izvedba U2 (`reinstall` po CNPC `updateTasks()`), U6 (hitrost na
