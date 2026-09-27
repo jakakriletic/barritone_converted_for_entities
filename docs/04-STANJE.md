@@ -4,6 +4,15 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-27 (3) — API 2 za CNPC: `reinstall`, hitrost in vrata na instanco (veja `m7-cnpc`)
+
+**Namen seje:** D-039 in izvedba U2 (`reinstall` po CNPC `updateTasks()`), U6 (hitrost na
+instanco), U3/U4 (vrata na instanco: `NONE`/`WOODEN`/`ALL`); JUnit za vsakega, prevod v oblaku.
+Pred tem so bili necommitani dokumenti načrta M11–M15 (seja 2026-09-26 (4)) commitani ločeno
+(`d60ddd7`, na željo uporabnika).
+
+---
+
 ## 2026-09-27 (2) — merge v `main`; M7 začet: D-018 v CNPC, revizija M7.1 (veja `m7-cnpc`)
 
 **Merge:** `m8-velikosti` → `main` z `--no-ff` (`8748cef`, 79 commitov M2–M6 in M8 ohranjenih);

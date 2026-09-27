@@ -509,7 +509,7 @@ predpostavljajo en primerek); LGPL je pri ločenem jarju trivialen (D-004).
 **Preverba.** M7.2 in M9.6 (most, brez knjižnice bitno enako); jar-in-jar: `launcher-test.ps1`
 s CNPC in ladja_mod, ki oba nosita knjižnico, na klientu in dedicated strežniku (M11.10).
 
-### D-030 — Tri plasti; worker je izrecna registracija; API 2 je dodaten
+### D-030 — Tri plasti; worker je izrecna registracija; API 3 je dodaten
 
 **Odločitev.**
 1. **Plast 1 — navigacija** (obstoječe, API 1: `NpcBaritone`, `INpcNavigator`, `NavListener`).
@@ -521,8 +521,8 @@ Plasti 2 in 3 obstajata za entiteto samo, če jo porabnik registrira:
 `NpcBaritone.worker(entity, WorkerSpec)` → `INpcWorker`. `WorkerSpec` vsebuje inventar
 (`IItemHandler`), lastnika (`GameProfile`), dovoljenja (`IWorkPermission`), delovno območje
 (D-033) in profil. Entiteta brez registracije fizično nima rok (D-032), zato navigacijski NPC
-ne more porušiti bloka ne glede na nastavitve. API 2 je nov paket
-`si.ladja.npcbaritone.api.work`; manifest `NpcBaritone-Api-Version: 2`; noben podpis API 1
+ne more porušiti bloka ne glede na nastavitve. API 3 (številka po D-039) je nov paket
+`si.ladja.npcbaritone.api.work`; manifest `NpcBaritone-Api-Version: 3`; noben podpis API 1
 se ne spremeni. Strežniški config `worker.enabled` (privzeto `true`) plast 2 in 3 izklopi v
 celoti (`worker()` vrne `null`).
 
@@ -662,7 +662,7 @@ prednosti bi worker vsakič opustil delo. D-023: knjižnica ne piše NBT.
 
 **Odločitev.**
 - `ISchematic` in sheme iz Baritona (`Fill`, `Walls`, `Shell`, `Composite`, `Mask`,
-  `Replace`, `Substitute`, maske) se prenesejo v API 2 — porabnik (npr. generator vasi) jih
+  `Replace`, `Substitute`, maske) se prenesejo v API 3 — porabnik (npr. generator vasi) jih
   sestavi **programsko**, brez datoteke.
 - Datoteke: formati MCEdit `.schematic`, Sponge `.schem`, Litematica `.litematic` (Baritonovi
   bralniki so brez klientskih razredov) iz mape strežnika `config/npcbaritone/schematics`;
@@ -696,6 +696,46 @@ uporabnik ob začetku M12.
 proces (`onTick` procesa). Meja za navigacijo (D-027) teh stroškov ne zajema.
 
 **Preverba.** M12 A4 (samo mine), M14 A5 (celotna mešanica, 3 ponovitve, mediana in razpon).
+
+### D-039 — Navigacijski API različice 2 (CNPC U2, U3/U4, U6); worker postane različica 3
+
+**Vprašanje.** CNPC revizija M7.1 (`customNPC_rework/docs/07-BARITONE-OZADJE.md` §3) zahteva
+od knjižnice tri stvari, ki jih API 1 nima: ponovno namestitev po `updateTasks()` (U2), vrata
+na instanco (U3 `doorInteract`, U4 "odpri vsa vrata") in hitrost na instanco (U6). D-030 je
+številko 2 rezerviral za worker paket.
+
+**Odločitev.**
+- **API različica 2** = samo nove metode v obstoječih vmesnikih in dva nova enuma v `api`:
+  `INpcNavigator.reinstall()`, `speedMode()`/`setSpeedMode(SpeedMode)`,
+  `doorMode()`/`setDoorMode(DoorMode)`; `SpeedMode {PLAYER, OWN}`, `DoorMode {NONE, WOODEN, ALL}`.
+  Noben podpis API 1 se ne spremeni. Porabnik nove metode kliče samo pri
+  `NpcBaritone.apiVersion() >= 2` (stari mod jar bi vrgel `AbstractMethodError`). Manifest
+  `NpcBaritone-Api-Version: 2`. Worker paket iz D-030 dobi **različico 3**.
+- **Vrstni red nastavitev:** privzeti NPC profil → strežniški config → poimenovan profil →
+  **prepis instance** (hitrost, vrata). `setProfile` prepise instance ohrani.
+- **Vrata** sta nastavitvi jedra `npcOpenDoors` (privzeto `true`: lesena vrata in ograjna
+  vrata) in `npcOpenIronDoors` (privzeto `false`), zato ju lahko nastavi tudi profil v configu.
+  `WOODEN` = obnašanje M4 (nespremenjeno); `ALL` = tudi železna in druga ne-lesena vrata so
+  prehodna in se odprejo neposredno (U4); `NONE` = entiteta ničesar ne odpira, vrata in ograjna
+  vrata so prehodna samo, če so že odprta (vanilla `isPassable`, brez smeri). Rušenja vrat ni
+  (D-031): CNPC `doorInteract = 0` (razbij) se preslika v `WOODEN`.
+- **Hitrost na instanco:** privzeto strežniški `speedMode`. `OWN` izklopi parkour samo tej
+  instanci (D-010). Menjava med vodenjem takoj vrne ali nastavi osnovni `MOVEMENT_SPEED`.
+- **`reinstall()`:** če je porabnik zamenjal navigator, move ali jump helper, se naši trije
+  šivi namestijo znova; nova vanilla trojica se shrani kot "prej" (za `detach`); taski, ki
+  kažejo na novi ali stari vanilla navigator, se preusmerijo na našega. Navigator je isti objekt,
+  zato cilj, pot in poslušalci ostanejo. Idempotentno. `attach` na že pripeti entiteti pokliče
+  `reinstall`. Pri `puppet` se novi taski odstranijo in ob `detach` vrnejo namesto starih.
+
+**Dokaz.** CNPC `EntityNPCInterface.updateTasks()` ob vsaki posodobitvi AI ustvari nov navigator
+in move helper (M7.1, U2) — brez ponovne namestitve bi NPC po prvi spremembi AI tiho padel na
+vanilla, ročaj API pa bi vračal `IDLE`. `speedMode` je bil globalen (`NpcbConfig`), vrata pa
+fiksna v `MovementHelper.canWalkThroughBlockState` in `EntityInteractions` (lesena vedno,
+železna nikoli). Nastavitve so na instanco že od D-016, zato vrata sodijo v `Settings`.
+
+**Preverba.** JUnit: `ReinstallTest`, `InstanceOverridesTest`, `DoorModeTest` (vsak najprej
+pade); `ApiJarTest` prevede porabnika API 2 samo proti API jarju. V igri: CNPC M7.4 (U2) in
+M7.5 (U3/U4/U6).
 
 ---
 
@@ -732,7 +772,7 @@ proces (`onTick` procesa). Meja za navigacijo (D-027) teh stroškov ne zajema.
 | D-027 | 2026-09-25 | Dve stopnji meje zmogljivosti (5 ms zdaj, 2 ms pred M7) | velja |
 | D-028 | 2026-09-25 | Velikosti: okvir blokov, meje 3 stolpci × 4 bloki, stikalo `largeEntities` | velja, preverba M8 T3 |
 | D-029 | 2026-09-26 | Distribucija: knjižnični mod, mehka odvisnost, brez vgrajenih kopij | velja, preverba M7.2/M9.6/M11.10 |
-| D-030 | 2026-09-26 | Tri plasti; worker je izrecna registracija; API 2 dodaten | velja |
+| D-030 | 2026-09-26 | Tri plasti; worker je izrecna registracija; API 3 dodaten (številka po D-039) | velja |
 | D-031 | 2026-09-26 | Rušenje/postavljanje/inventar samo za workerja (delno zamenja D-015) | velja, preverba M11 |
 | D-032 | 2026-09-26 | Roke prek `FakePlayer` z lastnikovim profilom, brez mixinov | velja, sonda M11.1 |
 | D-033 | 2026-09-26 | Obvezno delovno območje; dovoljenja v ceni in ob izvedbi | velja, preverba M11 |
@@ -741,3 +781,4 @@ proces (`onTick` procesa). Meja za navigacijo (D-027) teh stroškov ne zajema.
 | D-036 | 2026-09-26 | Proces ima prednost pred AI taski; stanje procesa se ne shranjuje | velja, preverba M11 |
 | D-037 | 2026-09-26 | Gradnja: programske sheme, datoteke, več workerjev; kaj se ne prenese | velja, preverba M14 |
 | D-038 | 2026-09-26 | Stopnja W: 20 workerjev ≤ 1 ms p95 dodatno (predlog) | potrdi uporabnik ob M12 |
+| D-039 | 2026-09-27 | Navigacijski API 2: `reinstall`, hitrost in vrata na instanco (CNPC U2–U6) | velja, preverba M7.4/M7.5 |

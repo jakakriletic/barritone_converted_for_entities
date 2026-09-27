@@ -19,7 +19,7 @@ dogodke.
 
 | # | Naloga | Vir |
 |---|---|---|
-| M14.1 | Sheme v API 2 (`api/work/schematic`): `ISchematic`, `IStaticSchematic`, `Fill`, `Walls`, `Shell`, `Composite`, `Mask`, `Replace`, `Substitute`, maske (`Sphere`, `Cylinder`, operatorji); JUnit: `desiredState` za vsako vrsto na majhnem primeru | 1.2.19 `api/schematic` |
+| M14.1 | Sheme v API 3 (`api/work/schematic`): `ISchematic`, `IStaticSchematic`, `Fill`, `Walls`, `Shell`, `Composite`, `Mask`, `Replace`, `Substitute`, maske (`Sphere`, `Cylinder`, operatorji); JUnit: `desiredState` za vsako vrsto na majhnem primeru | 1.2.19 `api/schematic` |
 | M14.2 | Bralniki datotek iz `config/npcbaritone/schematics`: MCEdit, Sponge, Litematica (1.2.19 `format/defaults`) + vanilla `.nbt` (`Template`); JUnit: ena majhna datoteka na format → pričakovana stanja | 1.2.19 `DefaultSchematicFormats` |
 | M14.3 | `BuilderProcess` port nad rokami in inventarjem: `placementPlausible` z `FakePlayer` rotacijo, `buildIgnoreExisting`, `buildIgnoreDirection`, `buildIgnoreProperties`, nadomestki, `buildInLayers`, `layerOrder`, `layerHeight`, `breakFromAbove`, `buildRepeat`, `mapArtMode`; rušenje napačnih blokov v shemi | 1.2.19 `BuilderProcess` (1137 vr.); Automatone `b3d431f8` (lestve) |
 | M14.4 | Bloki z oporo in dvodelni: vrstni red (trdni → odvisni: baklje, lestve, znaki, vrata, postelje, preproge), `canPlaceBlockAt` pred poskusom, dvodelni bloki prek vanilla predmeta (`ItemDoor`, `ItemBed` postavita oba dela) | nov (R-20) |

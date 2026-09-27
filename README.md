@@ -47,7 +47,7 @@ ozadje** za NPC-je, ki morajo priti daleč, čez zahteven teren ali zanesljivo (
 | **README.md** (ta datoteka) | pregled, status, kazalo | vedno prvo |
 | [`docs/04-STANJE.md`](docs/04-STANJE.md) | **živ dnevnik** — kaj je narejeno, kaj teče, kaj je blokirano | vedno drugo |
 | [`docs/01-ARHITEKTURA.md`](docs/01-ARHITEKTURA.md) | zgradba knjižnice, tok enega ticka, meje modulov | preden pišeš kodo |
-| [`docs/02-ODLOCITVE.md`](docs/02-ODLOCITVE.md) | **38 težkih vprašanj, vsako z odločitvijo, dokazom in preverbo** | preden karkoli spremeniš |
+| [`docs/02-ODLOCITVE.md`](docs/02-ODLOCITVE.md) | **39 težkih vprašanj, vsako z odločitvijo, dokazom in preverbo** | preden karkoli spremeniš |
 | [`docs/03-FAZE.md`](docs/03-FAZE.md) | milestoni M0–M15, faza 0, tečaji T1–T9, testna politika | ko načrtuješ sejo |
 | [`docs/05-SEJA-PROTOKOL.md`](docs/05-SEJA-PROTOKOL.md) | kako seja začne, dela, preverja in zaključi | vedno, tudi na koncu seje |
 | [`docs/06-RAZISKAVA.md`](docs/06-RAZISKAVA.md) | izmerjena dejstva: prevod, velikosti, Automatone časovnica, CNPC API | ko dvomiš v odločitev |

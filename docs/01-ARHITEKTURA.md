@@ -211,7 +211,7 @@ GameProfile lastnika                 ──►                       WorkerInven
                                               plast 1 navigacija: obstoječe (API 1)
 ```
 
-- Paketi: `api/work` (API 2, vključno s shemami), `core/process` (porti procesov),
+- Paketi: `api/work` (API 3, vključno s shemami), `core/process` (porti procesov),
   `core/work` (inventar, rezervacije gradnje, skener brez Forge razredov), `forge/work`
   (`EntityHands`, `FakePlayer`, eventi, `IItemHandler`). Meja ostane: `core` ne uvaža `forge`.
 - Tok ticka workerja: navigator tick (kot zdaj) → `PathingControlManager` izbere proces z
