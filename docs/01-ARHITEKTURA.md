@@ -20,6 +20,8 @@ si.ladja.npcbaritone
 ├── api/                    STABILNO od M6; edino, kar vidi CNPC (compileOnly)
 │   ├── NpcBaritone         vhod: attach(EntityLiving, Profile), get(entity), detach
 │   ├── INpcNavigator       goTo(BlockPos | Goal), follow(Entity), stop(), state()
+│   │                       API 2 (D-039): reinstall(), speedMode/setSpeedMode, doorMode/setDoorMode
+│   ├── SpeedMode, DoorMode API 2: PLAYER/OWN; NONE/WOODEN/ALL
 │   ├── NavState            IDLE, SEARCHING, MOVING, ARRIVED, FAILED(reason)
 │   ├── Profile             ime + prepis nastavitev (D-016)
 │   ├── IMovementFrame      identiteta / ladijski okvir (D-021)
@@ -208,7 +210,7 @@ job / decision tree / AI iz klepeta  ──►    api.work: INpcWorker, WorkerSp
 IItemHandler (skrinja workerja)      ──►      plast 3 procesi: mine · getToBlock · farm · build · follow
 IWorkPermission (meje ladje, baze)   ──►      plast 2 delo:    EntityHands (FakePlayer, D-032)
 GameProfile lastnika                 ──►                       WorkerInventory (D-034), varovala (D-033)
-                                              plast 1 navigacija: obstoječe (API 1)
+                                              plast 1 navigacija: obstoječe (API 1–2)
 ```
 
 - Paketi: `api/work` (API 3, vključno s shemami), `core/process` (porti procesov),

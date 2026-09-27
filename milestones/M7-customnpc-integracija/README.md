@@ -1,6 +1,6 @@
 # M7 — Integracija v CustomNPC rework
 
-**Velikost:** M · **Odvisen od:** M6 · **Odločitve:** D-005, D-018, D-019; v CNPC: D-007, D-012, D-016, M2.7
+**Velikost:** M · **Odvisen od:** M6 · **Odločitve:** D-005, D-018, D-019, D-039; v CNPC: D-007, D-012, D-016, M2.7
 
 ## Cilj
 
@@ -50,6 +50,7 @@ Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 |---|---|
 | pogoj | **izpolnjen**: CNPC D-022 (`customNPC_rework` `0cd2fa8`), stopnja A zmogljivosti (1,64 ms) |
 | M7.1 | **narejeno**: `customNPC_rework/docs/07-BARITONE-OZADJE.md` — 105 klicev, ukrepi U1–U7 (U7 formacije); adapter popravljen za `getPath()` med iskanjem (`2ee0df2`) |
-| M7.2–M7.3 | čakata API 2 knjižnice (U2 ponovna namestitev, U6 hitrost, U3/U4 vrata na instanco) |
-| M7.4 | predpogoj izpolnjen (CNPC M3.1 na `origin`); čaka API 2 |
+| API 2 | **prevedeno + JUnit** (D-039, `593a9b4`–`640b956`): `reinstall` (U2), hitrost (U6) in vrata (U3/U4) na instanco; čaka build na Windowsu in T2 |
+| M7.2–M7.3 | odblokirani (API 2); niso začeti |
+| M7.4 | predpogoj izpolnjen (CNPC M3.1 na `origin`); `reinstall()` po `updateTasks()` |
 | M7.5–M7.8 | niso začeti |

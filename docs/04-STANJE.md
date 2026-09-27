@@ -11,6 +11,27 @@ instanco), U3/U4 (vrata na instanco: `NONE`/`WOODEN`/`ALL`); JUnit za vsakega, p
 Pred tem so bili necommitani dokumenti načrta M11–M15 (seja 2026-09-26 (4)) commitani ločeno
 (`d60ddd7`, na željo uporabnika).
 
+**Narejeno (prevedeno + JUnit v oblaku, 124/124; čaka `.\dev.ps1 build` in zagon v igri):**
+
+| Commit | Kaj |
+|---|---|
+| `55c08a9` | **D-039**: navigacijski API 2; worker paket iz D-030 postane API 3 (M11.2, M14.1, arhitektura popravljeni) |
+| `593a9b4` | U3/U4: nastavitvi jedra `npcOpenDoors` (true), `npcOpenIronDoors` (false) — cena v `MovementHelper`, odpiranje v `MovementTraverse` in `EntityInteractions`. `WOODEN` = M4 nespremenjen (T2 testi zeleni); `NONE` = vrata prehodna samo odprta; `ALL` = tudi železna. `DoorModeTest` (A*, najprej padel 2/3) |
+| `4a0d4de` | U2: `Attach.reinstall` (šivi znova, nova vanilla trojica za `detach`, taski z novim ali starim vanilla navigatorjem preusmerjeni, idempotentno); `detach` obdrži porabnikov najnovejši šiv. U6: `InstanceOverrides` (config → profil → instanca), `setProfile` jih ohrani, `own` izklopi parkour samo instanci, `BaritoneMoveHelper.setSpeedMode` med vodenjem takoj. `ReinstallTest`, `InstanceOverridesTest`; 4 mutacije ujete |
+| `640b956` | javni API 2: `INpcNavigator.reinstall/speedMode/setSpeedMode/doorMode/setDoorMode`, enuma `SpeedMode`, `DoorMode`; `API_VERSION = 2`, manifest 2; `NpcBaritone.attach` na pripeti entiteti pokliče reinstall. `ApiJarTest` prevede porabnika API 2 |
+
+**Preslikava za CNPC (M7.5):** `doorInteract` 0 (razbij) in 1 (odpri) → `WOODEN`, 2 (nič) →
+`NONE`; "odpri vsa vrata" → `ALL`; `speedMode` NPC-ja → `setSpeedMode`; po vsakem
+`updateTasks()` → `NpcBaritone.get(npc).reinstall()` (samo pri `apiVersion() >= 2`).
+U5 (`avoidsWater` → cena vode) ostaja v CNPC preslikavi prek profila.
+
+**Omejitev (znana):** pri `NONE` se prehodnost odprtih vrat ugotavlja brez smeri (vanilla `isPassable`),
+kot pri upstream Baritonu; pri `WOODEN` so odprta železna vrata še vedno neprehodna (M4).
+
+**Naslednji korak:** `.\dev.ps1 build` na Windowsu (reobf, API jar z manifestom 2), nato
+`.\t2-run.ps1` (vrata, M4 nespremenjen); potem CNPC M7.2 (`NpcBaritoneBridge`) in M7.3
+(globalno stikalo) na veji CNPC.
+
 ---
 
 ## 2026-09-27 (2) — merge v `main`; M7 začet: D-018 v CNPC, revizija M7.1 (veja `m7-cnpc`)
