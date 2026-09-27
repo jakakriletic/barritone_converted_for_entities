@@ -25,6 +25,7 @@ nad shipyard chunki brez sprememb — manjka samo okvir (D-021).
 | M9.5 | Prehod kopno ↔ ladja: dvostopenjski cilj (svet → točka ob trupu → okvir ladje), menjava okvirja ob dotiku palube (`movingworld$getTouchedShipId`) |
 | M9.6 | Stikalo v `ladja_mod`: `ShipNavigator` (privzeto) ali Baritone za piratsko posadko |
 | M9.7 | Test: posadka na testnih ladjah (`testships/galeon`, `fregata`) med plovbo in zavijanjem hodi do topov |
+| M9.8 | Če so workerji na ladji (po M11): `IWorkPermission` ladja_moda prepove rušenje ladijskih blokov; delovno območje v ladijskem okvirju (D-021, D-033) |
 
 ## Merila sprejema
 

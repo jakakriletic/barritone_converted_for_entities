@@ -13,7 +13,7 @@ Ta README je **vstopna točka**. Vsaka seja začne tukaj, nato prebere `docs/04-
 | | |
 |---|---|
 | Datum zadnje posodobitve | 2026-09-27 |
-| Trenutna faza | **M8 zaključen**, ročne preverbe v klientu zaprte, **stopnja A zmogljivosti izpolnjena** (200 mobov: glavna nit p95 1,64 ms, D-027) — M7 odprt |
+| Trenutna faza | **M8 zaključen**, ročne preverbe v klientu zaprte, **stopnja A zmogljivosti izpolnjena** (200 mobov: glavna nit p95 1,64 ms, D-027) — M7 odprt. **Načrt worker plasti M11–M15 zapisan** (D-029–D-038) |
 | Naslednji korak | merge vej `m1`…`m8` v `main`, nato M7 (CustomNPC: stikalo na NPC, A/B); glej [`docs/04-STANJE.md`](docs/04-STANJE.md) |
 | Osnova | Baritone **v1.2.19** (`d9cb2d9`, zadnja izdaja za 1.12.2), pripet v `references/baritone-1.12.2` |
 | Konceptualni vodič | Automatone (`843b8397`), pripet v `references/automatone`; 167 commitov predelave Baritona za entitete je razvrščenih po milestonih |
@@ -28,9 +28,15 @@ strežniku in premikajo navadno entiteto namesto igralca. Integracija prek zamen
 `PathNavigate` + `EntityMoveHelper`, zato obstoječi AI taski (sledenje, napad, tavanje)
 delujejo nespremenjeni.
 
-**Ni:** bot, ki rudari, gradi ali farma; fake player; klientski mod; zamenjava
-za vanilla navigacijo pri vseh NPC-jih. Baritone je **izbirno ozadje** za NPC-je, ki
-morajo priti daleč, čez zahteven teren ali zanesljivo (D-005).
+**Načrtovano (M11–M15, D-030):** izbirne **worker** plasti — rušenje, postavljanje,
+inventar, rudarjenje, farmanje, gradnja po shemah (tudi več workerjev na eni), sledenje.
+Dobi jih samo entiteta, ki jo porabnik izrecno registrira kot workerja z inventarjem,
+lastnikom, dovoljenji in delovnim območjem. Gameplay (kdaj, zakaj, kam odnesti) ostane v
+porabniku.
+
+**Ni:** fake player kot vidna entiteta (`FakePlayer` je samo posrednik za roke, D-032);
+klientski mod; zamenjava za vanilla navigacijo pri vseh NPC-jih. Baritone je **izbirno
+ozadje** za NPC-je, ki morajo priti daleč, čez zahteven teren ali zanesljivo (D-005).
 
 ---
 
@@ -41,8 +47,8 @@ morajo priti daleč, čez zahteven teren ali zanesljivo (D-005).
 | **README.md** (ta datoteka) | pregled, status, kazalo | vedno prvo |
 | [`docs/04-STANJE.md`](docs/04-STANJE.md) | **živ dnevnik** — kaj je narejeno, kaj teče, kaj je blokirano | vedno drugo |
 | [`docs/01-ARHITEKTURA.md`](docs/01-ARHITEKTURA.md) | zgradba knjižnice, tok enega ticka, meje modulov | preden pišeš kodo |
-| [`docs/02-ODLOCITVE.md`](docs/02-ODLOCITVE.md) | **28 težkih vprašanj, vsako z odločitvijo, dokazom in preverbo** | preden karkoli spremeniš |
-| [`docs/03-FAZE.md`](docs/03-FAZE.md) | milestoni M0–M10, odvisnosti, izhodni kriteriji | ko načrtuješ sejo |
+| [`docs/02-ODLOCITVE.md`](docs/02-ODLOCITVE.md) | **38 težkih vprašanj, vsako z odločitvijo, dokazom in preverbo** | preden karkoli spremeniš |
+| [`docs/03-FAZE.md`](docs/03-FAZE.md) | milestoni M0–M15, faza 0, tečaji T1–T9, testna politika | ko načrtuješ sejo |
 | [`docs/05-SEJA-PROTOKOL.md`](docs/05-SEJA-PROTOKOL.md) | kako seja začne, dela, preverja in zaključi | vedno, tudi na koncu seje |
 | [`docs/06-RAZISKAVA.md`](docs/06-RAZISKAVA.md) | izmerjena dejstva: prevod, velikosti, Automatone časovnica, CNPC API | ko dvomiš v odločitev |
 | [`docs/07-TVEGANJA.md`](docs/07-TVEGANJA.md) | register tveganj z blažitvami in sprožilci | na začetku vsakega milestona |
@@ -68,7 +74,12 @@ morajo priti daleč, čez zahteven teren ali zanesljivo (D-005).
 | **M7** | Integracija v CustomNPC rework (A/B po meritvah M2.7) | M | M6 |
 | **M8** | Velikosti entitet (port Automatonovih dimenzij) | M | M6 |
 | **M9** | Ladje (MovingWorld): hoja po palubi v ladijskem prostoru | L | M6 (neobvezno) |
-| **M10** | Kasneje: sledenje, pot do bloka, rušenje/gradnja po profilu | — | po potrebi |
+| **M10** | Kasneje: zaloga idej | — | po potrebi |
+| **M11** | Worker osnova: roke, inventar, varovala | L | faza 0 |
+| **M12** | Rudarjenje, pot do bloka, odlaganje | M | M11 |
+| **M13** | Farmanje | S–M | M12 |
+| **M14** | Gradnja po shemah (en ali več workerjev) | L–XL | M11, M12.4 |
+| **M15** | Sledenje kot proces | S | M11.7 |
 
 Podrobno: [`docs/03-FAZE.md`](docs/03-FAZE.md).
 
@@ -81,7 +92,7 @@ barittone_for_npc_rework/
 ├── README.md, AGENTS.md, LICENSE, NOTICE.md
 ├── docs/                    načrt, odločitve, raziskava, stanje, protokol
 │   └── porting/             port map, Automatone roadmap, MCP preimenovanja
-├── milestones/M0 … M10/     en README na milestone
+├── milestones/M0 … M15/     en README na milestone
 ├── references/              pripete reference (git submoduli, detached HEAD)
 │   ├── baritone-1.12.2/     cabaletta/baritone @ v1.2.19 (d9cb2d9)
 │   └── automatone/          Ladysnake/Automatone @ 843b8397

@@ -192,5 +192,32 @@ false in vse ostane vanilla (D-005).
 - igralci (fake player ali pravi) — to je Baritone sam
 - leteči in plavajoči NPC-ji (`movementType` 1, 2) — ostanejo vanilla/CNPC
 - entitete večje od 3 stolpcev × 4 blokov; od 1×2 do te meje samo s stikalom `movement.largeEntities` (D-028, prej D-019)
-- rušenje, postavljanje, inventar do M10 (D-015)
+- rušenje, postavljanje, inventar za entitete, ki niso registrirane kot worker (D-015, D-031)
+- workerji večji od 1×2 (rušenje in postavljanje samo standardna veja, D-031)
+- raziskovanje nenaloženega sveta (`ExploreProcess`), integracija s klientskima modoma Schematica/Litematica, `/sel` (D-037)
 - hoja po nenaloženem svetu (D-014)
+
+---
+
+## 9. Worker plasti (načrt M11–M15, D-030)
+
+```
+porabnik (ladja_mod, kasneje CNPC)          knjižnica npcbaritone
+─────────────────────────────────           ─────────────────────────────────────────────
+job / decision tree / AI iz klepeta  ──►    api.work: INpcWorker, WorkerSpec, IWorkerListener
+IItemHandler (skrinja workerja)      ──►      plast 3 procesi: mine · getToBlock · farm · build · follow
+IWorkPermission (meje ladje, baze)   ──►      plast 2 delo:    EntityHands (FakePlayer, D-032)
+GameProfile lastnika                 ──►                       WorkerInventory (D-034), varovala (D-033)
+                                              plast 1 navigacija: obstoječe (API 1)
+```
+
+- Paketi: `api/work` (API 2, vključno s shemami), `core/process` (porti procesov),
+  `core/work` (inventar, rezervacije gradnje, skener brez Forge razredov), `forge/work`
+  (`EntityHands`, `FakePlayer`, eventi, `IItemHandler`). Meja ostane: `core` ne uvaža `forge`.
+- Tok ticka workerja: navigator tick (kot zdaj) → `PathingControlManager` izbere proces z
+  najvišjo prioriteto (proces > cilj AI taska, D-036) → premik ali dejanje → `CLICK_LEFT` /
+  `CLICK_RIGHT` gre v `EntityHands` (namesto samo v `EntityInteractions` za vrata).
+- Iskalna nit nikoli ne kliče rok, inventarja ali eventov: cene rušenja (orodja), območje in
+  seznami so predizračunani v `CalculationContext`; `IWorkPermission` je po pogodbi samo
+  branje in varen za niti (D-033, D-034).
+

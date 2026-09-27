@@ -2,7 +2,7 @@
 
 Generirano s `tools/portmap.py` iz `references/baritone-1.12.2/src` (brez `src/test`). Ne urejaj ročno — spremeni pravila v skripti in jo poženi znova.
 
-Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spremembe; **REWRITE** napisano znova po vzoru; **CLIENT** samo klientski debug prikaz (M3); **LATER** odloženo (M10); **DROP** se ne prenese. Stolpec *klient* = datoteka uvaža klientske razrede.
+Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spremembe; **REWRITE** napisano znova po vzoru; **CLIENT** samo klientski debug prikaz (M3); **LATER** odloženo v naveden milestone (M11–M15); **DROP** se ne prenese. Stolpec *klient* = datoteka uvaža klientske razrede.
 
 | akcija | datotek | vrstic |
 |---|---:|---:|
@@ -10,8 +10,8 @@ Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spreme
 | ADAPT | 39 | 6707 |
 | REWRITE | 13 | 1454 |
 | CLIENT | 4 | 696 |
-| LATER | 7 | 626 |
-| DROP | 217 | 22685 |
+| LATER | 46 | 5912 |
+| DROP | 178 | 17399 |
 | **skupaj** | 348 | 41033 |
 
 | datoteka (`src/…`) | vrstic | klient | akcija | razlog |
@@ -32,7 +32,7 @@ Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spreme
 | `api/java/baritone/api/cache/IWaypointCollection.java` | 66 |  | DROP | klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014) |
 | `api/java/baritone/api/cache/IWorldData.java` | 40 |  | REWRITE | minimalen per-dimension WorldData brez datotek na disku |
 | `api/java/baritone/api/cache/IWorldProvider.java` | 41 |  | REWRITE | minimalen per-dimension WorldData brez datotek na disku |
-| `api/java/baritone/api/cache/IWorldScanner.java` | 96 |  | DROP | klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014) |
+| `api/java/baritone/api/cache/IWorldScanner.java` | 96 |  | LATER | M12: vzorec za strežniški ServerBlockScanner (D-035) |
 | `api/java/baritone/api/cache/Waypoint.java` | 102 |  | DROP | klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014) |
 | `api/java/baritone/api/command/Command.java` | 67 |  | DROP | klientski chat ukazi; nadomesti /npcb (M3) |
 | `api/java/baritone/api/command/IBaritoneChatControl.java` | 42 |  | DROP | klientski chat ukazi; nadomesti /npcb (M3) |
@@ -116,39 +116,39 @@ Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spreme
 | `api/java/baritone/api/pathing/movement/MovementStatus.java` | 74 |  | KEEP | jedro iskanja poti |
 | `api/java/baritone/api/pathing/path/IPathExecutor.java` | 31 |  | KEEP | jedro iskanja poti |
 | `api/java/baritone/api/process/IBaritoneProcess.java` | 114 |  | KEEP | pogodba procesov |
-| `api/java/baritone/api/process/IBuilderProcess.java` | 78 | da | DROP | proces je izpuščen |
+| `api/java/baritone/api/process/IBuilderProcess.java` | 78 | da | LATER | M14 |
 | `api/java/baritone/api/process/ICustomGoalProcess.java` | 55 |  | KEEP | pogodba procesov |
 | `api/java/baritone/api/process/IElytraProcess.java` | 50 |  | DROP | Elytra + nativni nether-pathfinder (28+ napak prevoda, D-002) |
 | `api/java/baritone/api/process/IExploreProcess.java` | 27 |  | DROP | proces je izpuščen |
-| `api/java/baritone/api/process/IFarmProcess.java` | 45 |  | DROP | proces je izpuščen |
-| `api/java/baritone/api/process/IFollowProcess.java` | 51 |  | LATER | M10 |
-| `api/java/baritone/api/process/IGetToBlockProcess.java` | 35 |  | LATER | M10 |
-| `api/java/baritone/api/process/IMineProcess.java` | 117 |  | DROP | proces je izpuščen |
+| `api/java/baritone/api/process/IFarmProcess.java` | 45 |  | LATER | M13 |
+| `api/java/baritone/api/process/IFollowProcess.java` | 51 |  | LATER | M15 |
+| `api/java/baritone/api/process/IGetToBlockProcess.java` | 35 |  | LATER | M12 |
+| `api/java/baritone/api/process/IMineProcess.java` | 117 |  | LATER | M12 |
 | `api/java/baritone/api/process/PathingCommand.java` | 61 |  | KEEP | pogodba procesov |
 | `api/java/baritone/api/process/PathingCommandType.java` | 65 |  | KEEP | pogodba procesov |
-| `api/java/baritone/api/schematic/AbstractSchematic.java` | 50 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/CompositeSchematic.java` | 81 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/CompositeSchematicEntry.java` | 33 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/FillSchematic.java` | 54 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/ISchematic.java` | 95 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/ISchematicSystem.java` | 44 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/IStaticSchematic.java` | 59 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/MaskSchematic.java` | 55 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/ReplaceSchematic.java` | 53 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/ShellSchematic.java` | 32 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/SubstituteSchematic.java` | 91 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/WallsSchematic.java` | 32 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/format/ISchematicFormat.java` | 45 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/mask/AbstractMask.java` | 49 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/mask/Mask.java` | 60 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/mask/PreComputedMask.java` | 44 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/mask/StaticMask.java` | 82 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/mask/operator/BinaryOperatorMask.java` | 79 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/mask/operator/NotMask.java` | 56 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/mask/shape/CylinderMask.java` | 69 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/schematic/mask/shape/SphereMask.java` | 64 |  | DROP | gradnja po shemah |
-| `api/java/baritone/api/selection/ISelection.java` | 91 |  | DROP | izbira območij za gradnjo |
-| `api/java/baritone/api/selection/ISelectionManager.java` | 116 |  | DROP | izbira območij za gradnjo |
+| `api/java/baritone/api/schematic/AbstractSchematic.java` | 50 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/CompositeSchematic.java` | 81 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/CompositeSchematicEntry.java` | 33 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/FillSchematic.java` | 54 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/ISchematic.java` | 95 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/ISchematicSystem.java` | 44 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/IStaticSchematic.java` | 59 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/MaskSchematic.java` | 55 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/ReplaceSchematic.java` | 53 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/ShellSchematic.java` | 32 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/SubstituteSchematic.java` | 91 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/WallsSchematic.java` | 32 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/format/ISchematicFormat.java` | 45 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/mask/AbstractMask.java` | 49 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/mask/Mask.java` | 60 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/mask/PreComputedMask.java` | 44 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/mask/StaticMask.java` | 82 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/mask/operator/BinaryOperatorMask.java` | 79 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/mask/operator/NotMask.java` | 56 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/mask/shape/CylinderMask.java` | 69 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/schematic/mask/shape/SphereMask.java` | 64 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `api/java/baritone/api/selection/ISelection.java` | 91 |  | DROP | izbira /sel; območja poda porabnik (D-037) |
+| `api/java/baritone/api/selection/ISelectionManager.java` | 116 |  | DROP | izbira /sel; območja poda porabnik (D-037) |
 | `api/java/baritone/api/utils/BetterBlockPos.java` | 249 |  | KEEP |  |
 | `api/java/baritone/api/utils/BlockOptionalMeta.java` | 361 |  | KEEP |  |
 | `api/java/baritone/api/utils/BlockOptionalMetaLookup.java` | 97 |  | KEEP |  |
@@ -158,7 +158,7 @@ Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spreme
 | `api/java/baritone/api/utils/Helper.java` | 240 | da | REWRITE | log4j namesto klepeta |
 | `api/java/baritone/api/utils/IInputOverrideHandler.java` | 34 |  | KEEP |  |
 | `api/java/baritone/api/utils/IPlayerContext.java` | 108 | da | REWRITE | IEntityContext nad EntityLiving + referenčni okvir (D-006, D-021) |
-| `api/java/baritone/api/utils/IPlayerController.java` | 62 | da | REWRITE | interakcije entitete: samo vrata/ograje/lopute (D-015) |
+| `api/java/baritone/api/utils/IPlayerController.java` | 62 | da | REWRITE | interakcije entitete: vrata (D-015); M11 roke workerja (D-032) |
 | `api/java/baritone/api/utils/MyChunkPos.java` | 37 |  | KEEP |  |
 | `api/java/baritone/api/utils/NotificationHelper.java` | 89 |  | DROP | namizna obvestila |
 | `api/java/baritone/api/utils/Pair.java` | 59 |  | KEEP |  |
@@ -204,20 +204,20 @@ Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spreme
 | `main/java/baritone/BaritoneProvider.java` | 91 | da | REWRITE | register instanc po entiteti, šibke reference |
 | `main/java/baritone/KeepName.java` | 21 |  | DROP | proguard |
 | `main/java/baritone/behavior/Behavior.java` | 39 |  | ADAPT | izvajanje poti; bounded executor (D-017) |
-| `main/java/baritone/behavior/InventoryBehavior.java` | 230 | da | DROP | inventar/waypointi igralca |
+| `main/java/baritone/behavior/InventoryBehavior.java` | 230 | da | LATER | M11: inventar workerja nad IItemHandler (D-034) |
 | `main/java/baritone/behavior/LookBehavior.java` | 347 |  | ADAPT | obrat entitete namesto kamere (D-011) |
 | `main/java/baritone/behavior/PathingBehavior.java` | 573 |  | ADAPT | izvajanje poti; bounded executor (D-017) |
-| `main/java/baritone/behavior/WaypointBehavior.java` | 92 |  | DROP | inventar/waypointi igralca |
+| `main/java/baritone/behavior/WaypointBehavior.java` | 92 |  | DROP | waypointi igralca |
 | `main/java/baritone/behavior/look/ForkableRandom.java` | 85 |  | ADAPT | obrat entitete namesto kamere (D-011) |
 | `main/java/baritone/cache/CachedChunk.java` | 271 | da | DROP | klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014) |
 | `main/java/baritone/cache/CachedRegion.java` | 358 |  | DROP | klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014) |
 | `main/java/baritone/cache/CachedWorld.java` | 326 |  | DROP | klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014) |
 | `main/java/baritone/cache/ChunkPacker.java` | 171 |  | DROP | klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014) |
-| `main/java/baritone/cache/FasterWorldScanner.java` | 276 |  | DROP | klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014) |
+| `main/java/baritone/cache/FasterWorldScanner.java` | 276 |  | LATER | M12: vzorec za strežniški ServerBlockScanner (D-035) |
 | `main/java/baritone/cache/WaypointCollection.java` | 145 |  | DROP | klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014) |
 | `main/java/baritone/cache/WorldData.java` | 63 |  | REWRITE | minimalen per-dimension WorldData brez datotek na disku |
 | `main/java/baritone/cache/WorldProvider.java` | 184 | da | REWRITE | minimalen per-dimension WorldData brez datotek na disku |
-| `main/java/baritone/cache/WorldScanner.java` | 185 | da | DROP | klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014) |
+| `main/java/baritone/cache/WorldScanner.java` | 185 | da | LATER | M12: vzorec za strežniški ServerBlockScanner (D-035) |
 | `main/java/baritone/command/CommandSystem.java` | 35 |  | DROP | klientski chat ukazi; nadomesti /npcb (M3) |
 | `main/java/baritone/command/ExampleBaritoneControl.java` | 200 |  | DROP | klientski chat ukazi; nadomesti /npcb (M3) |
 | `main/java/baritone/command/argparser/ArgParserManager.java` | 90 |  | DROP | klientski chat ukazi; nadomesti /npcb (M3) |
@@ -289,16 +289,16 @@ Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spreme
 | `main/java/baritone/pathing/path/SplicedPath.java` | 106 |  | KEEP | jedro iskanja poti |
 | `main/java/baritone/pathing/precompute/PrecomputedData.java` | 117 |  | KEEP | jedro iskanja poti |
 | `main/java/baritone/pathing/precompute/Ternary.java` | 22 |  | KEEP | jedro iskanja poti |
-| `main/java/baritone/process/BackfillProcess.java` | 143 |  | DROP | rudarjenje/gradnja/farmanje/raziskovanje niso naloga NPC nog |
-| `main/java/baritone/process/BuilderProcess.java` | 1137 | da | DROP | rudarjenje/gradnja/farmanje/raziskovanje niso naloga NPC nog |
+| `main/java/baritone/process/BackfillProcess.java` | 143 |  | LATER | M12: zasipanje lukenj |
+| `main/java/baritone/process/BuilderProcess.java` | 1137 | da | LATER | M14: gradnja (D-037) |
 | `main/java/baritone/process/CustomGoalProcess.java` | 138 |  | ADAPT | edini proces v jedru: "pojdi do cilja" |
 | `main/java/baritone/process/ElytraProcess.java` | 565 |  | DROP | Elytra + nativni nether-pathfinder (28+ napak prevoda, D-002) |
-| `main/java/baritone/process/ExploreProcess.java` | 300 |  | DROP | rudarjenje/gradnja/farmanje/raziskovanje niso naloga NPC nog |
-| `main/java/baritone/process/FarmProcess.java` | 371 |  | DROP | rudarjenje/gradnja/farmanje/raziskovanje niso naloga NPC nog |
-| `main/java/baritone/process/FollowProcess.java` | 126 |  | LATER | M10: sledenje entiteti, pot do bloka |
-| `main/java/baritone/process/GetToBlockProcess.java` | 255 |  | LATER | M10: sledenje entiteti, pot do bloka |
-| `main/java/baritone/process/InventoryPauserProcess.java` | 90 |  | DROP | rudarjenje/gradnja/farmanje/raziskovanje niso naloga NPC nog |
-| `main/java/baritone/process/MineProcess.java` | 537 |  | DROP | rudarjenje/gradnja/farmanje/raziskovanje niso naloga NPC nog |
+| `main/java/baritone/process/ExploreProcess.java` | 300 |  | DROP | raziskovanje nenaloženega sveta (D-014, D-037) |
+| `main/java/baritone/process/FarmProcess.java` | 371 |  | LATER | M13: farmanje |
+| `main/java/baritone/process/FollowProcess.java` | 126 |  | LATER | M15: sledenje kot proces |
+| `main/java/baritone/process/GetToBlockProcess.java` | 255 |  | LATER | M12: pot do bloka |
+| `main/java/baritone/process/InventoryPauserProcess.java` | 90 |  | DROP | premik v inventarju je takojšen, ni pavze (D-034) |
+| `main/java/baritone/process/MineProcess.java` | 537 |  | LATER | M12: rudarjenje (D-035) |
 | `main/java/baritone/process/elytra/BlockStateOctreeInterface.java` | 54 |  | DROP | Elytra + nativni nether-pathfinder (28+ napak prevoda, D-002) |
 | `main/java/baritone/process/elytra/ElytraBehavior.java` | 1359 |  | DROP | Elytra + nativni nether-pathfinder (28+ napak prevoda, D-002) |
 | `main/java/baritone/process/elytra/NetherPath.java` | 65 |  | DROP | Elytra + nativni nether-pathfinder (28+ napak prevoda, D-002) |
@@ -306,13 +306,13 @@ Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spreme
 | `main/java/baritone/process/elytra/NullElytraProcess.java` | 92 |  | DROP | Elytra + nativni nether-pathfinder (28+ napak prevoda, D-002) |
 | `main/java/baritone/process/elytra/PathCalculationException.java` | 28 |  | DROP | Elytra + nativni nether-pathfinder (28+ napak prevoda, D-002) |
 | `main/java/baritone/process/elytra/UnpackedSegment.java` | 83 |  | DROP | Elytra + nativni nether-pathfinder (28+ napak prevoda, D-002) |
-| `main/java/baritone/selection/Selection.java` | 130 |  | DROP | izbira območij za gradnjo |
-| `main/java/baritone/selection/SelectionManager.java` | 118 |  | DROP | izbira območij za gradnjo |
-| `main/java/baritone/selection/SelectionRenderer.java` | 57 |  | DROP | izbira območij za gradnjo |
+| `main/java/baritone/selection/Selection.java` | 130 |  | DROP | izbira /sel; območja poda porabnik (D-037) |
+| `main/java/baritone/selection/SelectionManager.java` | 118 |  | DROP | izbira /sel; območja poda porabnik (D-037) |
+| `main/java/baritone/selection/SelectionRenderer.java` | 57 |  | DROP | izbira /sel; območja poda porabnik (D-037) |
 | `main/java/baritone/utils/BaritoneMath.java` | 37 |  | KEEP |  |
 | `main/java/baritone/utils/BaritoneProcessHelper.java` | 39 |  | ADAPT |  |
-| `main/java/baritone/utils/BlockBreakHelper.java` | 73 |  | LATER | rušenje privzeto izklopljeno (D-015) |
-| `main/java/baritone/utils/BlockPlaceHelper.java` | 55 |  | LATER | postavljanje privzeto izklopljeno (D-015) |
+| `main/java/baritone/utils/BlockBreakHelper.java` | 73 |  | LATER | M11: roke workerja (D-031, D-032) |
+| `main/java/baritone/utils/BlockPlaceHelper.java` | 55 |  | LATER | M11: roke workerja (D-031, D-032) |
 | `main/java/baritone/utils/BlockStateInterface.java` | 167 |  | ADAPT | strežniški id2ChunkMap, omejena kopija (D-013) |
 | `main/java/baritone/utils/BlockStateInterfaceAccessWrapper.java` | 83 |  | ADAPT | Forge isSideSolid manjka (napaka prevoda) |
 | `main/java/baritone/utils/GuiClick.java` | 136 | da | CLIENT | ponovno napisano kot neobvezen debug prikaz (M3) |
@@ -322,7 +322,7 @@ Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spreme
 | `main/java/baritone/utils/PathingCommandContext.java` | 33 |  | KEEP |  |
 | `main/java/baritone/utils/PathingControlManager.java` | 217 |  | ADAPT |  |
 | `main/java/baritone/utils/PlayerMovementInput.java` | 58 |  | DROP | klientski MovementInput |
-| `main/java/baritone/utils/ToolSet.java` | 230 | da | ADAPT | orodje v roki entitete ali stub (cena rušenja) |
+| `main/java/baritone/utils/ToolSet.java` | 230 | da | ADAPT | orodje v roki entitete ali stub (cena rušenja); M11 iz inventarja workerja (D-034) |
 | `main/java/baritone/utils/accessor/IAnvilChunkLoader.java` | 32 |  | DROP | mixin accessorji; v 1.12 strežniku javna polja / AT |
 | `main/java/baritone/utils/accessor/IBitArray.java` | 10 |  | DROP | mixin accessorji; v 1.12 strežniku javna polja / AT |
 | `main/java/baritone/utils/accessor/IBlockStateContainer.java` | 16 |  | DROP | mixin accessorji; v 1.12 strežniku javna polja / AT |
@@ -341,17 +341,17 @@ Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spreme
 | `main/java/baritone/utils/pathing/PathingBlockType.java` | 47 |  | KEEP |  |
 | `main/java/baritone/utils/player/BaritonePlayerContext.java` | 88 | da | REWRITE | EntityContext + nadzornik interakcij |
 | `main/java/baritone/utils/player/BaritonePlayerController.java` | 99 | da | REWRITE | EntityContext + nadzornik interakcij |
-| `main/java/baritone/utils/schematic/MapArtSchematic.java` | 70 |  | DROP | gradnja po shemah |
-| `main/java/baritone/utils/schematic/SchematicSystem.java` | 51 |  | DROP | gradnja po shemah |
-| `main/java/baritone/utils/schematic/SelectionSchematic.java` | 53 |  | DROP | gradnja po shemah |
-| `main/java/baritone/utils/schematic/StaticSchematic.java` | 50 |  | DROP | gradnja po shemah |
-| `main/java/baritone/utils/schematic/format/DefaultSchematicFormats.java` | 101 |  | DROP | gradnja po shemah |
-| `main/java/baritone/utils/schematic/format/defaults/LitematicaSchematic.java` | 346 |  | DROP | gradnja po shemah |
-| `main/java/baritone/utils/schematic/format/defaults/MCEditSchematic.java` | 69 |  | DROP | gradnja po shemah |
-| `main/java/baritone/utils/schematic/format/defaults/SpongeSchematic.java` | 157 |  | DROP | gradnja po shemah |
-| `main/java/baritone/utils/schematic/litematica/LitematicaHelper.java` | 214 |  | DROP | gradnja po shemah |
-| `main/java/baritone/utils/schematic/schematica/SchematicAdapter.java` | 59 |  | DROP | gradnja po shemah |
-| `main/java/baritone/utils/schematic/schematica/SchematicaHelper.java` | 45 |  | DROP | gradnja po shemah |
+| `main/java/baritone/utils/schematic/MapArtSchematic.java` | 70 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `main/java/baritone/utils/schematic/SchematicSystem.java` | 51 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `main/java/baritone/utils/schematic/SelectionSchematic.java` | 53 |  | DROP | izbira /sel; območja poda porabnik (D-037) |
+| `main/java/baritone/utils/schematic/StaticSchematic.java` | 50 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `main/java/baritone/utils/schematic/format/DefaultSchematicFormats.java` | 101 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `main/java/baritone/utils/schematic/format/defaults/LitematicaSchematic.java` | 346 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `main/java/baritone/utils/schematic/format/defaults/MCEditSchematic.java` | 69 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `main/java/baritone/utils/schematic/format/defaults/SpongeSchematic.java` | 157 |  | LATER | M14: sheme in bralniki datotek (D-037) |
+| `main/java/baritone/utils/schematic/litematica/LitematicaHelper.java` | 214 |  | DROP | integracija s klientskim modom Schematica/Litematica (D-037) |
+| `main/java/baritone/utils/schematic/schematica/SchematicAdapter.java` | 59 |  | DROP | integracija s klientskim modom Schematica/Litematica (D-037) |
+| `main/java/baritone/utils/schematic/schematica/SchematicaHelper.java` | 45 |  | DROP | integracija s klientskim modom Schematica/Litematica (D-037) |
 | `main/java/baritone/utils/type/VarInt.java` | 95 |  | KEEP |  |
 | `schematica_api/java/com/github/lunatrius/core/util/math/MBlockPos.java` | 42 |  | DROP | integracija s Schematico |
 | `schematica_api/java/com/github/lunatrius/schematica/Schematica.java` | 25 |  | DROP | integracija s Schematico |

@@ -231,6 +231,8 @@ direction") je vzorec: osnovni premiki ne potrebujejo natančnega pogleda.
 
 ### D-015 — Brez rušenja, postavljanja in inventarja; vrata neposredno
 
+**Status:** delno zamenjana z D-031 (2026-09-26) — velja za vse entitete, ki niso registrirane kot worker.
+
 **Odločitev.** NPC profil ima `allowBreak = allowPlace = allowInventory = false`
 (Baritone privzeto `true/true/false`). Vrata, ograjna vrata in lopute se odpirajo z
 neposrednim klicem bloka (kot CNPC `EntityAIOpenAnyDoor`), ne z desnim klikom igralca.
@@ -471,6 +473,232 @@ klientom — vanilla klient bi bil zavrnjen, kar krši D-024.
 
 ---
 
+## H. Worker: delo in procesi (M11–M15)
+
+Ozadje: uporabnik 2026-09-26 želi polno funkcionalnost Baritona (rušenje, postavljanje,
+rudarjenje, farmanje, gradnja), vendar modularno. CustomNPC uporablja samo navigacijo,
+ladja_mod pa na isti knjižnici gradi "workerje". Gameplay (kdaj, zakaj, kam odnesti) ostane
+v porabniku, knjižnica nudi zmožnosti.
+
+**Kaj dela Automatone (preverjeno v `references/automatone` @ `843b8397`):** vse procese
+(`MineProcess`, `BuilderProcess`, `FarmProcess` …) je obdržal, rušenje in postavljanje pa
+**dela samo za igralske entitete**. `AutomatoneComponents` vsem `LivingEntity` registrira
+`DummyEntityController` (vse metode vrnejo `false`/`FAIL`, doseg 0), `ServerPlayerController`
+pa samo `ServerPlayerEntity` (tudi njegovim fake playerjem). `EntityContext.inventory()` je
+za ne-igralca `null`, `InventoryBehavior` in `BuilderProcess` ne-igralca preskočita
+(`instanceof PlayerEntity`). Zaščita (`df9a13fe`) je `world.canPlayerModifyAt(player, pos)`,
+za ne-igralca vedno "ni zaščiteno". Mob, ki koplje ali gradi, v Automatonu torej **ne
+obstaja**; to je novo delo, Automatone je vzorec samo za igralsko pot (`ServerPlayerController`,
+ki gre skozi vanilla `interactionManager` z mixinom za stanje kopanja).
+
+### D-029 — Distribucija: knjižnični mod, mehka odvisnost porabnikov
+
+**Vprašanje.** Naj se jedro vgradi v CustomNPC in ladja_mod ali je ločen mod?
+
+**Odločitev.** Ločen mod `npcbaritone` (knjižnica, ne addon). Porabniki se prevedejo proti
+`api` jarju (`compileOnly`), v `@Mod` imajo `dependencies = "after:npcbaritone"` in
+dostopajo samo prek mostu, ki najprej preveri `Loader.isModLoaded("npcbaritone")` in
+različico API-ja iz manifesta. Brez knjižnice porabnik deluje kot prej (D-005). Vgrajevanje
+kopije v vsak mod je prepovedano. Jar-in-jar (`ContainedDeps` v manifestu porabnika) je
+dovoljen samo, če preverba pokaže, da Forge ob dveh vgrajenih kopijah naloži eno.
+
+**Dokaz.** Dve kopiji istih razredov v enem classloaderju = `LinkageError` (D-003); dve
+relocirani kopiji = dva bazena niti, dve vrsti in brez deljenja iskanj (D-017, meritve M5
+predpostavljajo en primerek); LGPL je pri ločenem jarju trivialen (D-004).
+
+**Preverba.** M7.2 in M9.6 (most, brez knjižnice bitno enako); jar-in-jar: `launcher-test.ps1`
+s CNPC in ladja_mod, ki oba nosita knjižnico, na klientu in dedicated strežniku (M11.10).
+
+### D-030 — Tri plasti; worker je izrecna registracija; API 2 je dodaten
+
+**Odločitev.**
+1. **Plast 1 — navigacija** (obstoječe, API 1: `NpcBaritone`, `INpcNavigator`, `NavListener`).
+   Ostane nespremenjena; CustomNPC rabi samo to.
+2. **Plast 2 — delo:** rušenje, postavljanje, orodja, inventar, dovoljenja.
+3. **Plast 3 — procesi:** `mine`, `getToBlock`, `farm`, `build`, `follow`.
+
+Plasti 2 in 3 obstajata za entiteto samo, če jo porabnik registrira:
+`NpcBaritone.worker(entity, WorkerSpec)` → `INpcWorker`. `WorkerSpec` vsebuje inventar
+(`IItemHandler`), lastnika (`GameProfile`), dovoljenja (`IWorkPermission`), delovno območje
+(D-033) in profil. Entiteta brez registracije fizično nima rok (D-032), zato navigacijski NPC
+ne more porušiti bloka ne glede na nastavitve. API 2 je nov paket
+`si.ladja.npcbaritone.api.work`; manifest `NpcBaritone-Api-Version: 2`; noben podpis API 1
+se ne spremeni. Strežniški config `worker.enabled` (privzeto `true`) plast 2 in 3 izklopi v
+celoti (`worker()` vrne `null`).
+
+**Dokaz.** En mod z enim executorjem (D-017) je pogoj za deljenje iskanj; dva jarja (core +
+addon) bi pomenila dva mod ID-ja in usklajevanje verzij brez koristi, ker je ločitev že na
+ravni API-ja in registracije.
+
+**Preverba.** M11 A5: T1+T2 z navigacijskim profilom po M11 nespremenjena (0 spremenjenih
+blokov); `ApiJarTest` prevede porabnika API 1 proti novemu jarju.
+
+### D-031 — Rušenje, postavljanje in inventar samo za workerja (delno zamenja D-015)
+
+**Odločitev.** D-015 ostane v veljavi za vse ne-registrirane entitete (navigacija, CNPC). Za
+workerja se odprejo `allowBreak`, `allowPlace` in `allowInventory` prek profila `worker`
+(D-016), vendar samo znotraj delovnega območja in dovoljenj (D-033). Omejitve:
+- velikost workerja do M10: standardna veja (širina ≤ 1, višina ≤ 2, D-028); pri večjih je
+  rušenje/postavljanje v ceni izklopljeno (hodi kot navigacijski NPC);
+- `blocksToDisallowBreaking` dobi NPC privzete vrednosti: vsi bloki s `TileEntity`
+  (skrinje, peči, …), postelje, vrata, spawnerji, bedrock, portal; porabnik jih sme razširiti,
+  ne zmanjšati pod `TileEntity` pravilo;
+- lava/voda vedra (MLG) samo, če jih inventar ima in profil dovoli (privzeto ne).
+
+**Dokaz.** Cene rušenja in postavljanja so v portu že prisotne, samo izklopljene
+(`NpcProfile`: `allowBreak = allowPlace = false`; `CalculationContext` in premiki še
+postavljajo `CLICK_LEFT/RIGHT`). Manjka izvajalec (roke) in inventar.
+
+**Preverba.** M11 T5 in invariante (M11 A2–A4).
+
+### D-032 — Roke: Forge `FakePlayer` kot posrednik, brez mixinov
+
+**Vprašanje.** Kako mob poruši ali postavi blok tako, da se obnaša kot igralec (čas kopanja,
+orodje, dropi, orientacija stopnic, zaščitni modi), brez mixinov (D-008)?
+
+**Odločitev.** Vsak worker dobi "roke": `EntityHands implements IPlayerController`, ki za
+vsako dejanje uporabi `FakePlayer` (`FakePlayerFactory.get(world, lastnikov profil)`) kot
+posrednika. Pred dejanjem se mu nastavijo pozicija, rotacija (iz `LookBehavior` entitete) in
+predmet v roki (iz inventarja, D-034); po dejanju (v `finally`) se predmet vrne.
+- **Rušenje:** napredek se računa kot vanilla (`IBlockState.getPlayerRelativeBlockHardness`
+  na tick, vsota ≥ 1), prikaz razpok `world.sendBlockBreakProgress(id entitete, …)`, zamah z
+  roko entitete; zaključek `fakePlayer.interactionManager.tryHarvestBlock(pos)` (proži
+  `BreakEvent`, orodje, fortune/silk touch, obrabo orodja).
+- **Postavljanje:** `interactionManager.processRightClickBlock(...)` z blokom v roki
+  (proži `RightClickBlock` in `PlaceEvent`; orientacija stopnic, vrat, hlodov je vanilla).
+- **Lastnik:** `GameProfile` iz `WorkerSpec` (npr. lastnik ladje), sicer
+  `[NpcBaritone]`. Zaščitni modi (claimi) tako odločajo po pravicah lastnika.
+- Ne-registrirana entiteta ima `DummyEntityController` (kot Automatone): vse `false`.
+
+**Dokaz.** Automatone za igralca uporablja isti vanilla `interactionManager`
+(`ServerPlayerController`), za stanje kopanja pa rabi mixin; napredek izračunamo sami po isti
+formuli, zato mixin ni potreben. `tryHarvestBlock` in `processRightClickBlock` sta v 1.12
+javna. **Odprto:** `FakePlayer.connection` je `null`, `ForgeHooks.onBlockBreakEvent` ob
+preklicu pošlje paket prek `connection` — sonda M11.1 (javap + test) določi, ali je potreben
+prazen `NetHandlerPlayServer`.
+
+**Preverba.** M11 T5 (čas kopanja z različnimi orodji ± 1 tick od vanilla, orientacija
+postavljenih stopnic), M11 A3 (preklican `BreakEvent` = blok ostane).
+
+### D-033 — Varovala: obvezno območje, dovoljenja v ceni in ob izvedbi
+
+**Odločitev.** Worker ne ruši in ne postavlja **izven delovnega območja** (seznam AABB v
+`WorkerSpec`; brez območja plast 2 ni aktivna). Preverba je na dveh mestih:
+1. **pri iskanju poti** (`CalculationContext.isProtected` → `COST_INF`, vzorec Automatone
+   `df9a13fe`): izven območja, `IWorkPermission.canBreak/canPlace` porabnika,
+   spawn protection in meja sveta, D-031 seznam — iskanje poti tako obide, kar ne sme rušiti, namesto da bi se zataknilo;
+2. **ob izvedbi**: iste preverbe še enkrat (svet se je lahko spremenil),
+   `WorldServer.isBlockModifiable(fakePlayer, pos)` + `BreakEvent` /
+   `PlaceEvent` prek rok (D-032). Preklic = premik ne uspe, ponovno načrtovanje.
+
+Preverba pri iskanju teče na iskalni niti: območje, seznam D-031, polmer spawn protection in
+meja sveta se preberejo na glavni niti ob gradnji `CalculationContext` (nespremenljivi
+podatki); `IWorkPermission.canBreak/canPlace` ima pogodbo **samo branje, varno za niti**
+(porabnik preverja lastne nespremenljive podatke, npr. meje ladje). Eventi in zaščitni modi se
+kličejo samo ob izvedbi na glavni niti.
+
+**Dokaz.** Baritone 1.2.19 `isPossiblyProtected` vrne vedno `false` (TODO #220); Automatone
+je dodal samo igralsko preverbo. Brez dvojne preverbe worker ali zatakne (pot skozi zaščiten
+blok) ali ruši v zaščitenem.
+
+**Preverba.** M11 A2 (0 porušenih/postavljenih blokov izven območja in v zaščitenem stebru T5).
+
+### D-034 — Inventar: porabnikov `IItemHandler` je edini vir resnice
+
+**Odločitev.** Knjižnica nima svojega inventarja. `WorkerSpec` poda Forge `IItemHandler`
+(ladja_mod: lastna skrinja workerja; CNPC kasneje: NPC inventar). Pravila:
+- orodje in bloki za postavljanje se iz njega **izvlečejo za eno dejanje** in v istem ticku
+  vrnejo (z obrabo) v `finally`; roke ne hranijo predmetov med ticki;
+- **dropi gredo neposredno v inventar**: `BlockEvent.HarvestDropsEvent` z `harvester` = naš
+  `FakePlayer` → `insertItem`, ostanek se spusti v svet kot `EntityItem`;
+  pobiranje `EntityItem` iz sveta (Baritone `mineScanDroppedItems`) ostane za ostanke;
+- poln inventar → dogodek `onInventoryFull` porabniku; proces se ustavi (ne ruši naprej
+  v prazno);
+- `ToolSet` izbira orodje iz tega inventarja (ne iz hotbara igralca); cena rušenja se
+  izračuna ob gradnji `CalculationContext` (predpomnjena po stanju bloka), iskalna nit
+  inventarja ne bere.
+
+**Dokaz.** Automatone za ne-igralca inventarja nima (`inventory() == null`). Dva vira
+resnice (kopija v rokah + porabnik) sta klasičen izvor dupe hroščev.
+
+**Preverba.** M11 A4: ohranitev predmetov (inventar + dropi v svetu = pričakovano) po T5 in
+po prekinitvi sredi kopanja (smrt, odstranitev entitete, unload chunka).
+
+### D-035 — Iskanje blokov na strežniku (nadomestek `WorldScanner`)
+
+**Odločitev.** Baritonov `WorldScanner`/`FasterWorldScanner` (klientski `ChunkProviderClient`)
+in `CachedWorld` (predpomnilnik regij, D-014) se ne preneseta. Nov `ServerBlockScanner`:
+- bere samo **naložene** chunke znotraj območja procesa (D-012, D-014), prek posnetka D-013;
+- teče v bazenu iskanja (D-017), ne na glavni niti, z omejitvijo chunkov na zahtevo;
+- rezultat (seznam pozicij) se deli med workerji z istim filtrom in istim območjem (vzorec
+  deljenja iskanj), velja do spremembe bloka v teh chunkih ali največ N tickov;
+- privzeto samo **izpostavljeni** bloki (vsaj ena ploskev ob zraku/tekočini), stikalo
+  `legitMine=false` dovoli "rentgen".
+
+**Dokaz.** `MineProcess` v 1.2.19 kliče `getCachedWorld().getLocationsOf` in
+`WorldScanner.scanChunkRadius` (vr. 370, 385), oboje klientsko; Automatone je skeniranje
+optimiziral (`b3da3410`, `d0970ec6`) in popravil NPE (`a3081aac`) — vzorec za M12.
+
+**Preverba.** M12 A3 (µs skeniranja p95, 0 naloženih chunkov) in D-038.
+
+### D-036 — Aktiven proces ima prednost pred AI taski; stanje procesa se ne shranjuje
+
+**Odločitev.**
+- Ko ima worker aktiven proces (mine/farm/build/follow), `BaritonePathNavigate.tryMoveTo*`
+  iz AI taskov vrne `false` in ne prekliče procesa; `NavListener` dobi `BUSY` (nova
+  vrednost `NavState`, ki jo dobijo samo registrirani workerji — porabnik API 1 je nikoli ne vidi). Porabnik, ki
+  želi, da AI prevzame (npr. boj), pokliče `INpcWorker.pause()` / `resume()` (vzorec
+  Baritonov `PathingControlManager` s prioriteto procesov).
+- Proces se ne shranjuje v NBT (razširitev D-023). Porabnik hrani svoj "job" (npr. "100
+  kamna, 40 narejeno") in ga po nalaganju ponovno zažene; knjižnica mu da napredek prek
+  `IWorkerListener.onProgress`.
+
+**Dokaz.** Vanilla taski (`EntityAIWander`) kličejo `tryMoveTo` vsakih nekaj sekund; brez
+prednosti bi worker vsakič opustil delo. D-023: knjižnica ne piše NBT.
+
+**Preverba.** M11 A6 (worker z `EntityAIWander` konča T5; `pause/resume` med kopanjem).
+
+### D-037 — Gradnja: programske sheme, datoteke, več workerjev
+
+**Odločitev.**
+- `ISchematic` in sheme iz Baritona (`Fill`, `Walls`, `Shell`, `Composite`, `Mask`,
+  `Replace`, `Substitute`, maske) se prenesejo v API 2 — porabnik (npr. generator vasi) jih
+  sestavi **programsko**, brez datoteke.
+- Datoteke: formati MCEdit `.schematic`, Sponge `.schem`, Litematica `.litematic` (Baritonovi
+  bralniki so brez klientskih razredov) iz mape strežnika `config/npcbaritone/schematics`;
+  plus vanilla strukture `.nbt` (`Template`), ki jih Baritone nima.
+- **Ne prenese se:** integracija s klientskima modoma Schematica/Litematica
+  (`schematica_api/`, `SchematicaHelper`, `LitematicaHelper`), izbira `/sel`
+  (`selection/`) — območja poda porabnik prek API-ja; `ExploreProcess` (hodi v nenaložen
+  svet, v nasprotju z D-014); Elytra (D-002).
+- **Več workerjev na eni shemi** (Baritone tega nima): `IBuildJob` si delijo workerji;
+  vsak dobi `MaskSchematic` svojega pasu, bloki se **rezervirajo** (en blok = en worker),
+  plasti gredo po vrsti (`buildInLayers`), naslednja plast se začne, ko so rezervacije
+  prejšnje v pasu zaprte ali proste. Worker, ki se zatakne, sprosti rezervacije.
+- Material: iz inventarja (D-034); manjkajoči predmeti → `onMissingMaterials(seznam)`;
+  profil `creativeBuild` (brez materiala) za test in za gameplay porabnika.
+- Napredek: `onBlockPlaced`, `onProgress(%)`, `onDone`, `onStuck(pozicija, razlog)`.
+
+**Dokaz.** `BuilderProcess` (1137 vrstic) v 1.2.19 je brez klientskih uvozov, vezan pa je na
+igralca (rotacija, hotbar, `processRightClickBlock`) — vse to pokrijeta D-032 in D-034.
+Automatone gradnjo dovoli samo igralcem (`BuilderProcess` vr. 310: ne-igralec → prazno).
+
+**Preverba.** M14 T8 (hiše z 1 in 3 workerji).
+
+### D-038 — Meja zmogljivosti za workerje (stopnja W)
+
+**Odločitev.** Poleg D-027 velja za plast 2 in 3: **20 workerjev** (mešano: 10 mine, 5 farm,
+5 build) na tečaju T9 doda na glavni niti **p95 ≤ 1 ms/tick** nad isto sceno brez procesov;
+skeniranje (D-035) ne teče na glavni niti. Številka je predlog; potrdi ali popravi jo
+uporabnik ob začetku M12.
+
+**Dokaz.** Glavna nit pri workerju dela več kot pri hoji: roke (FakePlayer, eventi), inventar,
+proces (`onTick` procesa). Meja za navigacijo (D-027) teh stroškov ne zajema.
+
+**Preverba.** M12 A4 (samo mine), M14 A5 (celotna mešanica, 3 ponovitve, mediana in razpon).
+
+---
+
 ## Dnevnik odločitev
 
 | ID | Datum | Odločitev | Status |
@@ -489,7 +717,7 @@ klientom — vanilla klient bi bil zavrnjen, kar krši D-024.
 | D-012 | 2026-09-24 | Branje samo prek BSI, brez nalaganja chunkov, lint test | velja |
 | D-013 | 2026-09-24 | Omejena kopija `id2ChunkMap` | velja, preverba M5 |
 | D-014 | 2026-09-24 | Nenaloženo = meja, segmenti | velja |
-| D-015 | 2026-09-24 | Brez rušenja/postavljanja; vrata neposredno | velja |
+| D-015 | 2026-09-24 | Brez rušenja/postavljanja; vrata neposredno | delno zamenjana z D-031 (velja za ne-workerje) |
 | D-016 | 2026-09-24 | Profili nastavitev na instanco | velja |
 | D-017 | 2026-09-24 | Omejen executor, vrsta, deljenje, meritve | velja, številke iz M5 |
 | D-018 | 2026-09-24 | `PathNavigate` pogodba pri asinhronosti | velja, preverba M6 |
@@ -503,3 +731,13 @@ klientom — vanilla klient bi bil zavrnjen, kar krši D-024.
 | D-026 | 2026-09-24 | Prvi commit = nespremenjen upstream | velja |
 | D-027 | 2026-09-25 | Dve stopnji meje zmogljivosti (5 ms zdaj, 2 ms pred M7) | velja |
 | D-028 | 2026-09-25 | Velikosti: okvir blokov, meje 3 stolpci × 4 bloki, stikalo `largeEntities` | velja, preverba M8 T3 |
+| D-029 | 2026-09-26 | Distribucija: knjižnični mod, mehka odvisnost, brez vgrajenih kopij | velja, preverba M7.2/M9.6/M11.10 |
+| D-030 | 2026-09-26 | Tri plasti; worker je izrecna registracija; API 2 dodaten | velja |
+| D-031 | 2026-09-26 | Rušenje/postavljanje/inventar samo za workerja (delno zamenja D-015) | velja, preverba M11 |
+| D-032 | 2026-09-26 | Roke prek `FakePlayer` z lastnikovim profilom, brez mixinov | velja, sonda M11.1 |
+| D-033 | 2026-09-26 | Obvezno delovno območje; dovoljenja v ceni in ob izvedbi | velja, preverba M11 |
+| D-034 | 2026-09-26 | Porabnikov `IItemHandler` edini vir resnice; dropi v inventar | velja, preverba M11 |
+| D-035 | 2026-09-26 | Strežniški skener blokov v bazenu, samo naloženi chunki | velja, preverba M12 |
+| D-036 | 2026-09-26 | Proces ima prednost pred AI taski; stanje procesa se ne shranjuje | velja, preverba M11 |
+| D-037 | 2026-09-26 | Gradnja: programske sheme, datoteke, več workerjev; kaj se ne prenese | velja, preverba M14 |
+| D-038 | 2026-09-26 | Stopnja W: 20 workerjev ≤ 1 ms p95 dodatno (predlog) | potrdi uporabnik ob M12 |

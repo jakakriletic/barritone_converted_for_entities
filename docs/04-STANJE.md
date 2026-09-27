@@ -63,6 +63,34 @@ Pogoj D-027 za M7 je odprt. Preostanek glavne niti (profil): `movement.update` +
 
 ---
 
+## 2026-09-26 (4) — načrt worker plasti M11–M15 (samo dokumentacija)
+
+**Zakaj:** uporabnik želi polno funkcionalnost Baritona (rušenje, postavljanje, rudarjenje,
+farmanje, gradnja) za "workerje" v ladja_modu in kasneje za generator vasi, vendar
+modularno: CustomNPC ostane samo na navigaciji.
+
+**Ugotovljeno v Automatonu (`843b8397`):** procese je obdržal, roke in inventar pa ima
+**samo za igralske entitete** (`DummyEntityController` za vse `LivingEntity`,
+`ServerPlayerController` samo za `ServerPlayerEntity`; `inventory()` za ne-igralca `null`;
+`BuilderProcess` ne-igralca preskoči). Mob, ki koplje ali gradi, je zato novo delo; rešitev
+brez mixinov je `FakePlayer` kot posrednik (D-032).
+
+**Zapisano:** odločitve D-029–D-038 (D-015 delno zamenjana z D-031), register tveganj R-16–R-22,
+milestoni M11 (worker osnova, L), M12 (rudarjenje, M), M13 (farmanje, S–M), M14 (gradnja,
+L–XL, več workerjev), M15 (sledenje, S), faza 0 in testna politika v `03-FAZE.md`, tečaji
+T5–T9, arhitektura §9, M10 očiščen, `PORT-MAP.md` in `AUTOMATONE-ROADMAP.md` ponovno
+generirana (46 datotek LATER z milestonom, 13 Automatone commitov preusmerjenih v M11–M14).
+Koda ni spremenjena.
+
+**Odprto za uporabnika:** številka stopnje W (D-038: 20 workerjev ≤ 1 ms p95 dodatno) — potrdi
+ob začetku M12.
+
+**Naslednji korak (nespremenjen):** faza 0 — stopnja A: `.\t4-run.ps1 -Mobs 200` in profil
+`baritone.tick()` na glavni niti; nato M5 A4 (1 h), merge vej v `main`, nato M11.1 (sonda
+`FakePlayer`).
+
+---
+
 ## 2026-09-26 (3) — ročne preverbe v klientu samodejno: `/npcb selftest` 6/6
 
 **Zakaj:** ročne preverbe (M3 A1, D-008, M6 A1–A3) so bile za uporabnika preveč korakov.

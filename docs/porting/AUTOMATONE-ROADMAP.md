@@ -2,19 +2,21 @@
 
 Generirano s `tools/automatone_roadmap.py` iz `references/automatone` @ `843b8397` (avtor Pyrofab, 2021-03-05 → 2021-05-26). Commit je **vzorec**, ne vir za kopiranje (D-001): pred delom na isti datoteki ga preberi z `git -C references/automatone show <hash>`.
 
-SKIP pomeni: Fabric/Yarn, Cardinal Components, Brigadier ukazi, fake player, gradnja, posebnosti 1.14+ (scaffolding, tagi, višina sveta), build in changelog.
+SKIP pomeni: Fabric/Yarn, Cardinal Components, Brigadier ukazi, fake player, izbira /sel, posebnosti 1.14+ (scaffolding, tagi, višina sveta), build in changelog.
 
 | za nas | commitov |
 |---|---:|
 | M1 | 20 |
 | M2 | 14 |
 | M3 | 6 |
-| M4 | 15 |
+| M4 | 14 |
 | M5 | 2 |
 | M6 | 3 |
 | M8 | 9 |
-| LATER | 5 |
-| SKIP | 93 |
+| M11 | 8 |
+| M12 | 4 |
+| M14 | 1 |
+| SKIP | 86 |
 
 | commit | datum | sporočilo | za nas | opomba |
 |---|---|---|---|---|
@@ -32,7 +34,7 @@ SKIP pomeni: Fabric/Yarn, Cardinal Components, Brigadier ukazi, fake player, gra
 | `fb073c81` | 2021-03-08 | Fix crash when falling into the void | **M1** | padec v praznino |
 | `cebc28f8` | 2021-03-09 | It's Automatone now | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `891b9e10` | 2021-03-09 | CCA time | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
-| `d3828043` | 2021-03-10 | Fix chained block breaking | **M4** | zaporedno rušenje (LATER) |
+| `d3828043` | 2021-03-10 | Fix chained block breaking | **M11** | zaporedno rušenje |
 | `2ba848ca` | 2021-03-10 | Un-harcode eye height | **M1** | višina oči iz entitete |
 | `52935625` | 2021-03-10 | Add a todo | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `c3cafa8a` | 2021-03-10 | Actually it's baritone again | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
@@ -52,7 +54,7 @@ SKIP pomeni: Fabric/Yarn, Cardinal Components, Brigadier ukazi, fake player, gra
 | `9fc118e3` | 2021-03-15 | Remove some now useless mixins | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `a893582a` | 2021-03-15 | Require OP to run automatone commands | **M3** | ukazi samo za OP |
 | `530b3803` | 2021-03-15 | Remove client baritone instance | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
-| `0f8a664b` | 2021-03-15 | Make IPlayerController a component | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
+| `0f8a664b` | 2021-03-15 | Make IPlayerController a component | **M11** | IPlayerController kot komponenta; ne-igralci dobijo Dummy (pri nas roke, D-032) |
 | `2b691f8c` | 2021-03-15 | Fix broken references to IEntityRenderManager | **SKIP** | ni relevantno za 1.12 NPC noge |
 | `446120d8` | 2021-03-15 | Give default step height to fake players | **M2** | privzeta višina koraka |
 | `31374839` | 2021-03-15 | Un-hardcode soulsand movement speed | **M2** | hitrost na soul sandu |
@@ -80,26 +82,26 @@ SKIP pomeni: Fabric/Yarn, Cardinal Components, Brigadier ukazi, fake player, gra
 | `635f8aaf` | 2021-03-16 | Fix path sync packet writing | **M3** | zapis paketa poti |
 | `ebc87346` | 2021-03-16 | Remove derelict PlayerMovementInput class | **M2** | odstranjen PlayerMovementInput |
 | `4bb57893` | 2021-03-16 | Remove settings from command suggestions | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
-| `df9a13fe` | 2021-03-16 | Implement protection detection | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
+| `df9a13fe` | 2021-03-16 | Implement protection detection | **M11** | zaščita v CalculationContext (samo igralci; pri nas D-033) |
 | `47d5461f` | 2021-03-16 | Make chat logging work on servers | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `b98c95d5` | 2021-03-17 | Yeet baritone references in strings | **SKIP** | ni relevantno za 1.12 NPC noge |
 | `11a93648` | 2021-03-17 | Make /version refer to mod metadata | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `1ed02cd6` | 2021-03-17 | Let gradle replace the version string | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `744a7aff` | 2021-03-17 | Make /come work as intended | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `05c0e051` | 2021-03-17 | Re-implement /click to work on dedicated servers | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
-| `678ecb02` | 2021-03-17 | Make block drop lookups actually sensible | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
+| `678ecb02` | 2021-03-17 | Make block drop lookups actually sensible | **M12** | dropi blokov (BlockOptionalMeta) za MineProcess |
 | `76ffef84` | 2021-03-17 | Use command pos as origin for /build | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `6684f0d9` | 2021-03-17 | Fix tab complete erasing previous arguments | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `61cf726a` | 2021-03-17 | Change prefix color | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `456aa6bf` | 2021-03-17 | Fix MovementTraverse looping in water under vine | **M4** | Traverse v vodi pod trto |
 | `333cc295` | 2021-03-17 | Assert rubber banding cannot happen serverside | **M2** | brez rubber bandinga na strežniku |
-| `a3081aac` | 2021-03-17 | Fix WorldScanner NPE | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
+| `a3081aac` | 2021-03-17 | Fix WorldScanner NPE | **M12** | NPE v WorldScanner |
 | `1f43bbe7` | 2021-03-17 | Un-hardcode number of sections in chunk | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
-| `b3da3410` | 2021-03-17 | Optimize chunk scanning | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
+| `b3da3410` | 2021-03-17 | Optimize chunk scanning | **M12** | hitrejše skeniranje chunkov (vzorec za D-035) |
 | `38c477f1` | 2021-03-17 | Fix chunk lookups being excruciatingly slow | **M1** | hitro branje chunkov na strežniku |
 | `8c12848f` | 2021-03-17 | Prevent MovementAscend from mining in water | **M4** | Ascend ne koplje v vodi |
 | `076c44ff` | 2021-03-17 | Make feetPos state lookup faster | **M1** | hitrejši feetPos |
-| `d0970ec6` | 2021-03-17 | Take some performance notes | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
+| `d0970ec6` | 2021-03-17 | Take some performance notes | **M12** | zmogljivost MineProcess |
 | `de9d45ec` | 2021-03-20 | actually trolling is not fine | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `53b5a594` | 2021-03-20 | Update readme | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `770d700c` | 2021-03-20 | Stop recommending hack clients | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
@@ -129,25 +131,25 @@ SKIP pomeni: Fabric/Yarn, Cardinal Components, Brigadier ukazi, fake player, gra
 | `109a8e67` | 2021-03-28 | Document each Movement's behaviour | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `0a6399f9` | 2021-03-28 | Un-hardcode player dimensions in MovementDownward | **M8** | dimenzije v MovementDownward |
 | `63e756af` | 2021-03-28 | Handle scaffolding in MovementDownward | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
-| `06176954` | 2021-03-29 | Un-hardcode missed nether check for MLG | **LATER** | MLG nether preverba |
+| `06176954` | 2021-03-29 | Un-hardcode missed nether check for MLG | **M11** | MLG nether preverba |
 | `a3656efe` | 2021-03-29 | Handle most interactions with scaffolding | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
-| `43268b09` | 2021-03-29 | Fix MovementDownward breaking wrong block | **SKIP** | ni relevantno za 1.12 NPC noge |
+| `43268b09` | 2021-03-29 | Fix MovementDownward breaking wrong block | **M11** | MovementDownward ruši napačen blok |
 | `39da8286` | 2021-03-31 | Somewhat handle different sizes in MovementAscend | **M8** | velikosti v MovementAscend |
 | `0412211c` | 2021-03-31 | Fix tags not being loaded in a dev env | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `885027f1` | 2021-03-31 | Make players jump to reach levitating water | **M4** | skok do lebdeče vode |
 | `a9c929f0` | 2021-03-31 | Fix MovementTraverse going bonkers with large entities | **M8** | Traverse z velikimi entitetami |
-| `2fec595b` | 2021-03-31 | Partially fix MovementAscend's extended block placement | **LATER** | razširjeno postavljanje v Ascend |
+| `2fec595b` | 2021-03-31 | Partially fix MovementAscend's extended block placement | **M11** | razširjeno postavljanje v Ascend |
 | `d27076e2` | 2021-04-01 | Save world data to NBT instead of external files | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `a67d6901` | 2021-04-01 | Move executor to main mod class | **M5** | executor v glavnem razredu moda |
 | `c5db7d1f` | 2021-04-01 | Turn SelectionManager into an Entity component | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `a8d793f9` | 2021-04-01 | Decouple basic movements from look direction | **M2** | gibanje neodvisno od smeri pogleda |
 | `921af7dd` | 2021-04-01 | Update changelog | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
-| `b3d431f8` | 2021-04-01 | Fix crash when building with ladders | **LATER** | gradnja z lestvami |
+| `b3d431f8` | 2021-04-01 | Fix crash when building with ladders | **M14** | gradnja z lestvami |
 | `71029ea9` | 2021-04-01 | Document dependencies in fabric.mod.json | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `18d66bed` | 2021-04-01 | Add mod icon | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `ddcbf339` | 2021-04-01 | Make fake players use their display profile's name | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
-| `72695f8c` | 2021-04-01 | Automatically release used items on next tick | **LATER** | sprostitev uporabljenih predmetov |
-| `4a94645c` | 2021-04-01 | Fix air bridging | **LATER** | air bridging |
+| `72695f8c` | 2021-04-01 | Automatically release used items on next tick | **M11** | sprostitev uporabljenih predmetov |
+| `4a94645c` | 2021-04-01 | Fix air bridging | **M11** | air bridging |
 | `5c99eaff` | 2021-04-01 | Update changelog | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `5cda8303` | 2021-04-03 | Fix mixin refmap reference | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
 | `1f6e6131` | 2021-04-04 | Replace block lists with tags in settings | **SKIP** | Fabric/CCA/brigadier/gradnja/fake player ali 1.14+ posebnost |
