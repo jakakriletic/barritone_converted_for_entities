@@ -83,6 +83,25 @@ public class InstanceOverridesTest {
         assertFalse(def.npcOpenIronDoors.value);
     }
 
+    /** API {@code DoorMode} → prepisi → nastavitve → nazaj isti {@code DoorMode}; null = profil. */
+    @Test
+    public void doorModeRoundTripsThroughSettings() {
+        NpcbConfig c = config(NpcbConfig.SpeedMode.PLAYER);
+        for (si.ladja.npcbaritone.api.DoorMode mode : si.ladja.npcbaritone.api.DoorMode.values()) {
+            Boolean[] f = ApiProvider.doorFlags(mode);
+            InstanceOverrides o = new InstanceOverrides();
+            o.openDoors = f[0];
+            o.openIronDoors = f[1];
+            assertEquals(mode, ApiProvider.doorMode(Attach.settingsFor(c, "closed", o)));
+        }
+        Boolean[] reset = ApiProvider.doorFlags(null);
+        InstanceOverrides o = new InstanceOverrides();
+        o.openDoors = reset[0];
+        o.openIronDoors = reset[1];
+        assertEquals(si.ladja.npcbaritone.api.DoorMode.NONE, ApiProvider.doorMode(Attach.settingsFor(c, "closed", o)));
+        assertEquals(si.ladja.npcbaritone.api.DoorMode.WOODEN, ApiProvider.doorMode(Attach.settingsFor(c, NpcbConfig.DEFAULT_PROFILE, o)));
+    }
+
     /** Preklop med vodenjem: osnovna hitrost se vrne ali nastavi takoj, brez vodenja se ne dotakne. */
     @Test
     public void moveHelperSwitchesBaseSpeedWhileControlling() throws Exception {

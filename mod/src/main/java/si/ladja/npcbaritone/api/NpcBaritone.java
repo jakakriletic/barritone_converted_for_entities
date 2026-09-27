@@ -31,7 +31,14 @@ import javax.annotation.Nullable;
  *         public void onArrived(EntityLiving e) { ... }
  *     });
  *     nav.goTo(new BlockPos(100, 64, -20));
+ *     if (NpcBaritone.apiVersion() >= 2) {
+ *         nav.setDoorMode(DoorMode.NONE);                        // API 2
+ *         nav.setSpeedMode(SpeedMode.OWN);
+ *     }
  * }
+ * // po tem, ko porabnik zamenja navigator/move helper (npr. CNPC updateTasks):
+ * INpcNavigator nav = NpcBaritone.get(npc);
+ * if (nav != null && NpcBaritone.apiVersion() >= 2) nav.reinstall();
  * }</pre>
  *
  * <p>Porabnik prevaja proti {@code npcbaritone-<ver>-api.jar} ({@code compileOnly}); ob zagonu
@@ -41,7 +48,12 @@ import javax.annotation.Nullable;
  */
 public final class NpcBaritone {
 
-    public static final int API_VERSION = 1;
+    /**
+     * 1 — navigacija (M6.7); 2 — {@code reinstall}, hitrost in vrata na instanco (D-039).
+     * Porabnik, ki kliče metode API 2, najprej preveri {@code apiVersion() >= 2}: starejši mod bi
+     * vrgel {@code AbstractMethodError}.
+     */
+    public static final int API_VERSION = 2;
 
     private static volatile INpcBaritoneProvider provider;
 
@@ -62,7 +74,8 @@ public final class NpcBaritone {
     }
 
     /**
-     * Pripne Baritona (ali vrne obstoječi navigator).
+     * Pripne Baritona (ali vrne obstoječi navigator; od API 2 ga ob tem ponovno namesti, če je
+     * porabnik zamenjal šive — glej {@link INpcNavigator#reinstall()}).
      *
      * @return null, če mod ni naložen, entiteta ni podprta (D-019) ali profil ne obstaja
      */
