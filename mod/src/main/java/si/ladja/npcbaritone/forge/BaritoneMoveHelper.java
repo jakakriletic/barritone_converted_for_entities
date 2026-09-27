@@ -42,7 +42,7 @@ public class BaritoneMoveHelper extends EntityMoveHelper {
     private static final float SPEED_IN_AIR = 0.02F;
 
     private final Baritone baritone;
-    private final NpcbConfig.SpeedMode speedMode;
+    private NpcbConfig.SpeedMode speedMode;
 
     private boolean controlling;
     private double savedBaseSpeed = Double.NaN;
@@ -129,7 +129,35 @@ public class BaritoneMoveHelper extends EntityMoveHelper {
         }
     }
 
-    private void takeControl() {
+    /**
+     * D-039 (CNPC U6): preklop načina hitrosti instance. Med vodenjem se osnovni
+     * {@code MOVEMENT_SPEED} takoj vrne (v {@code own}) ali nastavi na igralčevega (v {@code player}).
+     */
+    public void setSpeedMode(NpcbConfig.SpeedMode mode) {
+        if (mode == null || mode == speedMode) {
+            return;
+        }
+        if (controlling) {
+            if (speedMode == NpcbConfig.SpeedMode.PLAYER) {
+                entity.jumpMovementFactor = SPEED_IN_AIR;
+                if (!Double.isNaN(savedBaseSpeed)) {
+                    speed().setBaseValue(savedBaseSpeed);
+                    savedBaseSpeed = Double.NaN;
+                }
+            } else if (mode == NpcbConfig.SpeedMode.PLAYER) {
+                IAttributeInstance attr = speed();
+                savedBaseSpeed = attr.getBaseValue();
+                attr.setBaseValue(PLAYER_BASE_SPEED);
+            }
+        }
+        speedMode = mode;
+    }
+
+    public NpcbConfig.SpeedMode speedMode() {
+        return speedMode;
+    }
+
+    void takeControl() {
         controlling = true;
         if (speedMode == NpcbConfig.SpeedMode.PLAYER) {
             IAttributeInstance attr = speed();

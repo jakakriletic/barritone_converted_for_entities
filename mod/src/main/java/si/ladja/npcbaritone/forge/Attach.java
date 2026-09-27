@@ -53,11 +53,27 @@ public final class Attach {
     private static final Field F_MOVE_HELPER = field(MOVE_HELPER);
     private static final Field F_JUMP_HELPER = field(JUMP_HELPER);
 
-    /** Kar je bilo na entiteti pred pripenjanjem. */
+    /** Trije šivi entitete (D-008): navigator, move in jump helper. */
+    static final class Seams {
+        PathNavigate navigator;
+        EntityMoveHelper moveHelper;
+        EntityJumpHelper jumpHelper;
+
+        Seams(PathNavigate navigator, EntityMoveHelper moveHelper, EntityJumpHelper jumpHelper) {
+            this.navigator = navigator;
+            this.moveHelper = moveHelper;
+            this.jumpHelper = jumpHelper;
+        }
+
+        static Seams of(EntityLiving e) {
+            return new Seams(e.getNavigator(), e.getMoveHelper(), e.getJumpHelper());
+        }
+    }
+
+    /** Kar je bilo na entiteti pred pripenjanjem (ali ob zadnji {@link #reinstall}) in kar je naše. */
     private static final class Saved {
-        final PathNavigate navigator;
-        final EntityMoveHelper moveHelper;
-        final EntityJumpHelper jumpHelper;
+        final Seams vanilla;
+        final Seams ours;
         final List<EntityAITasks.EntityAITaskEntry> tasks = new ArrayList<>();
         final List<EntityAITasks.EntityAITaskEntry> targetTasks = new ArrayList<>();
         final boolean puppet;
@@ -65,17 +81,17 @@ public final class Attach {
         final BaritoneMoveHelper ourMove;
         final NavStatus status;
         final EntityInteractions interactions;
+        final InstanceOverrides overrides = new InstanceOverrides();
         String profile;
 
         Saved(EntityLiving e, boolean puppet, Baritone baritone, BaritoneMoveHelper ourMove, String profile) {
-            this.navigator = e.getNavigator();
-            this.moveHelper = e.getMoveHelper();
-            this.jumpHelper = e.getJumpHelper();
+            this.vanilla = Seams.of(e);
             this.puppet = puppet;
             this.baritone = baritone;
             this.ourMove = ourMove;
             this.status = NavStatus.install(baritone);
             this.interactions = new EntityInteractions(e, baritone);
+            this.ours = new Seams(null, ourMove, new BaritoneJumpHelper(e, baritone));
             this.profile = profile;
         }
     }
@@ -96,7 +112,8 @@ public final class Attach {
 
     /**
      * Kot {@link #attach(EntityLiving, boolean, NpcbConfig)} s poimenovanim profilom (D-016, M3.1).
-     * Pri že pripeti entiteti se profil ne spremeni (za to je {@link #setProfile}).
+     * Pri že pripeti entiteti se profil ne spremeni (za to je {@link #setProfile}); šivi se
+     * namestijo znova, če jih je porabnik medtem zamenjal (D-039, {@link #reinstall}).
      *
      * @throws IllegalArgumentException neznan profil ali neveljaven prepis v configu
      */
@@ -106,6 +123,7 @@ public final class Attach {
         }
         Saved existing = ATTACHED.get(entity);
         if (existing != null) {
+            reinstall(entity, existing);
             return existing.baritone;
         }
         Settings settings = profileFor(config, profile);
@@ -114,19 +132,115 @@ public final class Attach {
         BaritoneMoveHelper move = new BaritoneMoveHelper(entity, baritone, config.speedMode);
         Saved saved = new Saved(entity, puppet, baritone, move, profile.toLowerCase(java.util.Locale.ROOT));
         if (puppet) {
-            saved.tasks.addAll(entity.tasks.taskEntries);
-            saved.targetTasks.addAll(entity.targetTasks.taskEntries);
-            saved.tasks.forEach(t -> entity.tasks.removeTask(t.action));
-            saved.targetTasks.forEach(t -> entity.targetTasks.removeTask(t.action));
+            takeTasks(entity, saved, null);
         }
         BaritonePathNavigate ours = new BaritonePathNavigate(entity, entity.world, baritone, saved.interactions, saved.status);
+        saved.ours.navigator = ours;
         set(F_NAVIGATOR, entity, ours);
         // taski, ki so si navigator shranili v konstruktorju (EntityAIFollowOwner, EntityAIAvoidEntity, ...)
-        rewireNavigators(actions(entity), saved.navigator, ours);
+        rewireNavigators(actions(entity), saved.vanilla.navigator, ours);
         set(F_MOVE_HELPER, entity, move);
-        set(F_JUMP_HELPER, entity, new BaritoneJumpHelper(entity, baritone));
+        set(F_JUMP_HELPER, entity, saved.ours.jumpHelper);
         ATTACHED.put(entity, saved);
         return baritone;
+    }
+
+    /**
+     * D-039 (CNPC U2): porabnik je šive zamenjal (CNPC {@code updateTasks()} ustvari nov navigator
+     * in move helper). Naši šivi se namestijo znova, nova vanilla trojica se shrani za
+     * {@link #detach}, taski s shranjenim novim ali starim vanilla navigatorjem se preusmerijo.
+     * Navigator je isti objekt, zato cilj, pot in poslušalci ostanejo. Idempotentno.
+     *
+     * @return false, če entiteta ni pripeta
+     */
+    public static synchronized boolean reinstall(EntityLiving entity) {
+        Saved saved = ATTACHED.get(entity);
+        if (saved == null) {
+            return false;
+        }
+        reinstall(entity, saved);
+        return true;
+    }
+
+    private static int reinstall(EntityLiving entity, Saved saved) {
+        if (saved.puppet) {
+            // novi taski (npr. po updateTasks) se odstranijo in ob detach vrnejo namesto starih
+            PathNavigate current = entity.getNavigator() != saved.ours.navigator ? entity.getNavigator() : saved.vanilla.navigator;
+            takeTasks(entity, saved, current);
+        }
+        return reinstallSeams(entity, saved.vanilla, saved.ours);
+    }
+
+    /**
+     * Jedro {@link #reinstall}: na entiteto postavi {@code ours}, zamenjane šive shrani v
+     * {@code vanilla}, taske preusmeri.
+     *
+     * @return število sprememb (zamenjani šivi + preusmerjena polja); 0, če ni bilo kaj narediti
+     */
+    static int reinstallSeams(EntityLiving entity, Seams vanilla, Seams ours) {
+        int n = 0;
+        PathNavigate current = entity.getNavigator();
+        PathNavigate previous = vanilla.navigator;
+        List<Object> actions = actions(entity);
+        if (current != ours.navigator) {
+            n += rewireNavigators(actions, current, ours.navigator);
+            vanilla.navigator = current;
+            set(F_NAVIGATOR, entity, ours.navigator);
+            n++;
+        }
+        // task, ustvarjen pred zamenjavo, lahko še kaže na prejšnji vanilla navigator
+        if (previous != null && previous != current) {
+            n += rewireNavigators(actions, previous, ours.navigator);
+        }
+        if (entity.getMoveHelper() != ours.moveHelper) {
+            vanilla.moveHelper = entity.getMoveHelper();
+            set(F_MOVE_HELPER, entity, ours.moveHelper);
+            n++;
+        }
+        if (entity.getJumpHelper() != ours.jumpHelper) {
+            vanilla.jumpHelper = entity.getJumpHelper();
+            set(F_JUMP_HELPER, entity, ours.jumpHelper);
+            n++;
+        }
+        return n;
+    }
+
+    /** Šive, ki na entiteti niso naši, zapiše v {@code vanilla} (brez nameščanja). */
+    static void adoptReplaced(EntityLiving entity, Seams vanilla, Seams ours) {
+        if (entity.getNavigator() != ours.navigator) {
+            vanilla.navigator = entity.getNavigator();
+        }
+        if (entity.getMoveHelper() != ours.moveHelper) {
+            vanilla.moveHelper = entity.getMoveHelper();
+        }
+        if (entity.getJumpHelper() != ours.jumpHelper) {
+            vanilla.jumpHelper = entity.getJumpHelper();
+        }
+    }
+
+    /**
+     * {@code puppet}: taske entitete prestavi v {@code saved} (ob {@link #detach} se vrnejo).
+     * Pri ponovni namestitvi ({@code vanilla != null}) nadomestijo prej shranjene, polja z našim
+     * navigatorjem pa dobijo {@code vanilla}, da po {@code detach} ne ukazujejo mrtvemu.
+     */
+    private static void takeTasks(EntityLiving entity, Saved saved, PathNavigate vanilla) {
+        if (entity.tasks.taskEntries.isEmpty() && entity.targetTasks.taskEntries.isEmpty()) {
+            return;
+        }
+        List<EntityAITasks.EntityAITaskEntry> tasks = new ArrayList<>(entity.tasks.taskEntries);
+        List<EntityAITasks.EntityAITaskEntry> targetTasks = new ArrayList<>(entity.targetTasks.taskEntries);
+        if (vanilla != null) {
+            saved.tasks.clear();
+            saved.targetTasks.clear();
+            List<Object> taken = new ArrayList<>();
+            tasks.forEach(t -> taken.add(t.action));
+            targetTasks.forEach(t -> taken.add(t.action));
+            rewireNavigators(taken, saved.ours.navigator, vanilla);
+        }
+        saved.tasks.addAll(tasks);
+        saved.targetTasks.addAll(targetTasks);
+        tasks.forEach(t -> entity.tasks.removeTask(t.action));
+        targetTasks.forEach(t -> entity.targetTasks.removeTask(t.action));
     }
 
     /** @return true, če je bila entiteta pripeta */
@@ -140,10 +254,12 @@ public final class Attach {
         saved.ourMove.release();
         saved.interactions.release();
         entity.setJumping(false);
-        rewireNavigators(actions(entity), entity.getNavigator(), saved.navigator);
-        set(F_NAVIGATOR, entity, saved.navigator);
-        set(F_MOVE_HELPER, entity, saved.moveHelper);
-        set(F_JUMP_HELPER, entity, saved.jumpHelper);
+        // D-039: šiv, ki ga je porabnik zamenjal brez reinstall, je njegov najnovejši — ostane
+        adoptReplaced(entity, saved.vanilla, saved.ours);
+        rewireNavigators(actions(entity), saved.ours.navigator, saved.vanilla.navigator);
+        set(F_NAVIGATOR, entity, saved.vanilla.navigator);
+        set(F_MOVE_HELPER, entity, saved.vanilla.moveHelper);
+        set(F_JUMP_HELPER, entity, saved.vanilla.jumpHelper);
         if (saved.puppet) {
             saved.tasks.forEach(t -> entity.tasks.addTask(t.priority, t.action));
             saved.targetTasks.forEach(t -> entity.targetTasks.addTask(t.priority, t.action));
@@ -184,11 +300,75 @@ public final class Attach {
         if (saved == null) {
             return false;
         }
-        Settings settings = profileFor(config, profile);
+        Settings settings = settingsFor(config, profile, saved.overrides);
         saved.baritone.getPathingBehavior().softCancelIfSafe();
         saved.baritone.setSettings(settings);
         saved.profile = profile.toLowerCase(java.util.Locale.ROOT);
         return true;
+    }
+
+    /** D-039 (CNPC U6): način hitrosti instance; null, če entiteta ni pripeta. */
+    public static synchronized NpcbConfig.SpeedMode speedMode(EntityLiving entity, NpcbConfig config) {
+        Saved saved = ATTACHED.get(entity);
+        return saved == null ? null : saved.overrides.speed(config);
+    }
+
+    /**
+     * D-039 (CNPC U6): način hitrosti samo za to instanco ({@code null} = strežniški config).
+     * Profil se sestavi znova ({@code own} izklopi parkour), move helper preklopi takoj; tekoča
+     * pot se prekine kot pri {@link #setProfile}, cilj ostane.
+     *
+     * @return false, če entiteta ni pripeta
+     */
+    public static synchronized boolean setSpeedMode(EntityLiving entity, NpcbConfig config, NpcbConfig.SpeedMode mode) {
+        Saved saved = ATTACHED.get(entity);
+        if (saved == null) {
+            return false;
+        }
+        NpcbConfig.SpeedMode before = saved.overrides.speed(config);
+        saved.overrides.speedMode = mode;
+        saved.ourMove.setSpeedMode(saved.overrides.speed(config));
+        if (before != saved.overrides.speed(config)) {
+            rebuild(saved, config);
+        }
+        return true;
+    }
+
+    /**
+     * D-039 (CNPC U3/U4): vrata samo za to instanco ({@code null} = iz profila).
+     *
+     * @return false, če entiteta ni pripeta
+     */
+    public static synchronized boolean setDoors(EntityLiving entity, NpcbConfig config, Boolean openDoors, Boolean openIronDoors) {
+        Saved saved = ATTACHED.get(entity);
+        if (saved == null) {
+            return false;
+        }
+        saved.overrides.openDoors = openDoors;
+        saved.overrides.openIronDoors = openIronDoors;
+        rebuild(saved, config);
+        return true;
+    }
+
+    /** Nastavitve instance (za branje; ne spreminjaj jih mimo {@link #setProfile} in prepisov). */
+    public static synchronized Settings settings(EntityLiving entity) {
+        Saved saved = ATTACHED.get(entity);
+        return saved == null ? null : saved.baritone.getSettings();
+    }
+
+    private static void rebuild(Saved saved, NpcbConfig config) {
+        Settings settings = settingsFor(config, saved.profile, saved.overrides);
+        saved.baritone.getPathingBehavior().softCancelIfSafe();
+        saved.baritone.setSettings(settings);
+    }
+
+    /**
+     * D-039: nastavitve instance = poimenovan profil v načinu hitrosti instance + prepisi instance.
+     *
+     * @throws IllegalArgumentException neznan profil ali neveljaven prepis
+     */
+    static Settings settingsFor(NpcbConfig config, String name, InstanceOverrides overrides) {
+        return overrides.apply(profileFor(config, name, overrides.speed(config)));
     }
 
     public static synchronized boolean isPuppet(EntityLiving entity) {
@@ -202,7 +382,11 @@ public final class Attach {
 
     /** Nov profil instance: NPC privzete vrednosti + strežniški config (D-016). */
     static Settings profileFor(NpcbConfig config) {
-        return config.applyTo(NpcProfile.create());
+        return profileFor(config, config.speedMode);
+    }
+
+    private static Settings profileFor(NpcbConfig config, NpcbConfig.SpeedMode speedMode) {
+        return config.applyTo(NpcProfile.create(), speedMode);
     }
 
     /**
@@ -213,12 +397,17 @@ public final class Attach {
      * @throws IllegalArgumentException neznan profil ali neveljaven prepis
      */
     static Settings profileFor(NpcbConfig config, String name) {
+        return profileFor(config, name, config.speedMode);
+    }
+
+    /** Kot {@link #profileFor(NpcbConfig, String)} v danem načinu hitrosti (D-039: na instanco). */
+    static Settings profileFor(NpcbConfig config, String name, NpcbConfig.SpeedMode speedMode) {
         String key = name == null ? NpcbConfig.DEFAULT_PROFILE : name.toLowerCase(java.util.Locale.ROOT);
         Map<String, String> overrides = config.profiles.get(key);
         if (overrides == null) {
             throw new IllegalArgumentException("neznan profil '" + name + "' (na voljo: " + config.profiles.keySet() + ")");
         }
-        Settings s = profileFor(config);
+        Settings s = profileFor(config, speedMode);
         for (Map.Entry<String, String> o : overrides.entrySet()) {
             try {
                 SettingsUtil.parseAndApply(s, o.getKey(), o.getValue());
@@ -226,7 +415,7 @@ public final class Attach {
                 throw new IllegalArgumentException("profil '" + key + "': " + o.getKey() + "=" + o.getValue() + ": " + ex.getMessage(), ex);
             }
         }
-        if (config.speedMode == NpcbConfig.SpeedMode.OWN) {
+        if (speedMode == NpcbConfig.SpeedMode.OWN) {
             s.allowParkour.value = false;
         }
         return s;

@@ -133,6 +133,11 @@ public final class NpcbConfig {
      * forge plast sama (M5).
      */
     public Settings applyTo(Settings settings) {
+        return applyTo(settings, speedMode);
+    }
+
+    /** Kot {@link #applyTo(Settings)} z načinom hitrosti instance (D-039, CNPC U6). */
+    Settings applyTo(Settings settings, SpeedMode speedMode) {
         settings.npcSnapshotMarginChunks.value = snapshotMarginChunks;
         settings.npcMaxTurnDegrees.value = (float) maxTurnDegrees;
         if (speedMode == SpeedMode.OWN) {
