@@ -4,6 +4,27 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-27 (6) — prvi A/B zagon M7.6 ovrednoten; hitrost `own` popravljena (D-042)
+
+**Zagon uporabnika (CNPC 17:52–17:54, `nav-run -Ozadje baritone`):** N1–N15 in B1–B5 zelena,
+16/16 pripetih, 32 iskanj / 1151 tickov (0,028 na tick), 0 neuspelih, posnetek na glavni niti
+13/49 µs, glavna nit 20/173 µs/tick. Obe progi 8/8 v obeh fazah **pri 40 tickih**; vanilla
+(17:56, prva ponovitev serije): G faza A 1/8, faza B 6/8 (220/240/280), O 8/8 (180/200/220).
+
+**Ocena:** razlika v času je v veliki meri **hitrost, ne pot** — `gib(max)` Baritona 0,43 proti
+vanilla 0,13 bloka/tick. CNPC `navigateTo` zahteva 70 % atributa (javap), knjižnica pa je v
+načinu `own` hodila s 100 % (in sprintala). Popravljeno z **D-042** (prevedeno, 133/133 JUnit).
+Ozko grlo pa je realna razlika: vanilla G v fazi A 1/8, Baritone 8/8.
+
+**Serija vanilla** je padla v ponovitvi 2 pred zagonom scenarija: gradle `:extractNatives`
+("Could not expand ZIP lwjgl-platform … natives-windows.jar") — zaklenjeni natives JVM-a prve
+ponovitve. CNPC `nav-run.ps1` zdaj v tem primeru počaka 20 s in poskusi še enkrat.
+
+**Naslednji korak:** knjižnica `.\dev.ps1 build --offline`; v CNPC `.\testworld.ps1`,
+`.\nav-run.ps1 -Ozadje baritone` (preveri `gib(max)` ≈ vanilla na progi O), nato seriji po 3.
+
+---
+
 ## 2026-09-27 (5) — ocena stanja M7; U5 popravljen (D-040), doseg iskanja (D-041)
 
 **Ocena ob začetku.** Seja (4) je API 2 preverila na Windowsu (build, 125 JUnit, T2 10/10) in

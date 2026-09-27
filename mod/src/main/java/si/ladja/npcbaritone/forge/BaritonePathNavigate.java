@@ -148,6 +148,11 @@ public class BaritonePathNavigate extends PathNavigateGround {
         return allowsSprint(speed);
     }
 
+    /** D-042: hitrost zadnje vanilla zahteve ({@code tryMoveTo*}, {@code setPath}); 0 za API in ukaze. */
+    public double requestedSpeed() {
+        return speed;
+    }
+
     static boolean allowsSprint(double speed) {
         return speed <= 0 || speed > 1.0;
     }

@@ -124,4 +124,19 @@ public class InstanceOverridesTest {
     private static double base(EntityZombie z) {
         return z.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getBaseValue();
     }
+
+    /**
+     * D-042 (M7.6): v načinu {@code own} Baritone hodi kot vanilla — atribut × hitrost zahteve
+     * navigatorja (CNPC {@code navigateTo} kliče {@code tryMoveToXYZ(..., speed × 0,7)}), brez
+     * sprinta. {@code player} ostane D-010: atribut (igralčeva osnova), sprint po poti.
+     */
+    @Test
+    public void ownSpeedFollowsNavigatorMultiplierWithoutSprint() {
+        assertEquals(0.25F * 0.7F, BaritoneMoveHelper.moveSpeed(NpcbConfig.SpeedMode.OWN, 0.25, 0.7), 1e-6);
+        assertEquals("API goTo (hitrost 0) = atribut", 0.25F, BaritoneMoveHelper.moveSpeed(NpcbConfig.SpeedMode.OWN, 0.25, 0), 1e-6);
+        assertEquals("player ne množi", 0.1F, BaritoneMoveHelper.moveSpeed(NpcbConfig.SpeedMode.PLAYER, 0.1, 0.7), 1e-6);
+        assertFalse(BaritoneMoveHelper.sprintAllowed(NpcbConfig.SpeedMode.OWN, true));
+        assertTrue(BaritoneMoveHelper.sprintAllowed(NpcbConfig.SpeedMode.PLAYER, true));
+        assertFalse(BaritoneMoveHelper.sprintAllowed(NpcbConfig.SpeedMode.PLAYER, false));
+    }
 }

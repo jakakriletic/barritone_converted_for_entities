@@ -782,6 +782,24 @@ dati CNPC-ju domet na instanco brez spremembe API 2?
 **Preverba.** `SearchRangeTest` (pravokotniki, segment do meje pri dosegu 1, mutacija ujeta).
 V igri: vanilla zahteva s ciljem dlje od dosega mora priti v segmentih (R-23), CNPC M7.6.
 
+### D-042 — Način `own` hodi kot vanilla: atribut × hitrost zahteve, brez sprinta (dopolni D-010)
+
+**Vprašanje.** Prvi A/B zagon M7.6 (CNPC, 27. 9.): Baritone skupina je prišla v 40 tickih,
+vanilla v 180–280; `gib(max)` 0,43 proti 0,13 bloka/tick. Ali je to boljša pot ali samo hitrejša
+hoja?
+
+**Odločitev.** V načinu `own` `BaritoneMoveHelper` nastavi `setAIMoveSpeed(atribut × hitrost
+zahteve)` — hitrost iz `tryMoveToXYZ`/`tryMoveToEntityLiving`/`setPath` (API in ukazi imajo 0 =
+1,0) — in **ne sprinta**, kot vanilla `EntityMoveHelper`. Način `player` ostane po D-010
+(igralčeva osnova, sprint po poti in M6.5).
+
+**Dokaz.** Knjižnica je hitrost zahteve upoštevala samo za dovoljenje sprinta (M6.5), za hitrost
+pa ne. CNPC `EntityLivingWrapper.navigateTo` (javap): `clearPath(); tryMoveToXYZ(x, y, z,
+speed × 0,7)` — vanilla NPC hodi s 70 % atributa, Baritone s 100 % (+30 % v sprintu).
+
+**Preverba.** `InstanceOverridesTest.ownSpeedFollowsNavigatorMultiplierWithoutSprint` (mutacija
+ujeta); v igri: ponovitev M7.6, `gib(max)` Baritona mora biti blizu vanille na progi O.
+
 ---
 
 ## Dnevnik odločitev
@@ -797,7 +815,7 @@ V igri: vanilla zahteva s ciljem dlje od dosega mora priti v segmentih (R-23), C
 | D-007 | 2026-09-24 | Okolje enako CNPC; prevajanje v oblaku dovoljeno | velja |
 | D-008 | 2026-09-24 | Brez mixinov/coremoda; šivi navigator/move/jump | velja |
 | D-009 | 2026-09-24 | Tick iz `onUpdateNavigation` | velja |
-| D-010 | 2026-09-24 | Vhodi in hitrost: vrstni red, način "kot igralec" | velja, preverba M2 |
+| D-010 | 2026-09-24 | Vhodi in hitrost: vrstni red, način "kot igralec" | velja, `own` dopolnjen z D-042 |
 | D-011 | 2026-09-24 | Obrat telesa, glava ostane vanilla | velja |
 | D-012 | 2026-09-24 | Branje samo prek BSI, brez nalaganja chunkov, lint test | velja |
 | D-013 | 2026-09-24 | Omejena kopija `id2ChunkMap` | velja, preverba M5 |
@@ -829,3 +847,4 @@ V igri: vanilla zahteva s ciljem dlje od dosega mora priti v segmentih (R-23), C
 | D-039 | 2026-09-27 | Navigacijski API 2: `reinstall`, hitrost in vrata na instanco (CNPC U2–U6) | velja, preverba M7.4/M7.5 |
 | D-040 | 2026-09-27 | Malus vode `npcWaterPenalty`; `avoid_water` = vanilla malus 8 (CNPC U5) | velja, preverba M7.6 |
 | D-041 | 2026-09-27 | Doseg iskanja vanilla zahtev = `FOLLOW_RANGE` + 8 (CNPC M7.5), brez spremembe API | velja, preverba v igri (R-23) |
+| D-042 | 2026-09-27 | `own` = atribut × hitrost zahteve, brez sprinta (dopolni D-010) | velja, preverba M7.6 |
