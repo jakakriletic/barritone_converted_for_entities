@@ -378,7 +378,9 @@ public final class SelfTestRunner {
         long offMs;
 
         RenderOff() {
-            super("M3 A1 debug off", "po /npcb debug off črte izginejo v ≤ 3,5 s", 80);
+            // 20 tickov do izklopa + 3,5 s merila + rezerva; prej 80 = samo 3 s po izklopu, kar je
+            // enako roku pozabe na klientu (ClientPaths.EXPIRE_MS) — tekma, padlo 2026-09-27 pri 81 tickih
+            super("M3 A1 debug off", "po /npcb debug off črte izginejo v ≤ 3,5 s", 110);
         }
 
         @Override
@@ -408,6 +410,15 @@ public final class SelfTestRunner {
                 return ms <= 3500;
             }
             return null;
+        }
+
+        @Override
+        Boolean timeout(Run r) {
+            long[] rp = NpcBaritoneMod.proxy.renderedPaths();
+            detail = offMs < 0 ? "izklop ni bil poslan"
+                    : "črte niso izginile v " + (System.currentTimeMillis() - offMs) + " ms (poti v zadnji sličici "
+                    + (rp == null ? "?" : String.valueOf(rp[1])) + ")";
+            return false;
         }
 
         @Override

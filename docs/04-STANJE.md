@@ -23,8 +23,15 @@ Odprto je ostalo M7.5 `NpcNavRange`.
 **Preverjeno na Windowsu (16:06–16:07):** `.\dev.ps1 build` z `ab4e608` zelen (jar vsebuje
 `npcWaterPenalty`/`npcRespectFollowRange`), `.\t2-run.ps1` **10/10**, spremenjenih blokov 0,
 brez izjem — privzeti profil (vrata, voda 1 in 3 globoko, padec v vodo) nespremenjen.
-Meritev: `docs/meritve/m4/t2-20260927-160716.csv`. Čaka: `/npcb selftest` v igri (D-041 pri
-vanilla AI).
+Meritev: `docs/meritve/m4/t2-20260927-160716.csv`.
+
+**`/npcb selftest` (dev klient, 16:11–16:12): 5/6.** Vsi koraki z vanilla AI in dosegom D-041
+so OK: zombi za zidom udari po 90 tickih (kontrola 182), volk 50 tickov brez teleporta,
+vaščan v kolibi po 182 (kontrola 101). Padel je **korak 3 "debug off"** (izris na klientu,
+z D-040/D-041 nepovezan): korak je imel rok 80 tickov, izklop pa pride šele pri 20, torej 3 s
+okna — natanko toliko, kolikor klient hrani pot (`ClientPaths.EXPIRE_MS = 3000`); prej je šel
+pri 2841 ms, zdaj je čas potekel pri 81 tickih brez opisa. Napaka testa, ne izrisa: rok
+110 tickov (3,5 s merilo + rezerva) in opis ob izteku. Meritev: `docs/meritve/klient/selftest-20260927-161208.csv`.
 
 **Za CNPC:** `NpcNavRange` → atribut `FOLLOW_RANGE` (če ga CNPC že tako nastavlja, ni dela);
 `avoid_water` se ne preimenuje, zato most ostane enak.
