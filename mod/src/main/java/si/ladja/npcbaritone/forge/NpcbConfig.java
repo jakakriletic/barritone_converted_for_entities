@@ -65,7 +65,7 @@ public final class NpcbConfig {
             "walk: allowSprint=false",
             "parkour: allowParkour=true",
             "cautious: maxFallHeightNoWater=2, allowSprint=false",
-            "avoid_water: walkOnWaterOnePenalty=20",
+            "avoid_water: npcWaterPenalty=37.06", // D-040: 8 blokov hoje = vanilla PathNodeType.WATER
     };
 
     NpcbConfig(int searchThreads, int searchQueueLimit, int snapshotMarginChunks, int shareRadiusChunks,

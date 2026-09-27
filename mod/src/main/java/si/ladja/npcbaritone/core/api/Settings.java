@@ -431,6 +431,13 @@ public final class Settings {
     public final Setting<Boolean> npcOpenIronDoors = new Setting<>(false);
 
     /**
+     * NPC Baritone (D-040, CNPC U5): dodatna cena za vsak blok, v katerem so noge ali glava v vodi
+     * (bredenje, plavanje, gladina, padec v vodo). 0 = Baritonovo obnašanje; profil
+     * {@code avoid_water} = 8 blokov hoje, kot vanilla {@code PathNodeType.WATER} (malus 8).
+     */
+    public final Setting<Double> npcWaterPenalty = new Setting<>(0.0D);
+
+    /**
      * Set to 1.0 to effectively disable this feature
      *
      * @see <a href="https://github.com/cabaletta/baritone/issues/18">Issue #18</a>

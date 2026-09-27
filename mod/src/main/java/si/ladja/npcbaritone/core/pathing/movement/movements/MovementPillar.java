@@ -88,7 +88,7 @@ public class MovementPillar extends Movement {
         if (MovementHelper.isWater(toBreakBlock) && MovementHelper.isWater(from)) { // TODO should this also be allowed if toBreakBlock is air?
             srcUp = context.get(x, y + h - 1, z).getBlock();
             if (MovementHelper.isWater(srcUp)) {
-                return LADDER_UP_ONE_COST; // allow ascending pillars of water, but only if we're already in one
+                return LADDER_UP_ONE_COST + context.npcWaterPenalty; // allow ascending pillars of water, but only if we're already in one (D-040)
             }
         }
         double placeCost = 0;

@@ -254,7 +254,7 @@ public class MovementDescend extends Movement {
                 res.x = destX;
                 res.y = newY;
                 res.z = destZ;
-                res.cost = tentativeCost;// TODO incorporate water swim up cost?
+                res.cost = tentativeCost + context.npcWaterPenalty;// TODO incorporate water swim up cost? (D-040: malus vode)
                 return false;
             }
             if (reachedMinimum && context.allowFallIntoLava && MovementHelper.isLava(ontoBlock.getBlock())) {

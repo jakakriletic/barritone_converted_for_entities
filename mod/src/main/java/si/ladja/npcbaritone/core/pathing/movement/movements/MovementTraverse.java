@@ -104,7 +104,7 @@ public class MovementTraverse extends Movement {
             double WC = WALK_ONE_BLOCK_COST;
             boolean water = false;
             if (MovementHelper.isWater(pb0.getBlock()) || MovementHelper.isWater(pb1.getBlock())) {
-                WC = context.waterWalkSpeed;
+                WC = context.waterWalkSpeed + context.npcWaterPenalty; // D-040
                 water = true;
             } else {
                 if (destOn.getBlock() == Blocks.SOUL_SAND) {
@@ -112,7 +112,7 @@ public class MovementTraverse extends Movement {
                 } else if (frostWalker) {
                     // with frostwalker we can walk on water without the penalty, if we are sure we won't be using jesus
                 } else if (destOn.getBlock() == Blocks.WATER) {
-                    WC += context.walkOnWaterOnePenalty;
+                    WC += context.walkOnWaterOnePenalty + context.npcWaterPenalty; // D-040
                 }
                 if (srcDownBlock == Blocks.SOUL_SAND) {
                     WC += (WALK_ONE_OVER_SOUL_SAND_COST - WALK_ONE_BLOCK_COST) / 2;
@@ -212,7 +212,7 @@ public class MovementTraverse extends Movement {
         boolean water = false;
         for (int dy = 0; dy < h; dy++) {
             if (MovementHelper.isWater(context.getBlock(destX, y + dy, destZ))) {
-                WC = context.waterWalkSpeed;
+                WC = context.waterWalkSpeed + context.npcWaterPenalty; // D-040
                 water = true;
                 break;
             }
@@ -223,7 +223,7 @@ public class MovementTraverse extends Movement {
             } else if (frostWalker) {
                 // with frostwalker we can walk on water without the penalty
             } else if (destOn.getBlock() == Blocks.WATER) {
-                WC += context.walkOnWaterOnePenalty;
+                WC += context.walkOnWaterOnePenalty + context.npcWaterPenalty; // D-040
             }
             if (srcDownBlock == Blocks.SOUL_SAND) {
                 WC += (WALK_ONE_OVER_SOUL_SAND_COST - WALK_ONE_BLOCK_COST) / 2;

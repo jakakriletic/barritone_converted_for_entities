@@ -70,8 +70,11 @@ public class NpcbConfigTest {
     public void avoidWaterProfilePenalizesSurfaceWaterOnlyWhenSelected() {
         BootstrapOnce.ensure();
         NpcbConfig config = NpcbConfig.defaults();
-        assertEquals(3.0, Attach.profileFor(config, "default").walkOnWaterOnePenalty.value, 0.001);
-        assertEquals(20.0, Attach.profileFor(config, "avoid_water").walkOnWaterOnePenalty.value, 0.001);
+        assertEquals(0.0, Attach.profileFor(config, "default").npcWaterPenalty.value, 0.001);
+        // D-040: 8 blokov hoje na blok vode = vanilla PathNodeType.WATER (malus 8)
+        assertEquals(8 * si.ladja.npcbaritone.core.api.pathing.movement.ActionCosts.WALK_ONE_BLOCK_COST,
+                Attach.profileFor(config, "avoid_water").npcWaterPenalty.value, 0.01);
+        assertEquals(3.0, Attach.profileFor(config, "avoid_water").walkOnWaterOnePenalty.value, 0.001);
     }
 
     @Test
