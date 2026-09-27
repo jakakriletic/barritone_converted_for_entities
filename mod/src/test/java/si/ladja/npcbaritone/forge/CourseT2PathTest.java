@@ -181,14 +181,30 @@ public class CourseT2PathTest {
 
     @Test
     public void onlyClosedWoodenDoorsAndGatesAreOpenable() {
+        si.ladja.npcbaritone.core.api.Settings def = NpcProfile.create();
         IBlockState oak = Blocks.OAK_DOOR.getDefaultState();
-        assertTrue(EntityInteractions.isClosedOpenable(oak.withProperty(BlockDoor.OPEN, false)));
-        assertFalse(EntityInteractions.isClosedOpenable(oak.withProperty(BlockDoor.OPEN, true)));
-        assertFalse(EntityInteractions.isClosedOpenable(Blocks.IRON_DOOR.getDefaultState()));
-        assertTrue(EntityInteractions.isClosedOpenable(Blocks.OAK_FENCE_GATE.getDefaultState()));
-        assertFalse(EntityInteractions.isClosedOpenable(Blocks.OAK_FENCE_GATE.getDefaultState().withProperty(BlockFenceGate.OPEN, true)));
-        assertFalse(EntityInteractions.isClosedOpenable(Blocks.TRAPDOOR.getDefaultState()));
-        assertFalse(EntityInteractions.isClosedOpenable(Blocks.STONE.getDefaultState()));
+        assertTrue(EntityInteractions.isClosedOpenable(oak.withProperty(BlockDoor.OPEN, false), def));
+        assertFalse(EntityInteractions.isClosedOpenable(oak.withProperty(BlockDoor.OPEN, true), def));
+        assertFalse(EntityInteractions.isClosedOpenable(Blocks.IRON_DOOR.getDefaultState(), def));
+        assertTrue(EntityInteractions.isClosedOpenable(Blocks.OAK_FENCE_GATE.getDefaultState(), def));
+        assertFalse(EntityInteractions.isClosedOpenable(Blocks.OAK_FENCE_GATE.getDefaultState().withProperty(BlockFenceGate.OPEN, true), def));
+        assertFalse(EntityInteractions.isClosedOpenable(Blocks.TRAPDOOR.getDefaultState(), def));
+        assertFalse(EntityInteractions.isClosedOpenable(Blocks.STONE.getDefaultState(), def));
+    }
+
+    /** D-039 (CNPC U3/U4): NONE ne odpre ničesar, ALL tudi železna vrata. */
+    @Test
+    public void openableFollowsInstanceDoorMode() {
+        si.ladja.npcbaritone.core.api.Settings none = NpcProfile.create();
+        none.npcOpenDoors.value = false;
+        assertFalse(EntityInteractions.isClosedOpenable(Blocks.OAK_DOOR.getDefaultState(), none));
+        assertFalse(EntityInteractions.isClosedOpenable(Blocks.OAK_FENCE_GATE.getDefaultState(), none));
+        assertFalse(EntityInteractions.isClosedOpenable(Blocks.IRON_DOOR.getDefaultState(), none));
+        si.ladja.npcbaritone.core.api.Settings all = NpcProfile.create();
+        all.npcOpenIronDoors.value = true;
+        assertTrue(EntityInteractions.isClosedOpenable(Blocks.IRON_DOOR.getDefaultState(), all));
+        assertFalse(EntityInteractions.isClosedOpenable(Blocks.IRON_DOOR.getDefaultState().withProperty(BlockDoor.OPEN, true), all));
+        assertTrue(EntityInteractions.isClosedOpenable(Blocks.OAK_DOOR.getDefaultState(), all));
     }
 
     @Test

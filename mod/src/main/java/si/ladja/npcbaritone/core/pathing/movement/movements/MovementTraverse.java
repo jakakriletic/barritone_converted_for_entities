@@ -271,14 +271,14 @@ public class MovementTraverse extends Movement {
     private boolean tryOpenDoors(MovementState state, IBlockState bs, BlockPos doorPos, BlockPos from) {
         if (bs.getBlock() instanceof BlockDoor) {
             boolean notPassable = !MovementHelper.isDoorPassable(ctx, doorPos, from);
-            // Automatone b1899f30: odpirajo se samo lesena vrata
-            boolean canOpen = bs.getMaterial() == net.minecraft.block.material.Material.WOOD;
+            // Automatone b1899f30: odpirajo se samo lesena vrata; D-039: kaj se odpre, določa instanca
+            boolean canOpen = MovementHelper.mayOpen(bs, baritone.getSettings());
             if (notPassable && canOpen) {
                 state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(new BlockStateInterface(ctx).access, doorPos), ctx.entityRotations()), true))
                         .setInput(Input.CLICK_RIGHT, true);
                 return true;
             }
-        } else if (bs.getBlock() instanceof BlockFenceGate) {
+        } else if (bs.getBlock() instanceof BlockFenceGate && MovementHelper.mayOpen(bs, baritone.getSettings())) {
             BlockPos blocked = !MovementHelper.isGatePassable(ctx, doorPos.up(), from.up()) ? doorPos.up()
                     : !MovementHelper.isGatePassable(ctx, doorPos, from) ? doorPos
                     : null;

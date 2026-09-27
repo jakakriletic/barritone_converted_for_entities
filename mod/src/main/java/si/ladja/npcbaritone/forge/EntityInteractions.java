@@ -20,13 +20,14 @@ package si.ladja.npcbaritone.forge;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDoor;
 import net.minecraft.block.BlockFenceGate;
-import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import si.ladja.npcbaritone.core.Baritone;
+import si.ladja.npcbaritone.core.api.Settings;
+import si.ladja.npcbaritone.core.pathing.movement.MovementHelper;
 import si.ladja.npcbaritone.core.api.pathing.movement.IMovement;
 import si.ladja.npcbaritone.core.api.utils.input.Input;
 import si.ladja.npcbaritone.core.pathing.path.PathExecutor;
@@ -40,7 +41,7 @@ import java.util.Set;
 /**
  * M4.1: izvede vhod {@code CLICK_RIGHT} na entiteti (namesto {@code IPlayerController} pri
  * igralcu). Edino dovoljeno dejanje je odpiranje <b>lesenih vrat</b> in <b>ograjnih vrat</b>
- * ob trenutnem premiku — nič se ne poruši ali postavi (D-015). Vrata, ki jih je odprla
+ * (D-039: po nastavitvah instance, pri {@code ALL} tudi železnih) ob trenutnem premiku — nič se ne poruši ali postavi (D-015). Vrata, ki jih je odprla
  * entiteta, se zaprejo, ko jih zapusti (merilo M4 A4); vrata, ki so bila že odprta, ostanejo.
  *
  * <p>Kandidati so bloki premika ({@code dest}, {@code dest+1}, {@code src}, {@code src+1}),
@@ -109,7 +110,7 @@ public final class EntityInteractions {
         candidates.add(m.getSrc().up());
         for (BlockPos p : candidates) {
             BlockPos lower = lowerHalf(entity.world, p);
-            if (lower != null && isClosedOpenable(entity.world.getBlockState(lower))) {
+            if (lower != null && isClosedOpenable(entity.world.getBlockState(lower), baritone.getSettings())) {
                 return lower.toImmutable();
             }
         }
@@ -128,21 +129,24 @@ public final class EntityInteractions {
         return null;
     }
 
-    /** Lesena vrata ali ograjna vrata, ki so zaprta (D-015: nič drugega). */
-    static boolean isClosedOpenable(IBlockState s) {
+    /**
+     * Zaprta vrata ali ograjna vrata, ki jih instanca sme odpreti (D-015: nič drugega; D-039:
+     * lesena in ograjna pri {@code npcOpenDoors}, ostala pri {@code npcOpenIronDoors}).
+     */
+    static boolean isClosedOpenable(IBlockState s, Settings settings) {
         Block b = s.getBlock();
+        if (!MovementHelper.mayOpen(s, settings)) {
+            return false;
+        }
         if (b instanceof BlockDoor) {
-            return s.getMaterial() == Material.WOOD && !s.getValue(BlockDoor.OPEN);
+            return !s.getValue(BlockDoor.OPEN);
         }
-        if (b instanceof BlockFenceGate) {
-            return !s.getValue(BlockFenceGate.OPEN);
-        }
-        return false;
+        return b instanceof BlockFenceGate && !s.getValue(BlockFenceGate.OPEN);
     }
 
-    private static boolean open(World world, BlockPos lower) {
+    private boolean open(World world, BlockPos lower) {
         IBlockState s = world.getBlockState(lower);
-        if (!isClosedOpenable(s)) {
+        if (!isClosedOpenable(s, baritone.getSettings())) {
             return false;
         }
         setOpen(world, lower, s, true);
