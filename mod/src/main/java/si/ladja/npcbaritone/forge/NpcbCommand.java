@@ -58,13 +58,14 @@ import java.util.Locale;
  * /npcb course &lt;t1|t2|t3&gt; build [x y z]
  * /npcb course &lt;t1|t2|t3&gt; run &lt;entity&gt; [x y z]
  * /npcb course stop
+ * /npcb probe hands [x y z]     (M11.1, samo testni svet: izprazni škatlo vzhodno od izhodišča)
  * </pre>
  * Brez koordinat je izhodišče tečaja pošiljateljev položaj.
  */
 public class NpcbCommand extends CommandBase {
 
     private static final List<String> SUB = Arrays.asList("attach", "detach", "goto", "stop", "status", "profile", "debug", "trace",
-            "speedtest", "chunks", "course", "perf", "stress", "aitest", "selftest");
+            "speedtest", "chunks", "course", "perf", "stress", "aitest", "selftest", "probe");
 
     @Override
     public String getName() {
@@ -78,7 +79,7 @@ public class NpcbCommand extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/npcb <attach|detach|goto|stop|status|profile|debug|trace|speedtest|chunks|course|perf|stress|aitest|selftest> ...";
+        return "/npcb <attach|detach|goto|stop|status|profile|debug|trace|speedtest|chunks|course|perf|stress|aitest|selftest|probe> ...";
     }
 
     @Override
@@ -354,6 +355,33 @@ public class NpcbCommand extends CommandBase {
                 reply(sender, "T4: " + spawned + "/" + n + " NPC-jev pri " + origin);
                 break;
             }
+            case "probe": {
+                // M11.1: sonda FakePlayer (roke workerja, D-032, D-044)
+                String usage = "/npcb probe hands [x y z]";
+                need(args, 2, usage);
+                if (!"hands".equalsIgnoreCase(args[1]) || !(sender.getEntityWorld() instanceof net.minecraft.world.WorldServer)) {
+                    throw new WrongUsageException(usage);
+                }
+                BlockPos origin = args.length >= 5 ? parseBlockPos(sender, args, 2, false) : sender.getPosition();
+                com.mojang.authlib.GameProfile owner = sender.getCommandSenderEntity() instanceof EntityPlayerMP
+                        ? ((EntityPlayerMP) sender.getCommandSenderEntity()).getGameProfile() : null;
+                java.util.List<si.ladja.npcbaritone.forge.work.HandsProbe.Row> rows =
+                        si.ladja.npcbaritone.forge.work.HandsProbe.run((net.minecraft.world.WorldServer) sender.getEntityWorld(), origin, owner);
+                int ok = 0;
+                for (si.ladja.npcbaritone.forge.work.HandsProbe.Row r : rows) {
+                    ok += r.pass ? 1 : 0;
+                    reply(sender, (r.pass ? "OK " : "NAPAKA ") + r.id + " " + r.detail);
+                    NpcBaritoneMod.LOG.info("NPCB-PROBE {} {} {}", r.id, r.pass ? "OK" : "NAPAKA", r.detail);
+                }
+                try {
+                    File csv = si.ladja.npcbaritone.forge.work.HandsProbe.writeCsv(rows);
+                    reply(sender, "sonda rok: " + ok + "/" + rows.size() + " OK, " + csv.getPath());
+                    NpcBaritoneMod.LOG.info("NPCB-PROBE-DONE passed={} total={} csv={}", ok, rows.size(), csv.getAbsolutePath());
+                } catch (IOException e) {
+                    throw new CommandException("zapis CSV: " + e);
+                }
+                break;
+            }
             default:
                 throw new WrongUsageException(getUsage(sender));
         }
@@ -377,6 +405,9 @@ public class NpcbCommand extends CommandBase {
         }
         if (args.length == 2 && "debug".equalsIgnoreCase(args[0])) {
             return getListOfStringsMatchingLastWord(args, "on", "off");
+        }
+        if (args.length == 2 && "probe".equalsIgnoreCase(args[0])) {
+            return getListOfStringsMatchingLastWord(args, "hands");
         }
         if (args.length == 2 && "perf".equalsIgnoreCase(args[0])) {
             return getListOfStringsMatchingLastWord(args, "reset");
