@@ -4,6 +4,37 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-28 (seja 2) — pull, veja `m7-next`; M11.1 javap in sonda, M11.2 okostje API 3 (veja `m11-worker`)
+
+**Pull.** Lokalni `m7-cnpc@79da023` (D-029–D-042, meritve) ni bil nikoli pushan; druga seja je
+kodo rekonstruirala na `origin/m7-cnpc-oblak` in na njej naredila `origin/codex/m7-next`
+(3 commiti zgoraj). Računalnik GitHuba ne doseže (proxy 403), zato je bil origin prenesen kot git
+bundle. Nova lokalna veja **`m7-next`** = `m7-cnpc` + teh 3 commitov (cherry-pick; koda enaka
+`origin/codex/m7-next`, konflikti samo v dokumentih, razrešeni z ohranitvijo lokalnih zapisov;
+opomba v D-043 o manjkajočih D-029–D-042 odstranjena). `main` in `m7-cnpc` nespremenjena.
+
+**M11.1 (javap, RAZISKAVA §10).** (1) `ForgeHooks.onBlockBreakEvent` ob preklicu brez preverbe
+`null` pošlje paket prek `player.connection` → `HandsNetHandler` (prazen `NetHandlerPlayServer`).
+(2) `tryHarvestBlock` → `HarvestDropsEvent` z `harvester` = roke, preden nastane `EntityItem`;
+obraba sproži kriterij napredkov rok. (3) Stopnice/vrata berejo yaw rok. (4) Trdota bere predmet,
+`onGround` (÷5) in vodo na očeh **rok** → sinhronizacija, R-24. (5) **Nova ugotovitev:**
+`EntityPlayerMP.<init>` preveže objekt napredkov po UUID na novo entiteto → roke z UUID lastnika
+bi prevzele napredke igralca, ki je online → **D-044** (izpeljan UUID v3), zamenja točko
+"Lastnik" v D-032. Sonda v igri: `/npcb probe hands` (8 vrstic, pričakovane vrednosti v §10).
+
+**M11.2.** Okostje API 3 (glej M11 README). Stranska ugotovitev: **R-25** — pripete entitete brez
+`detach` ostanejo v `WeakHashMap` (vrednost drži ključ); nov `WorkerRegistry` tega vzorca nima.
+
+**Preverjeno:** prevod + JUnit **150/150** v oblaku (141 + `HandsIdentityTest` 4 + `WorkerSpecTest`
+4 + `NpcbConfigTest` 1; `ApiJarTest` prevede porabnika API 3). **Ni preverjeno:** Windows build
+(reobf `NetHandlerPlayServer`/`FakePlayer`), sonda v igri.
+
+**Naslednji korak:** `.\dev.ps1 build --offline`, nato v dev klientu (superflat, OP) `/npcb probe hands`
+— pričakovano 8/8 OK; CSV `run\npcbaritone\runs\probe-hands-*.csv` v `docs/meritve/m11/`.
+Potem M11.3 (roke: `EntityHands`, `BlockBreakHelper`/`BlockPlaceHelper`).
+
+---
+
 ## 2026-09-28 — V4 sprejet; M7 zaključen
 
 Uporabnik je sprejel V4 po D-043 z znano omejitvijo (zadnji prihod na skupni cilj 2–6 s kasneje;

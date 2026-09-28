@@ -67,3 +67,12 @@ Superflat, prisilno naloženi chunki, vsak odsek ima svoje območje in skrinjo z
 | A5 | T1 + T2 z navigacijskim profilom po M11: rezultat ≥ zadnji in 0 spremenjenih blokov (en tek, ker se deljena koda premikov spremeni) |
 | A6 | odsek 10 in `pause/resume` sredi kopanja |
 | A7 | `/npcb selftest` v dev klientu in vanilla klientu na dedicated strežniku: korak "worker tunel" OK |
+
+## Stanje (2026-09-28, veja `m11-worker` iz `m7-next`)
+
+| # | Stanje |
+|---|---|
+| M11.1 | **javap narejen** (RAZISKAVA §10): prazna povezava je potrebna (`HandsNetHandler`), identiteta rok ne sme biti UUID igralca (**D-044**, `HandsIdentityTest`), trdota rabi `onGround` in položaj rok (R-24). Sonda v igri `/npcb probe hands` — **prevedeno, čaka na zagon v dev strežniku** |
+| M11.2 | **prevedeno + JUnit 150/150 v oblaku**: `api.work` (`INpcWorker`, `WorkerSpec`, `WorkArea` vključno na obeh koncih, `IWorkPermission.AREA_ONLY`, `IWorkerListener`), `NpcBaritone.worker/getWorker/release`, `WorkerRegistry` (šibko na entiteto), config `worker.enabled`, manifest 3; `ApiJarTest` prevede porabnika API 1–3. `api/` sme uvažati še `net.minecraftforge.items` (D-034) in `GameProfile` (D-044). Profil workerja je do M11.6 `default` (brez rušenja). Čaka Windows build |
+| M11.3–M11.10 | niso začeti |
+
