@@ -4,6 +4,30 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-28 (seja 3) — M11.3 roke, M11.4 inventar, M11.5 varovala, M11.8 ukaz (veja `m11-worker`)
+
+Veji `m7-next` in `m11-worker` je uporabnik pushal. Build in sonda M11.1 še nista zagnana.
+
+**Narejeno (prevedeno + JUnit 169/169 v oblaku):** roke (`EntityHands`, `HandsPool`), inventar
+nad `IItemHandler` (`WorkerInventory`), varovala ob izvedbi (`WorkGuards`) in pri iskanju
+(`IWorkContext` v jedru, `WorkContextSnapshot` v forge), vgrajen profil `worker`, ukaz
+`/npcb worker`. Ne-worker: iskanje z entiteto brez posnetka ima rušenje in postavljanje na
+`COST_INF` ne glede na profil (D-031 izvedba); roke se zanj ne kličejo (ena `volatile` preverba
+na tick). Podrobno: M11 README, tabela Stanje.
+
+**Ni preverjeno:** Windows build, vse v igri. **Znano odprto:** M11.7 (AI taski lahko
+prekinejo — za preizkus `puppet`), padajoči bloki, porti Automatona (M11.6), T5 (M11.9).
+
+**Naslednji korak:** `.\dev.ps1 build --offline`; dev klient, superflat, OP:
+1. `/npcb probe hands` → 8/8 (M11.1).
+2. Husk (ne gori), ob njem skrinja s kamnitim krampom in 16 cobblestona, pred njim zid kamna
+   3 visoko: `/npcb attach @e[type=husk,c=1] puppet`, `/npcb worker register @e[type=husk,c=1] 12`,
+   `/npcb goto @e[type=husk,c=1] <x y z za zidom>` → razpoke, prehod, cobblestone v skrinji,
+   kramp obrabljen; `/npcb worker status @e[type=husk,c=1]`.
+3. Jarek širine 1 in globine 3+ pred njim → most iz cobblestona. Skrinja v poti → obvoz (D-031).
+
+---
+
 ## 2026-09-28 (seja 2) — pull, veja `m7-next`; M11.1 javap in sonda, M11.2 okostje API 3 (veja `m11-worker`)
 
 **Pull.** Lokalni `m7-cnpc@79da023` (D-029–D-042, meritve) ni bil nikoli pushan; druga seja je

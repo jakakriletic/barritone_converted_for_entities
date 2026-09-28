@@ -74,5 +74,11 @@ Superflat, prisilno naloženi chunki, vsak odsek ima svoje območje in skrinjo z
 |---|---|
 | M11.1 | **javap narejen** (RAZISKAVA §10): prazna povezava je potrebna (`HandsNetHandler`), identiteta rok ne sme biti UUID igralca (**D-044**, `HandsIdentityTest`), trdota rabi `onGround` in položaj rok (R-24). Sonda v igri `/npcb probe hands` — **prevedeno, čaka na zagon v dev strežniku** |
 | M11.2 | **prevedeno + JUnit 150/150 v oblaku**: `api.work` (`INpcWorker`, `WorkerSpec`, `WorkArea` vključno na obeh koncih, `IWorkPermission.AREA_ONLY`, `IWorkerListener`), `NpcBaritone.worker/getWorker/release`, `WorkerRegistry` (šibko na entiteto), config `worker.enabled`, manifest 3; `ApiJarTest` prevede porabnika API 1–3. `api/` sme uvažati še `net.minecraftforge.items` (D-034) in `GameProfile` (D-044). Profil workerja je do M11.6 `default` (brez rušenja). Čaka Windows build |
-| M11.3–M11.10 | niso začeti |
+| M11.3 | **prevedeno** (seja 3): `EntityHands` — rušenje kot vanilla (napredek z rokami, razpoke z ID entitete, 5 tickov premora, `LeftClickBlock` ob začetku, `tryHarvestBlock`), postavljanje (`processRightClickBlock` s sneakom, ne ob vratih), `HandsPool` (roke na svet in lastnika, dropi iz `HarvestDropsEvent` z vanilla verjetnostjo); priklop v `BaritonePathNavigate` samo za registrirane workerje. `IPlayerController` v jedru ostane samo doseg (jedro vhodov ne izvaja) |
+| M11.4 | **prevedeno + JUnit** (`WorkerInventoryTest` 7): orodje po `ToolSet`, samo če je boljše od roke; metni blok po `acceptableThrowawayItems`; vrnitev v istem ticku, ostanek v svet; dropi po vrnitvi orodja. `onInventoryFull`, `onToolBroken` |
+| M11.5 | **prevedeno + JUnit**: ob izvedbi `WorkGuards` (`WorkGuardsTest` 5, mutacija ujeta) + `isBlockModifiable` + eventi; pri iskanju `IWorkContext`/`WorkContextSnapshot` (območje, D-031, dovoljenja, spawn protection), `WorkerGoldenTest` 7 (4 mutacije ujete) |
+| M11.6 | delno: vgrajen profil `worker` odpre obstoječe premike z rušenjem/postavljanjem (Traverse, Ascend, Pillar, Descend/Downward, most); porti Automatonovih popravkov in padajoči bloki še niso narejeni |
+| M11.7 | ni začet (`BUSY`, `pause/resume` vpliva zaenkrat samo na roke) |
+| M11.8 | **prevedeno**: `/npcb worker register|release|status`; selftest korak "worker tunel" še ne |
+| M11.9–M11.10 | niso začeti |
 

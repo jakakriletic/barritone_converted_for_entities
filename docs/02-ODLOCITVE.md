@@ -549,6 +549,13 @@ workerja se odprejo `allowBreak`, `allowPlace` in `allowInventory` prek profila 
 (`NpcProfile`: `allowBreak = allowPlace = false`; `CalculationContext` in premiki še
 postavljajo `CLICK_LEFT/RIGHT`). Manjka izvajalec (roke) in inventar.
 
+**Izvedba (M11.5, 28. 9.).** Vgrajen profil `worker: allowBreak=true, allowPlace=true`
+(config ga sme prepisati). `CalculationContext` z entiteto in brez posnetka workerja
+(`IWorkContext`) postavi `allowBreak=false` in vse rušenje/postavljanje na `COST_INF` — tudi
+če bi porabnik ne-workerju dal profil z `allowBreak=true`; headless iskanje (golden testi) ostane
+po profilu. Seznam je v `WorkGuards.isProtected` (TileEntity, postelje, vrata); bedrock in portali
+padejo že na trdoti < 0.
+
 **Preverba.** M11 T5 in invariante (M11 A2–A4).
 
 ### D-032 — Roke: Forge `FakePlayer` kot posrednik, brez mixinov
