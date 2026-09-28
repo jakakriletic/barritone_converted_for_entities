@@ -4,6 +4,22 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-28 — M7 zaključen: V4 ni prestan
+
+CNPC M2.7 A/B je bil po dopolnitvi meritev ponovljen 3× za obe ozadji.
+Dejanske poti so pri obeh 8/8 cele; Baritonovo razmerje dolžine p50 je
+1,049 proti vanilla 1,131. Na grlu A pride 6/8 proti 1/8, na grlu B pa
+ena Baritonova ponovitev doseže le 4/8 proti vanilla 6/8. P95 trajanja
+strežniškega ticka brez shranjevanja je 5,37–6,03 ms proti 7,34–8,00 ms.
+Strošek in število iskanj na posamezno pot nista neposredno primerljiva,
+ker instrumentacija meri različna dogodka. Po zapisanem V4 izboljšava
+vseh veličin 1–3 ni dokazana; veličina 1 je enaka. **V4 ni prestan.**
+CNPC globalno stikalo ostane privzeto izključeno, knjižnica pa ostane
+uporabna za ostale odjemalce. CNPC R1 je dodatno odkril zastoj nosilca
+z jahačem; oba udeleženca jahanja sta zato izključena iz izbire Baritona,
+ponovljeni R1 je zelen. Podatki in surovi zapisi:
+[`customNPC_rework` M7.8](https://github.com/jakakriletic/customNPC_rework/blob/codex/m7-next/docs/meritve/2026-09-28-M7.8-zakljucek.md).
+
 ## 2026-09-28 — M7.6: način OWN usklajen z vanilla vhodom gibanja
 
 V primerljivem scenariju CNPC M2.7 je `gib(max)` na odprtem ostal previsok tudi po D-042:
