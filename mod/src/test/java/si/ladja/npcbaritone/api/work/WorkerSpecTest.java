@@ -80,6 +80,6 @@ public class WorkerSpecTest {
         assertNull("brez lastnika → roke [NpcBaritone] (D-044)", s.owner());
         assertSame(IWorkPermission.AREA_ONLY, s.permission());
         assertTrue(s.permission().canBreak(BlockPos.ORIGIN, null));
-        assertEquals("default", s.profile());
+        assertEquals("vgrajen profil D-031", "worker", s.profile());
     }
 }

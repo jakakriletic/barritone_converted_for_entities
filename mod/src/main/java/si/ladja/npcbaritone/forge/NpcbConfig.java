@@ -73,6 +73,12 @@ public final class NpcbConfig {
     public final Map<String, Map<String, String>> profiles;
 
     public static final String DEFAULT_PROFILE = "default";
+    /**
+     * M11.5 (D-031): vgrajen profil workerja — rušenje in postavljanje. Velja samo za registrirane
+     * workerje (ne-worker nima rok, {@code CalculationContext}); config ga lahko prepiše z istim imenom.
+     */
+    public static final String WORKER_PROFILE = "worker";
+    static final String WORKER_PROFILE_LINE = WORKER_PROFILE + ": allowBreak=true, allowPlace=true";
     static final String[] DEFAULT_NAMED_PROFILES = {
             "walk: allowSprint=false",
             "parkour: allowParkour=true",
@@ -126,6 +132,7 @@ public final class NpcbConfig {
         if (profiles != null) {
             profiles.forEach((k, v) -> p.putIfAbsent(k, Collections.unmodifiableMap(new LinkedHashMap<>(v))));
         }
+        parseProfiles(new String[]{WORKER_PROFILE_LINE}).forEach((k, v) -> p.putIfAbsent(k, Collections.unmodifiableMap(v)));
         this.profiles = Collections.unmodifiableMap(p);
     }
 

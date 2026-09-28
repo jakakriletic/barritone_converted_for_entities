@@ -60,6 +60,15 @@ public final class WorkerRegistry {
         } else {
             h.spec = spec;
         }
+        Baritone b = Attach.get(entity);
+        if (b != null) {
+            Handle handle = h; // M11.5: posnetek za vsako iskanje, na glavni niti; ročaj drži entiteto šibko
+            b.setWorkContext(() -> {
+                EntityLiving e = handle.entity.get();
+                return e == null || handle.released ? null
+                        : WorkContextSnapshot.of(handle.spec, e.world, b.getSettings().acceptableThrowawayItems.value);
+            });
+        }
         return h;
     }
 
@@ -76,6 +85,10 @@ public final class WorkerRegistry {
         }
         h.released = true;
         h.hands.abort(entity);
+        Baritone b = Attach.get(entity);
+        if (b != null) {
+            b.setWorkContext(null); // spet brez rok: iskanje brez rušenja in postavljanja (D-030)
+        }
         any = !workers.isEmpty();
         return true;
     }

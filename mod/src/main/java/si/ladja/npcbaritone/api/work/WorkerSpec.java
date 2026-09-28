@@ -74,7 +74,7 @@ public final class WorkerSpec {
         return permission;
     }
 
-    /** Profil navigacije (D-016). Od M11.6 privzeto {@code worker} (D-031). */
+    /** Profil navigacije (D-016); privzeto vgrajeni {@code worker} (rušenje in postavljanje, D-031). */
     public String profile() {
         return profile;
     }
@@ -84,7 +84,7 @@ public final class WorkerSpec {
         private WorkArea area;
         private GameProfile owner;
         private IWorkPermission permission = IWorkPermission.AREA_ONLY;
-        private String profile = "default";
+        private String profile = "worker";
 
         private Builder() {
         }
@@ -110,7 +110,7 @@ public final class WorkerSpec {
         }
 
         public Builder profile(String profile) {
-            this.profile = profile == null ? "default" : profile;
+            this.profile = profile == null ? "worker" : profile;
             return this;
         }
 

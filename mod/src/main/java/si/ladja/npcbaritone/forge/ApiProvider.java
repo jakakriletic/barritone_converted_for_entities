@@ -91,6 +91,15 @@ public final class ApiProvider implements INpcBaritoneProvider {
         if (attach(entity, spec.profile()) == null) {
             return null;
         }
+        String now = Attach.profile(entity);
+        if (!spec.profile().equals(now)) {
+            try {
+                Attach.setProfile(entity, NpcBaritoneMod.config(), spec.profile()); // že pripeta s tujim profilom
+            } catch (IllegalArgumentException ex) {
+                NpcBaritoneMod.LOG.warn("NpcBaritone.worker({}): profil {}: {}", entity, spec.profile(), ex.getMessage());
+                return null;
+            }
+        }
         return WorkerRegistry.INSTANCE.register(entity, spec);
     }
 
