@@ -300,6 +300,33 @@ chunka v shipyardu bi ga **generiralo** ("otok sredi ladje").
 | `chunkCaching` (613) | true | **false** (ni predpomnilnika regij, D-014) |
 | `renderPath` (669) | true | false (strežnik) |
 
+## §10 M11.1: `FakePlayer` kot roke workerja (javap, 28. 9. 2026)
+
+Vir: `tools/cache/forgeSrc-1.12.2-14.23.5.2847.jar` (`javap -c -p`). Sonda v igri:
+`/npcb probe hands` (`forge/work/HandsProbe`, CSV v `npcbaritone/runs/probe-hands-*.csv`).
+
+| # | Vprašanje | Ugotovitev (bytecode) | Posledica |
+|---|---|---|---|
+| 1 | `connection == null` ob preklicanem `BreakEvent` | `ForgeHooks.onBlockBreakEvent`: po `EVENT_BUS.post` in `isCanceled()` → `player.connection.sendPacket(new SPacketBlockChange(...))` in paket `TileEntity`, **brez preverbe `null`**; enako veja za meč v creative. `PlayerInteractionManager.tryHarvestBlock` pošilja še samo v creative. `PlayerAdvancements.flushDirty` pošilja prek `connection`. | goli `FakePlayer` vrže NPE, ko kdorkoli (zaščitni mod, porabnik) prekliče rušenje → `HandsNetHandler` (prazen `NetHandlerPlayServer`, paketi zavrženi; konstruktor sam nastavi `player.connection`) |
+| 2 | `tryHarvestBlock`, obraba, dropi | `onBlockBreakEvent` (−1 = preklic → `false`) → `Item.onBlockStartBreak` → `removeBlock` (`Block.removedByPlayer`) → `ItemStack.onBlockDestroyed` (obraba) → `Block.harvestBlock` → `harvesters.set(player)` → `dropBlockAsItemWithChance` → `ForgeEventFactory.fireBlockHarvesting(..., harvesters.get())` → `spawnAsEntity` za vsak ostali drop. Obraba: `attemptDamageItem` → `ItemDurabilityTrigger.trigger(EntityPlayerMP)` → `player.getAdvancements()` (polje iz konstruktorja). `harvestBlock` kliče še `addStat` (pri `FakePlayer` prazna) in `addExhaustion`. | `HarvestDropsEvent.getHarvester() == roke` → dropi v `IItemHandler` in `getDrops().clear()` (D-034) ujame vse, preden nastane `EntityItem`; XP gre v svet (`dropXpOnBlockBreak`) |
+| 3 | Orientacija pri `processRightClickBlock` | `ItemBlock.onItemUse` → `getStateForPlacement(..., placer, hand)`; stopnice in vrata berejo `placer.getHorizontalFacing()` (= `rotationYaw`), hlodi ploskev klika. `processRightClickBlock` kliče tudi `ForgeHooks.rayTraceEyeHitVec(player, reach)` za `RightClickBlock` (oči in rotacija rok). Razdalje ne preverja (to dela `NetHandlerPlayServer`). | pred dejanjem rokam nastaviti položaj **in** yaw/pitch iz `LookBehavior` entitete (D-032 že zahteva) |
+| 4 | Trdota z orodjem | `ForgeHooks.blockStrength`: `getDigSpeed/hardness/30` (lahko pobere) ali `/100`. `EntityPlayer.getDigSpeed`: `inventory.getDestroySpeed` (predmet v roki **rok**), efficiency, haste/fatigue **rok**, `isInsideOfMaterial(WATER)` na očeh **rok** (÷5), `!onGround` **rok** (÷5), nato `BreakSpeed` event. | napredek se računa z rokami, sinhroniziranimi z entiteto: predmet, položaj, `onGround`; učinki napitkov entitete se ne prenesejo (znana razlika, R-24) |
+| 5 | Identiteta rok | `EntityPlayerMP.<init>` → `PlayerList.getPlayerAdvancements(this)`: `advancements.get(uuid)`, sicer nov iz `advancements/<uuid>.json`; **v obeh primerih `setPlayer(this)`**. Enako `getPlayerStatsFile(this)` po UUID. | `FakePlayer` z UUID resničnega igralca bi prevzel njegove napredke, ko je online (napredki bi šli rokam, `flushDirty` v prazno) → D-044: izpeljan UUID |
+
+**Razno.** `PlayerInteractionManager.setGameType` pošlje paket vsem igralcem in
+`sendPlayerAbilities` — rok se ne preklaplja; privzeti `NOT_SET` ni creative in nima omejenih
+interakcij, zato poti v `tryHarvestBlock`/`onBlockBreakEvent` tečejo kot survival.
+`FakePlayerFactory` hrani roke po profilu v mapi in jih ob razložitvi sveta pobriše.
+
+**Pričakovano v sondi** (`/npcb probe hands`, 8 vrstic): identiteta ≠ lastnik; povezava
+nameščena; brez povezave preklic → NPE (potrdi vrstico 1); s povezavo preklic → `false`,
+blok ostane; kamniti kramp poruši kamen: obraba 1, zajet 1 × cobblestone, harvester = roke,
+0 `EntityItem`; trdota kamna 0,00667 (roka, 150 tickov), 0,04444 (lesen kramp, 23), 0,00889
+(lesen kramp v zraku, 113); stopnice pri yaw 0/90/180/270 → `SOUTH/WEST/NORTH/EAST`, predmet
+porabljen; hlod na vzhodno ploskev → os `X`.
+
+---
+
 ## §9 Viri
 
 - [cabaletta/baritone](https://github.com/cabaletta/baritone) — `v1.2.19`

@@ -557,7 +557,7 @@ postavljajo `CLICK_LEFT/RIGHT`). Manjka izvajalec (roke) in inventar.
 orodje, dropi, orientacija stopnic, zaščitni modi), brez mixinov (D-008)?
 
 **Odločitev.** Vsak worker dobi "roke": `EntityHands implements IPlayerController`, ki za
-vsako dejanje uporabi `FakePlayer` (`FakePlayerFactory.get(world, lastnikov profil)`) kot
+vsako dejanje uporabi `FakePlayer` (`FakePlayerFactory.get(world, profil rok po D-044)`) kot
 posrednika. Pred dejanjem se mu nastavijo pozicija, rotacija (iz `LookBehavior` entitete) in
 predmet v roki (iz inventarja, D-034); po dejanju (v `finally`) se predmet vrne.
 - **Rušenje:** napredek se računa kot vanilla (`IBlockState.getPlayerRelativeBlockHardness`
@@ -567,15 +567,17 @@ predmet v roki (iz inventarja, D-034); po dejanju (v `finally`) se predmet vrne.
 - **Postavljanje:** `interactionManager.processRightClickBlock(...)` z blokom v roki
   (proži `RightClickBlock` in `PlaceEvent`; orientacija stopnic, vrat, hlodov je vanilla).
 - **Lastnik:** `GameProfile` iz `WorkerSpec` (npr. lastnik ladje), sicer
-  `[NpcBaritone]`. Zaščitni modi (claimi) tako odločajo po pravicah lastnika.
+  `[NpcBaritone]`. ~~Zaščitni modi (claimi) tako odločajo po pravicah lastnika.~~ Zamenjano z
+  **D-044**: roke imajo izpeljan UUID, ne lastnikovega.
 - Ne-registrirana entiteta ima `DummyEntityController` (kot Automatone): vse `false`.
 
 **Dokaz.** Automatone za igralca uporablja isti vanilla `interactionManager`
 (`ServerPlayerController`), za stanje kopanja pa rabi mixin; napredek izračunamo sami po isti
 formuli, zato mixin ni potreben. `tryHarvestBlock` in `processRightClickBlock` sta v 1.12
-javna. **Odprto:** `FakePlayer.connection` je `null`, `ForgeHooks.onBlockBreakEvent` ob
-preklicu pošlje paket prek `connection` — sonda M11.1 (javap + test) določi, ali je potreben
-prazen `NetHandlerPlayServer`.
+javna. **Zaprto (M11.1, RAZISKAVA §10):** `ForgeHooks.onBlockBreakEvent` ob preklicu brez
+preverbe `null` kliče `player.connection.sendPacket` → roke dobijo `HandsNetHandler` (prazen
+`NetHandlerPlayServer`, paketi zavrženi). Rokam se pred dejanjem sinhronizirajo še `onGround`
+(trdota ÷5 v zraku) in položaj oči (voda ÷5); `setGameType` se ne kliče (paket vsem igralcem).
 
 **Preverba.** M11 T5 (čas kopanja z različnimi orodji ± 1 tick od vanilla, orientacija
 postavljenih stopnic), M11 A3 (preklican `BreakEvent` = blok ostane).
@@ -823,6 +825,29 @@ determinističen način (M7.9 korak 2), se doda **A6**: v tem načinu imajo vede
 ne spremeni izida, ampak odstrani merilo, ki ga nobeno ozadje ne bi moglo izpolniti, in naredi
 redke slabe zagone vidne. Potrdil uporabnik 28. 9. (predlog »popravek vrat V4«).
 
+### D-044 — Identiteta rok: izpeljan UUID, nikoli UUID resničnega igralca (dopolni D-032)
+
+**Vprašanje.** D-032 je rokam dal `GameProfile` lastnika, da bi zaščitni modi odločali po
+njegovih pravicah. Je to varno?
+
+**Odločitev.** Ne. Roke dobijo `HandsIdentity.forOwner(lastnik)`: UUID različice 3 iz
+`"NpcBaritone:" + UUID lastnika` (stalen za lastnika, preživi preimenovanje), ime
+`[NPCB]<lastnik>` (≤ 16 znakov); brez lastnika `[NpcBaritone]`. Pravice lastnika v zaščitenih
+območjih porabnik izrazi prek `IWorkPermission` (D-033), ne prek identitete. Zaščitni modi, ki
+odločajo po UUID, bodo roke obravnavali kot tujca — varna privzeta smer (prepoved, ne dovoljenje).
+
+**Dokaz.** RAZISKAVA §10/5: `EntityPlayerMP.<init>` → `PlayerList.getPlayerAdvancements(this)`
+poišče objekt napredkov po UUID (ali ga ustvari iz `advancements/<uuid>.json`) in pokliče
+`setPlayer(this)`; enako `getPlayerStatsFile`. `FakePlayer` z UUID igralca, ki je online, bi
+nase preusmeril njegove napredke (dosežki bi šli rokam, `flushDirty` v prazno povezavo), dokler
+se igralec ne prijavi znova.
+
+**Preverba.** `HandsIdentityTest` (najprej padel: skelet je vrnil UUID lastnika); sonda
+`/npcb probe hands` vrstica `identiteta`. **Odprto za uporabnika:** če ladja_mod ali generator
+vasi potrebuje, da claim mod workerja vidi kot lastnika, se doda izrecno stikalo v `WorkerSpec`
+(privzeto izklopljeno) — samo z ročno preverbo, da lastnik ni online ali da se napredki po
+dejanju vrnejo (`getPlayerAdvancements(lastnik)`).
+
 ---
 
 ## Dnevnik odločitev
@@ -860,7 +885,7 @@ redke slabe zagone vidne. Potrdil uporabnik 28. 9. (predlog »popravek vrat V4«
 | D-029 | 2026-09-26 | Distribucija: knjižnični mod, mehka odvisnost, brez vgrajenih kopij | velja, preverba M7.2/M9.6/M11.10 |
 | D-030 | 2026-09-26 | Tri plasti; worker je izrecna registracija; API 3 dodaten (številka po D-039) | velja |
 | D-031 | 2026-09-26 | Rušenje/postavljanje/inventar samo za workerja (delno zamenja D-015) | velja, preverba M11 |
-| D-032 | 2026-09-26 | Roke prek `FakePlayer` z lastnikovim profilom, brez mixinov | velja, sonda M11.1 |
+| D-032 | 2026-09-26 | Roke prek `FakePlayer`, brez mixinov; `HandsNetHandler` (M11.1) | velja; identiteta zamenjana z D-044 |
 | D-033 | 2026-09-26 | Obvezno delovno območje; dovoljenja v ceni in ob izvedbi | velja, preverba M11 |
 | D-034 | 2026-09-26 | Porabnikov `IItemHandler` edini vir resnice; dropi v inventar | velja, preverba M11 |
 | D-035 | 2026-09-26 | Strežniški skener blokov v bazenu, samo naloženi chunki | velja, preverba M12 |
@@ -872,3 +897,4 @@ redke slabe zagone vidne. Potrdil uporabnik 28. 9. (predlog »popravek vrat V4«
 | D-041 | 2026-09-27 | Doseg iskanja vanilla zahtev = `FOLLOW_RANGE` + 8 (CNPC M7.5), brez spremembe API | velja, preverba v igri (R-23) |
 | D-042 | 2026-09-27 | `own` = atribut × hitrost zahteve, brez sprinta (dopolni D-010) | velja, preverba M7.6 |
 | D-043 | 2026-09-28 | Vrata V4: veličina 1 »ni slabše«, najslabši zagon, Baritone ≥ 5 ponovitev | velja; V4 po njej sprejet 28. 9. (M7.10c) |
+| D-044 | 2026-09-28 | Identiteta rok: izpeljan UUID v3, nikoli UUID igralca (dopolni D-032) | velja; stikalo "kot lastnik" odprto za uporabnika |
