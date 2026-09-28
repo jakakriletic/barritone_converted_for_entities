@@ -58,6 +58,7 @@ import java.util.Locale;
  * /npcb course &lt;t1|t2|t3&gt; build [x y z]
  * /npcb course &lt;t1|t2|t3&gt; run &lt;entity&gt; [x y z]
  * /npcb course stop
+ * /npcb worker register &lt;entity&gt; [polmer=8] | release &lt;entity&gt; | status &lt;entity&gt;   (M11.8)
  * /npcb probe hands [x y z]     (M11.1, samo testni svet: izprazni škatlo vzhodno od izhodišča)
  * </pre>
  * Brez koordinat je izhodišče tečaja pošiljateljev položaj.
@@ -65,7 +66,7 @@ import java.util.Locale;
 public class NpcbCommand extends CommandBase {
 
     private static final List<String> SUB = Arrays.asList("attach", "detach", "goto", "stop", "status", "profile", "debug", "trace",
-            "speedtest", "chunks", "course", "perf", "stress", "aitest", "selftest", "probe");
+            "speedtest", "chunks", "course", "perf", "stress", "aitest", "selftest", "probe", "worker");
 
     @Override
     public String getName() {
@@ -79,7 +80,7 @@ public class NpcbCommand extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/npcb <attach|detach|goto|stop|status|profile|debug|trace|speedtest|chunks|course|perf|stress|aitest|selftest|probe> ...";
+        return "/npcb <attach|detach|goto|stop|status|profile|debug|trace|speedtest|chunks|course|perf|stress|aitest|selftest|probe|worker> ...";
     }
 
     @Override
@@ -382,6 +383,46 @@ public class NpcbCommand extends CommandBase {
                 }
                 break;
             }
+            case "worker": {
+                // M11.8: ročna pot za razvoj workerja (inventar = skrinja ob entiteti, območje = kocka)
+                String usage = "/npcb worker register <entity> [polmer=8] | release <entity> | status <entity>";
+                need(args, 3, usage);
+                EntityLiving e = getEntity(server, sender, args[2], EntityLiving.class);
+                String op = args[1].toLowerCase(Locale.ROOT);
+                if ("register".equals(op)) {
+                    int r = args.length > 3 ? parseInt(args[3], 1, 64) : 8;
+                    net.minecraftforge.items.IItemHandler inv = nearestInventory(e.world, e.getPosition(), 3);
+                    if (inv == null) {
+                        throw new CommandException("ni skrinje (IItemHandler) v 3 blokih od " + describe(e));
+                    }
+                    BlockPos c = e.getPosition();
+                    com.mojang.authlib.GameProfile owner = sender.getCommandSenderEntity() instanceof EntityPlayerMP
+                            ? ((EntityPlayerMP) sender.getCommandSenderEntity()).getGameProfile() : null;
+                    si.ladja.npcbaritone.api.work.WorkerSpec spec = si.ladja.npcbaritone.api.work.WorkerSpec.builder()
+                            .inventory(inv).owner(owner)
+                            .area(si.ladja.npcbaritone.api.work.WorkArea.box(c.add(-r, -r, -r), c.add(r, r, r)))
+                            .build();
+                    if (si.ladja.npcbaritone.api.NpcBaritone.worker(e, spec) == null) {
+                        throw new CommandException("worker ni registriran (worker.enabled=false, velikost ali profil)");
+                    }
+                    reply(sender, "worker: " + describe(e) + " območje " + spec.area() + " inventar " + inv.getSlots()
+                            + " slotov, profil=" + Attach.profile(e));
+                } else if ("release".equals(op)) {
+                    reply(sender, si.ladja.npcbaritone.api.NpcBaritone.release(e) ? "odjavljen: " + describe(e) : "ni worker: " + describe(e));
+                } else if ("status".equals(op)) {
+                    si.ladja.npcbaritone.forge.work.EntityHands h = si.ladja.npcbaritone.forge.work.WorkerRegistry.INSTANCE.hands(e);
+                    si.ladja.npcbaritone.api.work.INpcWorker w = si.ladja.npcbaritone.api.NpcBaritone.getWorker(e);
+                    if (h == null || w == null) {
+                        reply(sender, "ni worker: " + describe(e));
+                    } else {
+                        reply(sender, describe(e) + " porušeno=" + h.brokenCount() + " postavljeno=" + h.placedCount()
+                                + " zadnja zavrnitev=" + h.lastRefusal() + (w.paused() ? " (premor)" : "") + " območje " + w.spec().area());
+                    }
+                } else {
+                    throw new WrongUsageException(usage);
+                }
+                break;
+            }
             default:
                 throw new WrongUsageException(getUsage(sender));
         }
@@ -405,6 +446,9 @@ public class NpcbCommand extends CommandBase {
         }
         if (args.length == 2 && "debug".equalsIgnoreCase(args[0])) {
             return getListOfStringsMatchingLastWord(args, "on", "off");
+        }
+        if (args.length == 2 && "worker".equalsIgnoreCase(args[0])) {
+            return getListOfStringsMatchingLastWord(args, "register", "release", "status");
         }
         if (args.length == 2 && "probe".equalsIgnoreCase(args[0])) {
             return getListOfStringsMatchingLastWord(args, "hands");
@@ -441,6 +485,8 @@ public class NpcbCommand extends CommandBase {
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "course":
                 return index == 3;
+            case "worker":
+                return index == 2;
             case "goto":
                 return index == 1 || (index == 2 && args.length == 3);
             case "trace":
@@ -522,5 +568,23 @@ public class NpcbCommand extends CommandBase {
 
     private static void reply(ICommandSender sender, String msg) {
         sender.sendMessage(new TextComponentString("[npcb] " + msg));
+    }
+
+    /** M11.8: najbližji {@code IItemHandler} (skrinja, sod …) v kocki okoli točke. */
+    @Nullable
+    private static net.minecraftforge.items.IItemHandler nearestInventory(net.minecraft.world.World w, BlockPos c, int r) {
+        net.minecraftforge.items.IItemHandler best = null;
+        double bestD = Double.MAX_VALUE;
+        for (BlockPos p : BlockPos.getAllInBox(c.add(-r, -r, -r), c.add(r, r, r))) {
+            net.minecraft.tileentity.TileEntity te = w.getTileEntity(p);
+            if (te != null && te.hasCapability(net.minecraftforge.items.CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
+                double d = p.distanceSq(c);
+                if (d < bestD) {
+                    bestD = d;
+                    best = te.getCapability(net.minecraftforge.items.CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+                }
+            }
+        }
+        return best;
     }
 }
