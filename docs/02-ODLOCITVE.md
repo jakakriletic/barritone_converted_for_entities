@@ -800,6 +800,29 @@ speed × 0,7)` — vanilla NPC hodi s 70 % atributa, Baritone s 100 % (+30 % v s
 **Preverba.** `InstanceOverridesTest.ownSpeedFollowsNavigatorMultiplierWithoutSprint` (mutacija
 ujeta); v igri: ponovitev M7.6, `gib(max)` Baritona mora biti blizu vanille na progi O.
 
+### D-043 — Vrata V4: veličina 1 »ni slabše«, najslabši zagon, 5 ponovitev
+
+**Kontekst.** M7.8 (CNPC `docs/meritve/2026-09-28-M7.8-zakljucek.md`): vanilla ima na merilu 1
+že 8/8 celih poti, zato zahteva A3 »boljše čez razpon« za veličino 1 ni izpolnljiva ne glede na
+ozadje. Vanilla je deterministična (46 od 59 veličin ima razpon 0), Baritone ni: grlo B je dal
+8, 8 in 4 od 8. Pri treh ponovitvah en slab zagon določi ves razpon, redkega slabega zagona pa
+tri ponovitve ne ujamejo zanesljivo.
+
+**Odločitev.** A3 se bere tako:
+1. veličina 1 (delež celih poti): Baritone **ni slabši** od vanille v nobenem zagonu;
+2. veličini 2 in 3: Baritonova **mediana je boljša** od vanille **in** njegov **najslabši** zagon
+   ni slabši od najslabšega vanilla zagona;
+3. Baritone najmanj **5 ponovitev** (vanilla ostane pri 3, ker je njen razpon 0).
+
+A4 ostane nespremenjen, šteje pa šele, ko obe ozadji merita isti dogodek (vanilla sonda meri
+celoten sinhroni `findPath`, knjižnica samo posnetek na glavni niti). Ko bo obstajal
+determinističen način (M7.9 korak 2), se doda **A6**: v tem načinu imajo vedenjske veličine
+(prispelo, prvi/mediana/zadnji, razpon) razpon 0.
+
+**Posledica.** M7.8 tudi po tej definiciji ne prestane (grlo B najslabši 4/8 < 6/8). Odločitev
+ne spremeni izida, ampak odstrani merilo, ki ga nobeno ozadje ne bi moglo izpolniti, in naredi
+redke slabe zagone vidne. Potrdil uporabnik 28. 9. (predlog »popravek vrat V4«).
+
 ---
 
 ## Dnevnik odločitev
@@ -848,3 +871,4 @@ ujeta); v igri: ponovitev M7.6, `gib(max)` Baritona mora biti blizu vanille na p
 | D-040 | 2026-09-27 | Malus vode `npcWaterPenalty`; `avoid_water` = vanilla malus 8 (CNPC U5) | velja, preverba M7.6 |
 | D-041 | 2026-09-27 | Doseg iskanja vanilla zahtev = `FOLLOW_RANGE` + 8 (CNPC M7.5), brez spremembe API | velja, preverba v igri (R-23) |
 | D-042 | 2026-09-27 | `own` = atribut × hitrost zahteve, brez sprinta (dopolni D-010) | velja, preverba M7.6 |
+| D-043 | 2026-09-28 | Vrata V4: veličina 1 »ni slabše«, najslabši zagon, Baritone ≥ 5 ponovitev | velja; V4 po njej sprejet 28. 9. (M7.10c) |

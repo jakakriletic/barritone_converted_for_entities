@@ -78,6 +78,27 @@ public class NpcbConfigTest {
     }
 
     @Test
+    public void crowdYieldOffByDefaultAndConfigOrPropertyTurnsItOn() throws Exception {
+        BootstrapOnce.ensure();
+        assertFalse(NpcbConfig.defaults().crowdYield);
+        assertFalse(Attach.profileFor(NpcbConfig.defaults(), "default").npcCrowdYield.value);
+        File f = new File(tmp.getRoot(), "crowd.cfg");
+        Files.write(f.toPath(), Arrays.asList("movement {", "    B:crowdYield=true", "}"), StandardCharsets.UTF_8);
+        NpcbConfig on = NpcbConfig.load(new Configuration(f));
+        assertTrue(on.crowdYield);
+        assertTrue(on.applyTo(si.ladja.npcbaritone.core.api.NpcProfile.create()).npcCrowdYield.value);
+        assertTrue(on.toString().contains("crowdYield=true"));
+        File g = new File(tmp.getRoot(), "prop.cfg");
+        System.setProperty("npcbcrowdyield", "true");
+        try {
+            assertTrue(NpcbConfig.load(new Configuration(g)).crowdYield);
+        } finally {
+            System.clearProperty("npcbcrowdyield");
+        }
+        assertFalse(NpcbConfig.load(new Configuration(g)).crowdYield);
+    }
+
+    @Test
     public void constructorClampsOutOfRange() {
         NpcbConfig c = new NpcbConfig(0, 100000, 1, 99, null, 1000, true);
         assertEquals(1, c.searchThreads);

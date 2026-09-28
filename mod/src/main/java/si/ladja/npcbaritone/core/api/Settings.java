@@ -445,6 +445,17 @@ public final class Settings {
     public final Setting<Boolean> npcRespectFollowRange = new Setting<>(true);
 
     /**
+     * NPC Baritone (M7.10, korak 3): ko pot blokira druga živa entiteta pred nogami (v smeri
+     * trenutnega premika), entiteta počaka namesto da rine; čakanje ne šteje v
+     * {@link #movementTimeoutTicks}. Po {@link #npcCrowdMaxWaitTicks} tickih čakanja se obnaša kot
+     * upstream. {@code false} = upstream obnašanje (privzeto; porabnik ga vklopi).
+     */
+    public final Setting<Boolean> npcCrowdYield = new Setting<>(false);
+
+    /** NPC Baritone (M7.10): največ zaporednih tickov čakanja zaradi gneče na enem premiku. */
+    public final Setting<Integer> npcCrowdMaxWaitTicks = new Setting<>(40);
+
+    /**
      * Set to 1.0 to effectively disable this feature
      *
      * @see <a href="https://github.com/cabaletta/baritone/issues/18">Issue #18</a>

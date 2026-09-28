@@ -71,6 +71,12 @@ public class PathExecutor implements IPathExecutor, Helper {
     private Double currentMovementOriginalCostEstimate;
     private Integer costEstimateIndex;
     private boolean failed;
+    /** Diagnostika (sled M7.9): koda razloga zadnjega preklica; prazno, dokler pot ni preklicana. */
+    private String cancelReason = "";
+    /** Diagnostika (sled M7.9): razlog premora v zadnjem ticku ({@code chunk_edge}, {@code backtrack}); prazno = brez. */
+    private String pauseReason = "";
+    /** M7.10: zaporedni ticki čakanja zaradi gneče na trenutnem premiku. */
+    private int crowdWaitTicks;
 
     private final PathingBehavior behavior;
     private final IEntityContext ctx;
@@ -113,6 +119,7 @@ public class PathExecutor implements IPathExecutor, Helper {
 
     private boolean tickInner() {
         long prof = PerfProfile.start();
+        pauseReason = "";
         if (pathPosition == path.length() - 1) {
             pathPosition++;
         }
@@ -179,6 +186,7 @@ public class PathExecutor implements IPathExecutor, Helper {
             IMovement next = path.movements().get(pathPosition + 1);
             if (!behavior.baritone.bsi.worldContainsLoadedChunk(next.getDest().x, next.getDest().z)) {
                 logDebug("Pausing since destination is at edge of loaded chunks");
+                pauseReason = "chunk_edge";
                 clearKeys();
                 return true;
             }
@@ -191,7 +199,7 @@ public class PathExecutor implements IPathExecutor, Helper {
             for (int i = 1; i < behavior.baritone.getSettings().costVerificationLookahead.value && pathPosition + i < path.length() - 1; i++) {
                 if (((Movement) path.movements().get(pathPosition + i)).calculateCost(behavior.secretInternalGetCalculationContext()) >= ActionCosts.COST_INF && canCancel) {
                     logDebug("Something has changed in the world and a future movement has become impossible. Cancelling.");
-                    cancel();
+                    cancel("future_impossible");
                     return true;
                 }
             }
@@ -199,27 +207,33 @@ public class PathExecutor implements IPathExecutor, Helper {
         double currentCost = movement.recalculateCost(behavior.secretInternalGetCalculationContext());
         if (currentCost >= ActionCosts.COST_INF && canCancel) {
             logDebug("Something has changed in the world and this movement has become impossible. Cancelling.");
-            cancel();
+            cancel("movement_impossible");
             return true;
         }
         if (!movement.calculatedWhileLoaded() && currentCost - currentMovementOriginalCostEstimate > behavior.baritone.getSettings().maxCostIncrease.value && canCancel) {
             // don't do this if the movement was calculated while loaded
             // that means that this isn't a cache error, it's just part of the path interfering with a later part
             logDebug("Original cost " + currentMovementOriginalCostEstimate + " current cost " + currentCost + ". Cancelling.");
-            cancel();
+            cancel("cost_increase");
             return true;
         }
         PerfProfile.add(PathExecutor.class, PROF_COST, prof);
         prof = PerfProfile.start();
         if (shouldPause()) {
             logDebug("Pausing since current best path is a backtrack");
+            pauseReason = "backtrack";
+            clearKeys();
+            return true;
+        }
+        if (crowdYieldThisTick(movement)) {
+            pauseReason = "crowd_wait";
             clearKeys();
             return true;
         }
         MovementStatus movementStatus = movement.update();
         if (movementStatus == UNREACHABLE || movementStatus == FAILED) {
             logDebug("Movement returns status " + movementStatus);
-            cancel();
+            cancel(movementStatus == UNREACHABLE ? "movement_unreachable" : "movement_failed");
             return true;
         }
         if (movementStatus == SUCCESS) {
@@ -240,7 +254,7 @@ public class PathExecutor implements IPathExecutor, Helper {
                 // ticksOnCurrent is greater than recalculateCost + 100
                 // this is why we cache cost at the beginning, and don't recalculate for this comparison every tick
                 logDebug("This movement has taken too long (" + ticksOnCurrent + " ticks, expected " + currentMovementOriginalCostEstimate + "). Cancelling.");
-                cancel();
+                cancel("movement_timeout");
                 return true;
             }
         }
@@ -257,7 +271,7 @@ public class PathExecutor implements IPathExecutor, Helper {
             logDebug("FAR AWAY FROM PATH FOR " + ticksAway + " TICKS. Current distance: " + status.getFirst() + ". Threshold: " + MAX_DIST_FROM_PATH);
             if (ticksAway > MAX_TICKS_AWAY) {
                 logDebug("Too far away from path for too long, cancelling path");
-                cancel();
+                cancel("off_path_long");
                 return true;
             }
         } else {
@@ -265,7 +279,7 @@ public class PathExecutor implements IPathExecutor, Helper {
         }
         if (possiblyOffPath(status, MAX_MAX_DIST_FROM_PATH)) { // ok, stop right away, we're way too far.
             logDebug("too far from path");
-            cancel();
+            cancel("off_path_far");
             return true;
         }
         return false;
@@ -620,6 +634,81 @@ public class PathExecutor implements IPathExecutor, Helper {
     private void onChangeInPathPosition() {
         clearKeys();
         ticksOnCurrent = 0;
+        crowdWaitTicks = 0;
+    }
+
+    /**
+     * M7.10 (korak 3, {@code npcCrowdYield}): ali naj entiteta ta tick počaka, ker ji pot zapira
+     * druga živa entiteta. Med čakanjem se {@code movement.update()} ne kliče, zato se
+     * {@code ticksOnCurrent} ne poveča in {@code movement_timeout} ne sproži preklica in novega
+     * iskanja (M7.9: to je bil mehanizem zastoja na grlu). Po {@code npcCrowdMaxWaitTicks}
+     * zaporednih tickih entiteta nadaljuje kot upstream, dokler se blokada ne sprosti.
+     */
+    private boolean crowdYieldThisTick(Movement movement) {
+        if (!behavior.baritone.getSettings().npcCrowdYield.value) {
+            return false;
+        }
+        net.minecraft.entity.EntityLiving self = ctx.entity();
+        // M7.10b: zadnji premiki poti se ne čakajo — več NPC-jev z istim ciljem bi sicer stalo v vrsti
+        // pred ciljnim blokom (odprta proga: zadnji prihod 440 tickov proti 220 pri vanilli)
+        boolean nearEnd = pathPosition >= path.length() - 1 - CROWD_END_MOVES;
+        if (nearEnd || !self.onGround || !movement.safeToCancel() || !crowdBlocked(self, movement)) {
+            crowdWaitTicks = 0;
+            return false;
+        }
+        crowdWaitTicks++;
+        return crowdWaitTicks <= behavior.baritone.getSettings().npcCrowdMaxWaitTicks.value;
+    }
+
+    /** Razdalja pregleda pred hitboxom v smeri premika (blokov). */
+    static final double CROWD_PROBE = 0.45;
+    /** M7.10b: toliko zadnjih premikov poti se v gneči ne čaka (prihod na skupni cilj). */
+    static final int CROWD_END_MOVES = 2;
+
+    private boolean crowdBlocked(net.minecraft.entity.EntityLiving self, Movement movement) {
+        BetterBlockPos dest = movement.getDest();
+        double dx = dest.x + 0.5 - self.posX;
+        double dz = dest.z + 0.5 - self.posZ;
+        double len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 0.2) {
+            return false; // na cilju premika; smer ni določena
+        }
+        dx /= len;
+        dz /= len;
+        net.minecraft.util.math.AxisAlignedBB probe = self.getEntityBoundingBox()
+                .offset(dx * CROWD_PROBE, 0.0, dz * CROWD_PROBE).grow(0.05, 0.0, 0.05);
+        for (net.minecraft.entity.EntityLiving o : self.world.getEntitiesWithinAABB(net.minecraft.entity.EntityLiving.class, probe)) {
+            if (o == self || o.isDead || o == self.getRidingEntity() || self.isPassenger(o)) {
+                continue;
+            }
+            double speed = Math.sqrt(o.motionX * o.motionX + o.motionZ * o.motionZ);
+            if (shouldYield(dx, dz, o.posX - self.posX, o.posZ - self.posZ, speed > 0.02,
+                    !o.getNavigator().noPath(), self.getEntityId(), o.getEntityId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Čista odločitev (headless test): počakaj, če je druga entiteta <b>pred</b> nami v smeri
+     * premika ({@code dirX, dirZ}, enotski vektor) in
+     * <ul>
+     * <li>se premika (vrsta, ki se prazni), ali</li>
+     * <li>stoji, a ima pot ({@code otherNavigating}: sama čaka v vrsti) in manjši ID — pri dveh
+     * takih, ki si zapirata pot, počaka samo tista z večjim ID-jem.</li>
+     * </ul>
+     * Stoječa entiteta brez poti (prispela, brez ukaza) se ne čaka; tam velja upstream.
+     * M7.10a (čakanje tudi na prispele) je naredil vrsto pred ciljem, M7.10b (samo premikajoče)
+     * je vrnil gnečo v vrata (trki 13–39 → 366–537).
+     */
+    static boolean shouldYield(double dirX, double dirZ, double relX, double relZ, boolean otherMoving,
+                               boolean otherNavigating, int selfId, int otherId) {
+        double ahead = relX * dirX + relZ * dirZ;
+        if (ahead <= 0.1) {
+            return false;
+        }
+        return otherMoving || (otherNavigating && otherId < selfId);
     }
 
     private void clearKeys() {
@@ -627,10 +716,21 @@ public class PathExecutor implements IPathExecutor, Helper {
         behavior.baritone.getInputOverrideHandler().clearAllKeys();
     }
 
-    private void cancel() {
+    private void cancel(String reason) {
         clearKeys();
         pathPosition = path.length() + 3;
         failed = true;
+        cancelReason = reason;
+    }
+
+    /** Sled M7.9: koda razloga preklica (glej klice {@link #cancel(String)}); prazno, če pot ni preklicana. */
+    public String cancelReason() {
+        return cancelReason;
+    }
+
+    /** Sled M7.9: razlog premora v zadnjem {@link #onTick()}; prazno = izvajalec ni čakal. */
+    public String pauseReason() {
+        return pauseReason;
     }
 
     @Override

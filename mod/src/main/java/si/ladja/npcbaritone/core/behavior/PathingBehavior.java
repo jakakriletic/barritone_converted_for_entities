@@ -90,6 +90,13 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
     private volatile String lastSearchResult = "none";
     private volatile long searchesStarted;
 
+    // Sled M7.9 (nedeterminizem v grlu): piše in bere samo strežniška nit
+    private long lastSubmitWorldTick = -1;
+    private String lastCancelReason = "";
+    private long lastCancelWorldTick = -1;
+    private String lastPauseReason = "";
+    private long lastPauseWorldTick = -1;
+
     public PathingBehavior(Baritone baritone) {
         super(baritone);
     }
@@ -152,6 +159,7 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                     ) {
                         // when it was *just* started, currentBest will be empty so we need to also check calcFrom since that's always present
                         inProgress.cancel(); // cancellation doesn't dispatch any events
+                        noteCancel("search_irrelevant");
                     }
                 }
             }
@@ -159,7 +167,14 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                 return;
             }
             safeToCancel = current.onTick();
+            if (!current.pauseReason().isEmpty()) {
+                lastPauseReason = current.pauseReason();
+                lastPauseWorldTick = worldTick();
+            }
             if (current.failed() || current.finished()) {
+                if (current.failed()) {
+                    noteCancel(current.cancelReason());
+                }
                 current = null;
                 if (goal == null || goal.isInGoal(ctx.feetPos())) {
                     logDebug("All done. At " + goal);
@@ -528,6 +543,7 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
         }
         inProgress = pathfinder;
         searchesStarted++;
+        lastSubmitWorldTick = worldTick();
         try {
             Baritone.submitSearch(() -> runSearch(pathfinder, start, goal, talkAboutIt, primaryTimeout, failureTimeout), searchPriority());
         } catch (RejectedExecutionException ex) {
@@ -602,6 +618,34 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior,
                 }
             }
         }
+    }
+
+    private long worldTick() {
+        return ctx.entity().world.getTotalWorldTime();
+    }
+
+    private void noteCancel(String reason) {
+        lastCancelReason = reason == null || reason.isEmpty() ? "unknown" : reason;
+        lastCancelWorldTick = worldTick();
+    }
+
+    /** Sled M7.9: tick sveta zadnje oddaje iskanja (glavna nit); -1 = še nobene. */
+    public long lastSubmitWorldTick() {
+        return lastSubmitWorldTick;
+    }
+
+    /**
+     * Sled M7.9: razlog preklica poti ali iskanja v ticku {@code worldTick}, prazno sicer. Kode izvajalca so iz
+     * {@link PathExecutor#cancelReason()}, {@code search_irrelevant} pomeni, da je glavna nit prekinila iskanje,
+     * ker entiteta ni več na njegovem začetku (odvisno od tega, kako daleč je iskalna nit prišla).
+     */
+    public String cancelReasonAt(long worldTick) {
+        return worldTick == lastCancelWorldTick ? lastCancelReason : "";
+    }
+
+    /** Sled M7.9: razlog premora izvajalca v ticku {@code worldTick} ({@code chunk_edge}, {@code backtrack}); prazno sicer. */
+    public String pauseReasonAt(long worldTick) {
+        return worldTick == lastPauseWorldTick ? lastPauseReason : "";
     }
 
     /**
