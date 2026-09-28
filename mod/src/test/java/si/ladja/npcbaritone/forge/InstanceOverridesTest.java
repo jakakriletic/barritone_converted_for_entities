@@ -133,6 +133,10 @@ public class InstanceOverridesTest {
     @Test
     public void ownSpeedFollowsNavigatorMultiplierWithoutSprint() {
         assertEquals(0.25F * 0.7F, BaritoneMoveHelper.moveSpeed(NpcbConfig.SpeedMode.OWN, 0.25, 0.7), 1e-6);
+        assertEquals("vanilla EntityLiving.setAIMoveSpeed sets forward to applied speed",
+                0.175F, BaritoneMoveHelper.forwardInput(NpcbConfig.SpeedMode.OWN, 1.0F, 0.175F), 1e-6);
+        assertEquals("player keeps full Baritone input",
+                1.0F, BaritoneMoveHelper.forwardInput(NpcbConfig.SpeedMode.PLAYER, 1.0F, 0.1F), 1e-6);
         assertEquals("API goTo (hitrost 0) = atribut", 0.25F, BaritoneMoveHelper.moveSpeed(NpcbConfig.SpeedMode.OWN, 0.25, 0), 1e-6);
         assertEquals("player ne množi", 0.1F, BaritoneMoveHelper.moveSpeed(NpcbConfig.SpeedMode.PLAYER, 0.1, 0.7), 1e-6);
         assertFalse(BaritoneMoveHelper.sprintAllowed(NpcbConfig.SpeedMode.OWN, true));

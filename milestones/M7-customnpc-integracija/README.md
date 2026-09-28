@@ -44,12 +44,14 @@ Brez te odločitve M7 ne začne (D-005).
 **Vrata V4:** A3 in A4 ⇒ Baritone ostane izbiren v CNPC in se dokumentira za uporabnike.
 Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 
-## Stanje (2026-09-27, veja `m7-cnpc` iz `main`)
+## Stanje (2026-09-28, nadaljevanje na vejah `codex/m7-next`)
 
 | # | Stanje |
 |---|---|
 | pogoj | **izpolnjen**: CNPC D-022 (`customNPC_rework` `0cd2fa8`), stopnja A zmogljivosti (1,64 ms) |
 | M7.1 | **narejeno**: `customNPC_rework/docs/07-BARITONE-OZADJE.md` — 105 klicev, ukrepi U1–U7 (U7 formacije); adapter popravljen za `getPath()` med iskanjem (`2ee0df2`) |
-| M7.2–M7.3 | čakata API 2 knjižnice (U2 ponovna namestitev, U6 hitrost, U3/U4 vrata na instanco) |
-| M7.4 | predpogoj izpolnjen (CNPC M3.1 na `origin`); čaka API 2 |
-| M7.5–M7.8 | niso začeti |
+| M7.2–M7.4 | v CNPC kodi na veji `m7-cnpc-oblak`: most, stikalo, ponovna namestitev po `updateTasks()` |
+| M7.5 | API 2, hitrost, vrata, voda in doseg v kodi; način `OWN` popravljen po primerljivi meritvi |
+| M7.6 | scenarij in prvi posamezni A/B zagoni zeleni; [meritev 28. 9.](../../docs/04-STANJE.md) |
+| M7.7 | 3 + 3 ponovitve zeleni; prihod na grlu A boljši, toda dolžina Baritonove poti in primerljiv strošek iskanj še manjkajo; V4 odprt |
+| M7.8 | odprto: preverba jahanja v svetu |
