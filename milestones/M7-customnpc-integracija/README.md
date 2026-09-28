@@ -30,6 +30,7 @@ Brez te odločitve M7 ne začne (D-005).
 | M7.6 | Scenarij M2.7 z izbiro ozadja (`nav-run.ps1 -Ozadje baritone`) | CNPC |
 | M7.7 | A/B: vanilla vs. Baritone, po 3 ponovitve, tabela šestih veličin z razponi | CNPC `docs/meritve/` |
 | M7.8 | Jahanje (CNPC D-018): NPC na nosilcu — Baritone se ne uporablja za jahača; preveri, da `RiderState` ostane pravilen | CNPC |
+| M7.9 | Sled nedeterminizma na grlu B: razlog preklica/premora, zamik uporabe rezultata iskanja, gneča (`PathTrace` stolpci 18–24); serija 10 zagonov `nav-run -Sled`, analiza `tools/sled_grlo.py` | knjižnica + CNPC |
 
 ## Merila sprejema
 
@@ -44,6 +45,13 @@ Brez te odločitve M7 ne začne (D-005).
 **Vrata V4:** A3 in A4 ⇒ Baritone ostane izbiren v CNPC in se dokumentira za uporabnike.
 Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 
+**Popravek A3 (D-043, 28. 9.).** Veličina 1 je bila v M7.8 pri vanilli že 8/8, zato »boljše«
+ni bilo dosegljivo. Od D-043 velja: veličina 1 **ni slabša**; veličini 2 in 3 sta **boljši v
+mediani** in Baritonov **najslabši** zagon ni slabši od vanilla (vanilla je deterministična,
+razpon 0); za Baritona najmanj **5 ponovitev**. Po tej definiciji M7.8 še vedno ne prestane
+(grlo B: najslabši zagon 4/8 proti vanilla 6/8). A4 ostane, a potrebuje enako definirana
+dogodka v obeh ozadjih; dokler tega ni, se ne šteje ne kot padec ne kot prestano.
+
 ## Stanje (2026-09-28, nadaljevanje na vejah `codex/m7-next`)
 
 | # | Stanje |
@@ -54,4 +62,7 @@ Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 | M7.5 | API 2, hitrost, vrata, voda in doseg v kodi; način `OWN` popravljen po primerljivi meritvi |
 | M7.6 | scenarij in prvi posamezni A/B zagoni zeleni; [meritev 28. 9.](../../docs/04-STANJE.md) |
 | M7.7 | 3 + 3 ponovitve zeleni; prihod na grlu A boljši, toda dolžina Baritonove poti in primerljiv strošek iskanj še manjkajo; V4 odprt |
-| M7.8 | odprto: preverba jahanja v svetu |
+| M7.8 | **narejeno 28. 9.**: A/B 3 + 3 z dejanskimi potmi (V4 ni prestan); R1 našel zastoj nosilca z jahačem pod Baritonom → izbira izključi jahača in nosilca s potnikom, ponovljeni R1 zelen (CNPC `docs/meritve/2026-09-28-M7.8-zakljucek.md`) |
+| M7.10 | **zaključeno 28. 9.**: čakanje v gneči (`npcCrowdYield`, privzeto izklopljeno); različica c v 5 zagonih 8/8 na obeh grlih in odprtem (CNPC `docs/meritve/2026-09-28-M7.10-cakanje-v-gneci.md`), JUnit 141/141 |
+| V4 | **sprejet 28. 9.** (D-043) z znano omejitvijo: pri več entitetah na istem ciljnem bloku zadnja prispe 2–6 s kasneje kot vanilla (`CROWD_END_MOVES`) |
+| M7.9 | **zaključeno 28. 9.**: vzrok nestabilnosti grla B je gneča (`movement_timeout` → novo iskanje), zamik rezultata iskanja jo samo sproži; poprej: **v kodi 28. 9., čaka na build in serijo**: sled + `nav-run -Sled` + `tools/sled_grlo.py`; prevod in JUnit 135/135 v oblaku |

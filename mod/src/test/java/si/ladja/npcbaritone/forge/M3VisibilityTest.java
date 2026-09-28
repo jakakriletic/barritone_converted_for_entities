@@ -170,12 +170,50 @@ public class M3VisibilityTest {
     @Test
     public void traceRowHasAllColumnsAndQuotesGoal() {
         String row = PathTrace.format(12345L, 7, "Zombie", "T1/3", "MOVING", 1.5, 64, -2.25,
-                "GoalBlock{x=1,y=2,z=3}", 40, 5, "MovementTraverse", 812, 3, 2, "", "CALC_STARTED|CALC_FINISHED_NOW_EXECUTING");
+                "GoalBlock{x=1,y=2,z=3}", 40, 5, "MovementTraverse", 812, 3, 2, "", "CALC_STARTED|CALC_FINISHED_NOW_EXECUTING")
+                + "," + PathTrace.formatM79("movement_timeout", "", 12340L, 2, 5L, 3, true);
         List<String> cells = parseCsvLine(row);
         assertEquals(PathTrace.COLUMNS, cells.size());
         assertEquals("GoalBlock{x=1,y=2,z=3}", cells.get(8));
         assertEquals("64.000", cells.get(6));
         assertEquals("CALC_STARTED|CALC_FINISHED_NOW_EXECUTING", cells.get(16));
+        assertEquals("movement_timeout", cells.get(17));
+        assertEquals("", cells.get(18));
+        assertEquals("12340", cells.get(19));
+        assertEquals("2", cells.get(20));
+        assertEquals("5", cells.get(21));
+        assertEquals("3", cells.get(22));
+        assertEquals("1", cells.get(23));
+    }
+
+    // ------------------------------------------------------------ M7.9 sled nedeterminizma
+
+    @Test
+    public void m79ColumnsEmptyLatencyWhenNoNewPath() {
+        List<String> cells = parseCsvLine(PathTrace.formatM79("", "backtrack", -1L, 0, -1L, 0, false));
+        assertEquals(7, cells.size());
+        assertEquals("backtrack", cells.get(1));
+        assertEquals("-1", cells.get(2));
+        assertEquals("", cells.get(4));
+        assertEquals("0", cells.get(6));
+    }
+
+    @Test
+    public void execTrackReportsLatencyOncePerSearch() {
+        PathTrace.ExecTrack t = new PathTrace.ExecTrack();
+        Object a = new Object();
+        Object spliced = new Object();
+        Object b = new Object();
+        assertEquals(-1L, t.observe(null, 100L, 100L));   // iskanje oddano, poti še ni
+        assertEquals(-1L, t.observe(null, 100L, 101L));
+        assertEquals(2L, t.observe(a, 100L, 102L));        // pot iz iskanja 100 uporabljena 2 ticka kasneje
+        assertEquals(1, t.no);
+        assertEquals(-1L, t.observe(a, 100L, 103L));       // isti izvajalec
+        assertEquals(-1L, t.observe(spliced, 100L, 104L)); // nov izvajalec brez novega iskanja (spoj)
+        assertEquals(1, t.no);
+        assertEquals(-1L, t.observe(null, 110L, 110L));    // preklic + novo iskanje
+        assertEquals(1L, t.observe(b, 110L, 111L));
+        assertEquals(2, t.no);
     }
 
     @Test
@@ -194,7 +232,7 @@ public class M3VisibilityTest {
         assertEquals(0, PathTrace.INSTANCE.dump(f));
         List<String> lines = Files.readAllLines(f.toPath(), StandardCharsets.UTF_8);
         assertEquals(Collections.singletonList(PathTrace.HEADER), lines);
-        assertEquals(17, PathTrace.COLUMNS);
+        assertEquals(24, PathTrace.COLUMNS);
     }
 
     @Test

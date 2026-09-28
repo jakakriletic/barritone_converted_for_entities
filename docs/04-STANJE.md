@@ -4,6 +4,112 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-28 — V4 sprejet; M7 zaključen
+
+Uporabnik je sprejel V4 po D-043 z znano omejitvijo (zadnji prihod na skupni cilj 2–6 s kasneje;
+popravek, če bo potreben: `CROWD_END_MOVES` 2 → 4). Za CNPC: Baritone z `crowdYield` je izbirno
+ozadje, oboje privzeto izklopljeno. Meritve v CNPC `docs/meritve/2026-09-28-M7.10-cakanje-v-gneci.md`.
+**Naslednji korak:** commit + push te veje (sled M7.9, `crowdYield` M7.10, `tools/sled_grlo.py`,
+D-043, dokumenti); knjižnica nato čaka na naslednjega porabnika ali formacije v CNPC.
+
+## 2026-09-28 — M7.10c: 8/8 na obeh grlih v vseh 5 zagonih
+
+Serija `cnpc-m7/audit/m25c-nav-2026-09-28-1443` (`-Umik`, M7.10c; T1–T6 zelena), analiza
+`m710c-umik-grloB-2026-09-28-1443.md`. Prispelih: grlo A **8/8** (vanilla 1/8), grlo B **8/8**
+(vanilla 6/8), odprto 8/8 — v vseh 5 zagonih, razpon 0. Trki v vratih 18–19, preklici 5, iskanja
+60–61. Čas: mediana grla B 260 (vanilla 240, a pri vanilli pride samo 6), odprta proga mediana 200
+= vanilla, **zadnji prihod na odprtem 260–340 proti 220** (vrsta pred skupnim ciljem). Po D-043:
+veličini 1 in 2 izpolnjeni, veličina 3 na grlih izpolnjena čez razpon, na odprtem mediana enaka,
+zadnji prihod slabši; A4 (strošek iskanja) še neprimerljiv. Odločitev o V4 je pri uporabniku.
+
+## 2026-09-28 — M7.10b ovrednoten, M7.10c v kodi
+
+Serija `cnpc-m7/audit/m25c-nav-2026-09-28-1418` (M7.10b: čaka se samo na premikajoče). Odprta proga
+popravljena (8/8, zadnji 260–280 proti 440; vanilla 220). Grlo B 8, 6, 6, 6, 8 (mediana 6 = vanilla,
+najslabši 6 ≥ 6), grlo A 4/8 (M7.10a 7/8). Trki v vratih znova 366–537 (M7.10a 13–39): stoječi
+člani vrste v vratih se niso več čakali. Zagoni so zdaj skoraj deterministični (dve skupini:
+p1 = p5, p2 = p3 = p4). **M7.10c:** čaka se tudi na stoječo entiteto, ki ima pot
+(`!getNavigator().noPath()`) in manjši ID; na prispele/neaktivne ne; zadnja 2 premika brez čakanja
+ostaneta. JUnit 141/141 v oblaku. **Naslednji korak:** build + serija 5×.
+
+## 2026-09-28 — M7.10: prva serija (5×) ovrednotena, pravilo popravljeno (M7.10b)
+
+Serija `cnpc-m7/audit/m25c-nav-2026-09-28-1357` (`-Umik`, T1–T6 zelena), analiza
+`m710-umik-grloB-2026-09-28-1357.md`. Mehanizem deluje: trki na grlu B 800 → 13–39, preklici
+12–15 → 3–4, iskanja 75 → 44. Grlo A **7/8 v vseh** (prej 6, vanilla 1). Grlo B 7, 8, 6, 8, 5
+(mediana 7; vanilla 6) — najslabši 5 < 6, D-043 ni izpolnjen. **Stranski učinek:** tudi na odprti
+progi ~800 tickov `crowd_wait`; vseh 8 gre na isti ciljni blok, zadnji prihod 440 tickov proti 220
+(vanilla), v enem zagonu proga O 7/8 (zadnji obstal 2,14 bloka od cilja v vrsti).
+**Vzrok:** pravilo »počakaj, če se drugi premika ali ima manjši ID« je čakalo tudi na stoječe
+(prispele) NPC-je pred ciljem. **M7.10b:** čaka se samo na entiteto, ki se premika; zadnja 2
+premika poti se ne čakata. JUnit 140/140 v oblaku. **Naslednji korak:** build + ista serija 5×.
+
+## 2026-09-28 — M7.10 (korak 3): čakanje v gneči (v kodi, čaka na serijo)
+
+Nastavitev `npcCrowdYield` (privzeto false) + `npcCrowdMaxWaitTicks` (40). Ko je pred nogami v
+smeri premika (0,45 bloka) druga živa entiteta, ki se premika ali ima manjši ID, izvajalec ta tick
+ne kliče `movement.update()` in spusti tipke: NPC počaka v vrsti, `ticksOnCurrent` se ne poveča,
+`movement_timeout` in novo iskanje se ne sprožita. Po 40 zaporednih tickih rine kot upstream.
+Sled pokaže čakanje kot `pause=crowd_wait`. Vklop: config `movement.crowdYield` ali sistemska
+lastnost `npcbcrowdyield=true`; CNPC `nav-run.ps1 -Umik` (→ `-PnpcbCrowdYield=true`, odtis
+`ozadje=baritone-umik`, preverba, da log vsebuje `crowdYield=true`).
+Prevod + **JUnit 140/140** v oblaku (+5: `CrowdYieldTest` 4, `NpcbConfigTest` 1).
+
+**Naslednji korak:** `.\dev.ps1 build --offline`, nato v `cnpc-m7`
+`.\ponovitve-run.ps1 -Ponovitev 5 -Dodatno @('-Ozadje','baritone','-Umik','-Sled','-BaritoneRoot','..\npcbaritone-m7')`.
+Cilj (D-043): grlo B najslabši zagon ≥ 6/8, mediana > 6; grlo A in odprto ne slabše.
+
+## 2026-09-28 — M7.9: serija 10 zagonov ovrednotena — vzrok je gneča, čas jo samo sproži
+
+Build zelen, serija `cnpc-m7/audit/m25c-nav-2026-09-28-1239` (T1–T6 zelena), analiza
+`cnpc-m7/audit/m79-sled-grloB-2026-09-28-1239.md`. Grlo B prispelih: 6 v osmih zagonih, 8 v enem,
+4 v enem (vanilla vedno 6). V **vseh** zagonih je v grlu gneča (~2.900 tickov s `crowd > 0`,
+~800 trkov) in 12–15 preklicev `movement_timeout`; dobri zagon 7 preklicev in 291 trkov, slabi
+14 in 825. `exec_lat` je 0 ali 1 tick, porazdelitev se razlikuje v 7 od 10 zagonov; prvo
+razhajanje položajev (tick 44–150 faze) je brez dogodka iskanja, torej ga naredi potiskanje v
+gneči. **Sklep:** gneča je mehanizem (zastoj → `movement_timeout` → novo iskanje), zamik
+rezultata iskanja za en tick samo izbere, kako se gneča razplete. Determinističen način bi izid
+naredil ponovljiv, ne boljšega. **Naslednji korak:** korak 3 — pri zastoju zaradi entitete
+čakati/umakniti se namesto preklica; korak 2 (T+k) po potrebi za ponovljive teste.
+
+## 2026-09-28 — M7.9: sled nedeterminizma na grlu B (v kodi, čaka na build in serijo)
+
+**Namen.** Zakaj je grlo B pri Baritonu enkrat 8/8 in enkrat 4/8, vanilla pa vedno 6/8. V slabem
+zagonu (CNPC `m27-nav-2026-09-28-1053-p1`) je bilo 7/8 NPC-jev v zastoju in 77 iskanj proti 68.
+Dve hipotezi, ki jih sled loči: **(čas)** rezultat asinhronega iskanja se uporabi v različnem ticku
+(iskalna nit nastavi `current` sama; `shouldPause` in preklic nerelevantnega iskanja bereta
+`bestPathSoFar()` tekočega iskanja), **(gneča)** osem NPC-jev gre po isti tesni liniji (razmerje
+1,049), se zagozdi v vratih in izvajalec pot prekliče (`movement_timeout`, odmik od poti).
+
+**Narejeno.**
+- `PathExecutor`: koda razloga preklica (`future_impossible`, `movement_impossible`, `cost_increase`,
+  `movement_unreachable`, `movement_failed`, `movement_timeout`, `off_path_long`, `off_path_far`) in
+  premora (`chunk_edge`, `backtrack`). Obnašanje nespremenjeno.
+- `PathingBehavior`: tick oddaje iskanja, razlog preklica poti ali iskanja (`search_irrelevant`) in
+  premora po ticku sveta; samo strežniška nit.
+- `PathTrace`: 7 novih stolpcev na koncu (pogodba »samo na konec«): `cancel_reason, pause,
+  submit_tick, exec_no, exec_lat, crowd, collided`. `exec_lat` = ticki od oddaje iskanja do prve
+  uporabe njegove poti (spoj segmentov ne šteje); `crowd` = druge žive entitete v hitboxu +0,3.
+- `tools/sled_grlo.py`: analiza serije (po zagonih, po NPC-jih, prvi tick razhajanja od
+  referenčnega zagona, samodejni sklep čas/gneča).
+- CNPC `nav-run.ps1 -Sled` (samo z `-Ozadje baritone`): `/npcb trace on` pred fazo A, izpis po
+  NAV-SUM, kopija ob zapisu zagona kot `<zapis>-sled.csv`.
+- **D-043**: vrata V4 — veličina 1 »ni slabše«, najslabši zagon, Baritone ≥ 5 ponovitev
+  (M7 README, `02-ODLOCITVE.md`).
+
+**Preverjeno v seji.** `tools/cloud-compile.sh` proti `forgeSrc-1.12.2-14.23.5.2847.jar` in
+knjižnicam iz uporabnikovega gradle predpomnilnika: prevod main + test, **JUnit 135/135** (133 + 2
+nova v `M3VisibilityTest`). `sled_grlo.py` na sintetični seriji (3 zagoni, en slab), PowerShell
+parser za `nav-run.ps1` 0 napak (pwsh 7.4), regex `NPCB-TRACE-DUMP` in ime ciljne datoteke.
+**Ni preverjeno:** build na Windowsu (reobf), obnašanje v igri.
+
+**Naslednji korak.**
+1. Tukaj: `.\dev.ps1 build --offline` (prevod + JUnit, `M3VisibilityTest` ima 2 nova testa).
+2. V `cnpc-m7`: `.\ponovitve-run.ps1 -Ponovitev 10 -Dodatno @('-Ozadje','baritone','-Sled','-BaritoneRoot','..\npcbaritone-m7')` (~30 min).
+3. Analiza: `python3 tools/sled_grlo.py ..\cnpc-m7\audit\m27-nav-<čas>-p*-sled.csv`. Če je vzrok
+   čas → korak 2 (determinističen način: rezultat v ticku T+k, omejitev vozlišč namesto ure);
+   če gneča → korak 3 (blokada z entiteto: čakaj/umakni se namesto preklica).
+
 ## 2026-09-28 — M7 zaključen: V4 ni prestan
 
 CNPC M2.7 A/B je bil po dopolnitvi meritev ponovljen 3× za obe ozadji.

@@ -469,6 +469,32 @@ klientom — vanilla klient bi bil zavrnjen, kar krši D-024.
 **Dokaz.** Sonda v oblaku (§4): `Bootstrap.register()` v 2,2 s, branje/pisanje
 `ExtendedBlockStorage` na chunku brez sveta deluje, `Blocks.OAK_DOOR` stanja so na voljo.
 
+### D-043 — Vrata V4: veličina 1 »ni slabše«, najslabši zagon, 5 ponovitev
+
+*28. 9. 2026. Številka je izbrana nad D-042; D-029–D-042 so zapisane samo na domačem
+računalniku (glej `REKONSTRUKCIJA-2026-09-28.md`).*
+
+**Kontekst.** M7.8 (CNPC `docs/meritve/2026-09-28-M7.8-zakljucek.md`): vanilla ima na merilu 1
+že 8/8 celih poti, zato zahteva A3 »boljše čez razpon« za veličino 1 ni izpolnljiva ne glede na
+ozadje. Vanilla je deterministična (46 od 59 veličin ima razpon 0), Baritone ni: grlo B je dal
+8, 8 in 4 od 8. Pri treh ponovitvah en slab zagon določi ves razpon, redkega slabega zagona pa
+tri ponovitve ne ujamejo zanesljivo.
+
+**Odločitev.** A3 se bere tako:
+1. veličina 1 (delež celih poti): Baritone **ni slabši** od vanille v nobenem zagonu;
+2. veličini 2 in 3: Baritonova **mediana je boljša** od vanille **in** njegov **najslabši** zagon
+   ni slabši od najslabšega vanilla zagona;
+3. Baritone najmanj **5 ponovitev** (vanilla ostane pri 3, ker je njen razpon 0).
+
+A4 ostane nespremenjen, šteje pa šele, ko obe ozadji merita isti dogodek (vanilla sonda meri
+celoten sinhroni `findPath`, knjižnica samo posnetek na glavni niti). Ko bo obstajal
+determinističen način (M7.9 korak 2), se doda **A6**: v tem načinu imajo vedenjske veličine
+(prispelo, prvi/mediana/zadnji, razpon) razpon 0.
+
+**Posledica.** M7.8 tudi po tej definiciji ne prestane (grlo B najslabši 4/8 < 6/8). Odločitev
+ne spremeni izida, ampak odstrani merilo, ki ga nobeno ozadje ne bi moglo izpolniti, in naredi
+redke slabe zagone vidne. Potrdil uporabnik 28. 9. (predlog »popravek vrat V4«).
+
 ---
 
 ## Dnevnik odločitev
@@ -503,3 +529,4 @@ klientom — vanilla klient bi bil zavrnjen, kar krši D-024.
 | D-026 | 2026-09-24 | Prvi commit = nespremenjen upstream | velja |
 | D-027 | 2026-09-25 | Dve stopnji meje zmogljivosti (5 ms zdaj, 2 ms pred M7) | velja |
 | D-028 | 2026-09-25 | Velikosti: okvir blokov, meje 3 stolpci × 4 bloki, stikalo `largeEntities` | velja, preverba M8 T3 |
+| D-043 | 2026-09-28 | Vrata V4: veličina 1 »ni slabše«, najslabši zagon, Baritone ≥ 5 ponovitev (D-029–D-042 na domačem računalniku) | velja; V4 po njej sprejet 28. 9. (M7.10c) |
