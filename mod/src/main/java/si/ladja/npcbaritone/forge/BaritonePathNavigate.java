@@ -185,7 +185,10 @@ public class BaritonePathNavigate extends PathNavigateGround {
             baritone.tick();
             si.ladja.npcbaritone.core.PerfProfile.add(BaritonePathNavigate.class, PROF_BARITONE_TICK, p);
             p = si.ladja.npcbaritone.core.PerfProfile.start();
+            int doors = interactions.openedCount();
             interactions.tick(); // M4.1: CLICK_RIGHT → vrata
+            // M11.3: roke samo za registrirane workerje (D-030); ne-worker: takoj nazaj
+            si.ladja.npcbaritone.forge.work.WorkerRegistry.INSTANCE.tickHands(entity, baritone, interactions.openedCount() != doors);
             si.ladja.npcbaritone.core.PerfProfile.add(BaritonePathNavigate.class, PROF_INTERACTIONS, p);
         }
         PerfMeter.INSTANCE.add(System.nanoTime() - t0); // M5.6

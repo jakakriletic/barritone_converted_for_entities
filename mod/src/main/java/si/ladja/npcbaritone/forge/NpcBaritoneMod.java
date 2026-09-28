@@ -81,6 +81,7 @@ public final class NpcBaritoneMod {
         MinecraftForge.EVENT_BUS.register(StressRunner.INSTANCE);
         MinecraftForge.EVENT_BUS.register(AiTestRunner.INSTANCE);
         MinecraftForge.EVENT_BUS.register(SelfTestRunner.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(si.ladja.npcbaritone.forge.work.HandsPool.INSTANCE); // M11.3: dropi rok, razložitev sveta
         si.ladja.npcbaritone.api.NpcBaritone.setProvider(ApiProvider.INSTANCE); // M6.7
         DebugSync.INSTANCE.register();
         proxy.preInit();

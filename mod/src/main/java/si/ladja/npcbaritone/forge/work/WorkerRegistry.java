@@ -22,6 +22,7 @@ import si.ladja.npcbaritone.api.INpcNavigator;
 import si.ladja.npcbaritone.api.work.INpcWorker;
 import si.ladja.npcbaritone.api.work.IWorkerListener;
 import si.ladja.npcbaritone.api.work.WorkerSpec;
+import si.ladja.npcbaritone.core.Baritone;
 import si.ladja.npcbaritone.forge.ApiProvider;
 import si.ladja.npcbaritone.forge.Attach;
 
@@ -33,9 +34,9 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * M11.2 (D-030): registrirani workerji. Okostje — ročaj hrani specifikacijo, poslušalce in stanje
- * premora; roke (M11.3), inventar (M11.4), varovala (M11.5) in prednost procesa (M11.7) se
- * priključijo nanj. Ročaj drži entiteto samo šibko, sicer vnos v {@link WeakHashMap} nikoli ne
+ * M11.2 (D-030): registrirani workerji. Ročaj hrani specifikacijo, poslušalce, stanje premora in
+ * roke (M11.3); inventar (M11.4) je pogled na {@code spec.inventory()}. Varovala pri iskanju
+ * (M11.5) in prednost procesa (M11.7) se priključijo nanj. Ročaj drži entiteto samo šibko, sicer vnos v {@link WeakHashMap} nikoli ne
  * bi izginil (R-25).
  */
 public final class WorkerRegistry {
@@ -43,6 +44,8 @@ public final class WorkerRegistry {
     public static final WorkerRegistry INSTANCE = new WorkerRegistry();
 
     private final Map<EntityLiving, Handle> workers = new WeakHashMap<>();
+    /** Hitra pot za ne-workerje: brez zaklepa, dokler ni nobenega workerja. */
+    private volatile boolean any;
 
     private WorkerRegistry() {
     }
@@ -53,6 +56,7 @@ public final class WorkerRegistry {
         if (h == null || h.released) {
             h = new Handle(entity, spec);
             workers.put(entity, h);
+            any = true;
         } else {
             h.spec = spec;
         }
@@ -71,7 +75,43 @@ public final class WorkerRegistry {
             return false;
         }
         h.released = true;
+        h.hands.abort(entity);
+        any = !workers.isEmpty();
         return true;
+    }
+
+    /**
+     * M11.3: kliče {@code BaritonePathNavigate} po {@code EntityInteractions} vsak tick. Ne-worker:
+     * nič (D-030: brez registracije entiteta nima rok).
+     *
+     * @param doorUsed {@code EntityInteractions} je ta tick odprl vrata ({@code CLICK_RIGHT} porabljen)
+     */
+    public void tickHands(EntityLiving entity, Baritone baritone, boolean doorUsed) {
+        if (!any) {
+            return;
+        }
+        Handle h;
+        synchronized (this) {
+            h = workers.get(entity);
+        }
+        if (h == null || !h.active()) {
+            return;
+        }
+        if (h.paused) {
+            h.hands.abort(entity);
+            return;
+        }
+        WorkerSpec spec = h.spec;
+        h.hands.tick(entity, baritone, spec,
+                new WorkerInventory(spec.inventory(), () -> baritone.getSettings().acceptableThrowawayItems.value),
+                h.listeners, doorUsed);
+    }
+
+    /** Za {@code /npcb status} in tečaj T5. */
+    @Nullable
+    public synchronized EntityHands hands(EntityLiving entity) {
+        Handle h = workers.get(entity);
+        return h == null ? null : h.hands;
     }
 
     /** Za varovala in roke (M11.3+): specifikacija aktivnega workerja ali null. */
@@ -84,6 +124,7 @@ public final class WorkerRegistry {
     private static final class Handle implements INpcWorker {
         private final WeakReference<EntityLiving> entity;
         private final List<IWorkerListener> listeners = new CopyOnWriteArrayList<>();
+        final EntityHands hands = new EntityHands();
         volatile WorkerSpec spec;
         volatile boolean paused;
         volatile boolean released;
