@@ -419,6 +419,32 @@ public final class Settings {
     public final Setting<Float> npcMaxTurnDegrees = new Setting<>(30.0f);
 
     /**
+     * NPC Baritone (D-039, CNPC U3): lesena vrata in ograjna vrata se odprejo (neposredno, D-015).
+     * {@code false} — entiteta ničesar ne odpira; vrata so prehodna samo, če so že odprta.
+     */
+    public final Setting<Boolean> npcOpenDoors = new Setting<>(true);
+
+    /**
+     * NPC Baritone (D-039, CNPC U4): tudi železna in druga ne-lesena vrata so prehodna in se
+     * odprejo neposredno (porabnik jih dovoli NPC-ju, ki jih "zna odpreti").
+     */
+    public final Setting<Boolean> npcOpenIronDoors = new Setting<>(false);
+
+    /**
+     * NPC Baritone (D-040, CNPC U5): dodatna cena za vsak blok, v katerem so noge ali glava v vodi
+     * (bredenje, plavanje, gladina, padec v vodo). 0 = Baritonovo obnašanje; profil
+     * {@code avoid_water} = 8 blokov hoje, kot vanilla {@code PathNodeType.WATER} (malus 8).
+     */
+    public final Setting<Double> npcWaterPenalty = new Setting<>(0.0D);
+
+    /**
+     * NPC Baritone (D-041, CNPC M7.5): zahteve prek vanilla {@code PathNavigate} (AI taski) vidijo
+     * samo entiteta ± ({@code FOLLOW_RANGE} + 8) blokov, kot vanilla; dlje gre pot v segmentih.
+     * API {@code goTo}/{@code follow} in ukazi dosega nimajo.
+     */
+    public final Setting<Boolean> npcRespectFollowRange = new Setting<>(true);
+
+    /**
      * Set to 1.0 to effectively disable this feature
      *
      * @see <a href="https://github.com/cabaletta/baritone/issues/18">Issue #18</a>

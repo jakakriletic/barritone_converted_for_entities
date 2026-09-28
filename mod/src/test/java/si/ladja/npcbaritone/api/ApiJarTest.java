@@ -78,6 +78,12 @@ public class ApiJarTest {
             "    nav.goTo(new GoalComposite(new GoalBlock(0, 64, 0), new GoalXZ(10, 10)));",
             "    boolean moving = nav.state() == NavState.MOVING;",
             "    nav.stop();",
+            "    if (NpcBaritone.apiVersion() >= 2) {",
+            "      nav.reinstall();",
+            "      nav.setSpeedMode(SpeedMode.OWN);",
+            "      nav.setDoorMode(nav.doorMode() == DoorMode.ALL ? DoorMode.NONE : DoorMode.WOODEN);",
+            "      boolean own = nav.speedMode() == SpeedMode.OWN;",
+            "    }",
             "  }",
             "}");
 

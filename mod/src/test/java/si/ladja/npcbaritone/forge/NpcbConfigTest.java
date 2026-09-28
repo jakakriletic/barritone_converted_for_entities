@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import si.ladja.npcbaritone.harness.BootstrapOnce;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -63,6 +64,17 @@ public class NpcbConfigTest {
         assertEquals(NpcbConfig.SpeedMode.PLAYER, d.speedMode);
         assertEquals(30, d.maxTurnDegrees);
         assertFalse(d.syncPathsToOps);
+    }
+
+    @Test
+    public void avoidWaterProfilePenalizesSurfaceWaterOnlyWhenSelected() {
+        BootstrapOnce.ensure();
+        NpcbConfig config = NpcbConfig.defaults();
+        assertEquals(0.0, Attach.profileFor(config, "default").npcWaterPenalty.value, 0.001);
+        // D-040: 8 blokov hoje na blok vode = vanilla PathNodeType.WATER (malus 8)
+        assertEquals(8 * si.ladja.npcbaritone.core.api.pathing.movement.ActionCosts.WALK_ONE_BLOCK_COST,
+                Attach.profileFor(config, "avoid_water").npcWaterPenalty.value, 0.01);
+        assertEquals(3.0, Attach.profileFor(config, "avoid_water").walkOnWaterOnePenalty.value, 0.001);
     }
 
     @Test

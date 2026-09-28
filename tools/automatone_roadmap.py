@@ -29,7 +29,7 @@ M={
 'fb073c81':('M1','padec v praznino'),
 '2ba848ca':('M1','višina oči iz entitete'),
 'c32eb014':('M1','nether preverba iz sveta'),
-'d3828043':('M4','zaporedno rušenje (LATER)'),
+'d3828043':('M11','zaporedno rušenje'),
 '89b1174a':('M1','nastavitve na instanco (priprava)'),
 '7bd582c2':('M1','kaskadne nastavitve'),
 'a1bb2422':('M1','lokalne nastavitve'),
@@ -60,7 +60,7 @@ M={
 '333cc295':('M2','brez rubber bandinga na strežniku'),
 '31374839':('M2','hitrost na soul sandu'),
 '446120d8':('M2','privzeta višina koraka'),
-'72695f8c':('LATER','sprostitev uporabljenih predmetov'),
+'72695f8c':('M11','sprostitev uporabljenih predmetov'),
 'ebc87346':('M2','odstranjen PlayerMovementInput'),
 '33b707cf':('M2','sneak se ne ponastavi vsak tick'),
 'fadc7082':('M2','yaw glave ob spawnu'),
@@ -96,10 +96,18 @@ M={
 '0a6399f9':('M8','dimenzije v MovementDownward'),
 '39da8286':('M8','velikosti v MovementAscend'),
 'a9c929f0':('M8','Traverse z velikimi entitetami'),
-'2fec595b':('LATER','razširjeno postavljanje v Ascend'),
-'4a94645c':('LATER','air bridging'),
-'b3d431f8':('LATER','gradnja z lestvami'),
-'06176954':('LATER','MLG nether preverba'),
+'2fec595b':('M11','razširjeno postavljanje v Ascend'),
+'4a94645c':('M11','air bridging'),
+'06176954':('M11','MLG nether preverba'),
+# M11–M14 worker (D-030); Automatone roke/inventar ima samo za igralce
+'0f8a664b':('M11','IPlayerController kot komponenta; ne-igralci dobijo Dummy (pri nas roke, D-032)'),
+'df9a13fe':('M11','zaščita v CalculationContext (samo igralci; pri nas D-033)'),
+'43268b09':('M11','MovementDownward ruši napačen blok'),
+'678ecb02':('M12','dropi blokov (BlockOptionalMeta) za MineProcess'),
+'b3da3410':('M12','hitrejše skeniranje chunkov (vzorec za D-035)'),
+'a3081aac':('M12','NPE v WorldScanner'),
+'d0970ec6':('M12','zmogljivost MineProcess'),
+'b3d431f8':('M14','gradnja z lestvami'),
 }
 SKIPKW=['changelog','readme','gradle','buildscript','proguard','fabric','icon','cca','brigadier','fake player','fake players','tab complete','command','tag','schematic','selection','mixin refmap','version','prefix','recommending','trolling','merge','compilation','scaffolding','invoker','life buoy','sysout','/click','/come','/build','/version','logger','publishing','entrypoint','argument','chat logging','protection','io operations','stack lookups','drop lookups','un-hardcode world height','sections','wrapper','it\'s automatone','actually it\'s baritone','client baritone instance','todo','renderManager','irender','world data to nbt','un-hardcode number','chunkloading cancellation','requiem','component','performance notes','settings from command','document','remove some now useless mixins','sink','ride','summoned clientside','unloading','unloadEntities','exceptions','exception spaghetti','worldscanner','chunk scanning','dependencies']
 
@@ -121,10 +129,10 @@ def main():
     out.write('Generirano s `tools/automatone_roadmap.py` iz `references/automatone` @ `843b8397` '
               '(avtor Pyrofab, 2021-03-05 → 2021-05-26). Commit je **vzorec**, ne vir za kopiranje '
               '(D-001): pred delom na isti datoteki ga preberi z `git -C references/automatone show <hash>`.\n\n')
-    out.write('SKIP pomeni: Fabric/Yarn, Cardinal Components, Brigadier ukazi, fake player, gradnja, '
+    out.write('SKIP pomeni: Fabric/Yarn, Cardinal Components, Brigadier ukazi, fake player, izbira /sel, '
               'posebnosti 1.14+ (scaffolding, tagi, višina sveta), build in changelog.\n\n')
     out.write('| za nas | commitov |\n|---|---:|\n')
-    for k in ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M8', 'LATER', 'SKIP']:
+    for k in ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M8', 'M11', 'M12', 'M14', 'LATER', 'SKIP']:
         if c[k]:
             out.write('| %s | %d |\n' % (k, c[k]))
     out.write('\n| commit | datum | sporočilo | za nas | opomba |\n|---|---|---|---|---|\n')

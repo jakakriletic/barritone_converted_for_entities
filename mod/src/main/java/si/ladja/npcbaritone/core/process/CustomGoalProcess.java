@@ -55,6 +55,7 @@ public final class CustomGoalProcess extends BaritoneProcessHelper implements IC
 
     @Override
     public void setGoal(Goal goal) {
+        baritone.getPathingBehavior().setSearchRange(0); // D-041: doseg nastavi samo PathNavigate adapter
         this.goal = goal;
         this.mostRecentGoal = goal;
         if (this.state == State.NONE) {

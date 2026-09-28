@@ -173,7 +173,7 @@ public class MovementDiagonal extends Movement {
         } else if (frostWalker) {
             // frostwalker lets us walk on water without the penalty
         } else if (destWalkOn.getBlock() == Blocks.WATER) {
-            multiplier += context.walkOnWaterOnePenalty * SQRT_2;
+            multiplier += context.walkOnWaterOnePenalty * SQRT_2 + context.npcWaterPenalty; // D-040
         }
         Block fromDownBlock = fromDown.getBlock();
         if (fromDownBlock == Blocks.LADDER || fromDownBlock == Blocks.VINE) {
@@ -199,7 +199,7 @@ public class MovementDiagonal extends Movement {
             // Ignore previous multiplier
             // Whatever we were walking on (possibly soul sand) doesn't matter as we're actually floating on water
             // Not even touching the blocks below
-            multiplier = context.waterWalkSpeed;
+            multiplier = context.waterWalkSpeed + context.npcWaterPenalty; // D-040
             water = true;
         }
         IBlockState pb0 = context.get(x, y, destZ);
@@ -344,7 +344,7 @@ public class MovementDiagonal extends Movement {
         } else if (frostWalker) {
             // frostwalker lets us walk on water without the penalty
         } else if (destWalkOn.getBlock() == Blocks.WATER) {
-            multiplier += context.walkOnWaterOnePenalty * SQRT_2;
+            multiplier += context.walkOnWaterOnePenalty * SQRT_2 + context.npcWaterPenalty; // D-040
         }
         Block fromDownBlock = fromDown.getBlock();
         if (fromDownBlock == Blocks.LADDER || fromDownBlock == Blocks.VINE) {
@@ -367,7 +367,7 @@ public class MovementDiagonal extends Movement {
             if (ascend) {
                 return;
             }
-            multiplier = context.waterWalkSpeed;
+            multiplier = context.waterWalkSpeed + context.npcWaterPenalty; // D-040
             water = true;
         }
         IBlockState pb0 = context.get(x, y, destZ);

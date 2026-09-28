@@ -65,6 +65,7 @@ public final class NpcbConfig {
             "walk: allowSprint=false",
             "parkour: allowParkour=true",
             "cautious: maxFallHeightNoWater=2, allowSprint=false",
+            "avoid_water: npcWaterPenalty=37.06", // D-040: 8 blokov hoje = vanilla PathNodeType.WATER
     };
 
     NpcbConfig(int searchThreads, int searchQueueLimit, int snapshotMarginChunks, int shareRadiusChunks,
@@ -133,6 +134,11 @@ public final class NpcbConfig {
      * forge plast sama (M5).
      */
     public Settings applyTo(Settings settings) {
+        return applyTo(settings, speedMode);
+    }
+
+    /** Kot {@link #applyTo(Settings)} z načinom hitrosti instance (D-039, CNPC U6). */
+    Settings applyTo(Settings settings, SpeedMode speedMode) {
         settings.npcSnapshotMarginChunks.value = snapshotMarginChunks;
         settings.npcMaxTurnDegrees.value = (float) maxTurnDegrees;
         if (speedMode == SpeedMode.OWN) {

@@ -135,8 +135,10 @@ public interface MovementHelper extends ActionCosts, Helper {
         }
         if (block instanceof BlockDoor || block instanceof BlockFenceGate) {
             // M4.1 (Automatone b1899f30): lesena vrata in ograjna vrata se odprejo, vse ostalo
-            // (železna vrata, kovinska vrata iz modov) je neprehodno
-            return block instanceof BlockFenceGate || state.getMaterial() == net.minecraft.block.material.Material.WOOD ? YES : NO;
+            // (železna vrata, kovinska vrata iz modov) je neprehodno.
+            // D-039 (CNPC U3/U4): kaj se odpre, je nastavitev instance; kar se ne odpre, je pri
+            // NONE prehodno samo, če je že odprto (vanilla isPassable), pri WOODEN kot prej.
+            return doorPassability(block instanceof BlockFenceGate || state.getMaterial() == net.minecraft.block.material.Material.WOOD, settings);
         }
         if (block == Blocks.CARPET) {
             return MAYBE;
@@ -166,6 +168,31 @@ public interface MovementHelper extends ActionCosts, Helper {
             System.out.println("The block " + state.getBlock().getLocalizedName() + " requires a special case due to the exception " + exception.getMessage());
             return MAYBE;
         }
+    }
+
+    /**
+     * D-039: prehodnost vrat ali ograjnih vrat po nastavitvah instance. {@code YES} — entiteta jih
+     * odpre; {@code MAYBE} — ničesar ne odpira ({@code npcOpenDoors = false}), odločijo vanilla
+     * {@code isPassable} (odprta); {@code NO} — železna pri {@code WOODEN} (obnašanje M4).
+     */
+    static Ternary doorPassability(boolean wooden, Settings settings) {
+        if (wooden ? settings.npcOpenDoors.value : settings.npcOpenIronDoors.value) {
+            return YES;
+        }
+        return settings.npcOpenDoors.value ? NO : MAYBE;
+    }
+
+    /** D-039: ali entiteta ta vrata (spodnjo polovico ali ograjna vrata) sme odpreti. */
+    public static boolean mayOpen(IBlockState state, Settings settings) {
+        Block b = state.getBlock();
+        if (b instanceof BlockFenceGate) {
+            return settings.npcOpenDoors.value;
+        }
+        if (b instanceof BlockDoor) {
+            return state.getMaterial() == net.minecraft.block.material.Material.WOOD
+                    ? settings.npcOpenDoors.value : settings.npcOpenIronDoors.value;
+        }
+        return false;
     }
 
     static boolean canWalkThroughPosition(BlockStateInterface bsi, int x, int y, int z, IBlockState state) {

@@ -23,7 +23,8 @@ import net.minecraft.util.math.BlockPos;
 import si.ladja.npcbaritone.core.api.pathing.goals.Goal;
 
 /**
- * Baritonov navigator enega NPC-ja (API 1). Vanilla AI taski entitete delujejo naprej prek
+ * Baritonov navigator enega NPC-ja (API 1; metode, označene z API 2, samo pri
+ * {@code NpcBaritone.apiVersion() >= 2}). Vanilla AI taski entitete delujejo naprej prek
  * običajnega {@code getNavigator()}; ta vmesnik je za porabnike, ki hočejo cilje neposredno
  * (skripte, ukazi, "pojdi do točke") in povratne klice. Samo strežniška nit.
  */
@@ -60,4 +61,37 @@ public interface INpcNavigator {
     void addListener(NavListener listener);
 
     void removeListener(NavListener listener);
+
+    // ------------------------------------------------------------------ API 2 (D-039)
+
+    /**
+     * Ponovno namesti Baritona, če je porabnik entiteti zamenjal navigator, move ali jump helper
+     * (CNPC {@code updateTasks()}); taske s shranjenim navigatorjem preusmeri. Cilj, pot in
+     * poslušalci ostanejo. Poceni, kadar ni kaj narediti. <b>API 2.</b>
+     *
+     * @return false, če entiteta ni več pripeta
+     */
+    boolean reinstall();
+
+    /** Način hitrosti te instance (privzeto strežniški config). <b>API 2.</b> */
+    SpeedMode speedMode();
+
+    /**
+     * Način hitrosti samo za to instanco; {@code null} vrne strežniškega. Tekoča pot se prekine,
+     * če se je način spremenil; cilj ostane. <b>API 2.</b>
+     *
+     * @return false, če entiteta ni pripeta
+     */
+    boolean setSpeedMode(SpeedMode mode);
+
+    /** Katera vrata ta instanca odpira (privzeto iz profila, {@link DoorMode#WOODEN}). <b>API 2.</b> */
+    DoorMode doorMode();
+
+    /**
+     * Vrata samo za to instanco; {@code null} vrne vrednost profila. Tekoča pot se prekine, cilj
+     * ostane. <b>API 2.</b>
+     *
+     * @return false, če entiteta ni pripeta
+     */
+    boolean setDoorMode(DoorMode mode);
 }

@@ -80,6 +80,8 @@ public class BaritonePathNavigate extends PathNavigateGround {
     private int newSearches;
     /** M6.7: razdalja sledenja (GoalNear), privzeto 1 za vanilla {@code tryMoveToEntityLiving}. */
     private int followRange = 1;
+    /** D-041: zadnji cilj je prišel prek vanilla {@code PathNavigate} (doseg velja), ne prek API. */
+    private boolean vanillaRange;
     private final java.util.List<si.ladja.npcbaritone.api.NavListener> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     private NavStatus.State lastState = NavStatus.State.IDLE;
 
@@ -144,6 +146,11 @@ public class BaritonePathNavigate extends PathNavigateGround {
     /** M6.5: ali sme izvajalec poti šprintati (bere {@code BaritoneMoveHelper}). */
     public boolean allowsSprint() {
         return allowsSprint(speed);
+    }
+
+    /** D-042: hitrost zadnje vanilla zahteve ({@code tryMoveTo*}, {@code setPath}); 0 za API in ukaze. */
+    public double requestedSpeed() {
+        return speed;
     }
 
     static boolean allowsSprint(double speed) {
@@ -228,6 +235,7 @@ public class BaritonePathNavigate extends PathNavigateGround {
             return false;
         }
         speed = 0;
+        vanillaRange = false;
         followRange = Math.max(1, range);
         debounce.reset();
         debounce.goalPos = pos;
@@ -262,6 +270,7 @@ public class BaritonePathNavigate extends PathNavigateGround {
             debounce.goalPos = now;
             newSearches++;
             baritone.getCustomGoalProcess().setGoalAndPath(new GoalNear(now, followRange));
+            applyVanillaRange();
             lastFollowRegoal = totalTicks;
         }
     }
@@ -271,6 +280,7 @@ public class BaritonePathNavigate extends PathNavigateGround {
     /** API/ukazi: izrecen cilj, sprint po profilu, brez debounca. */
     public boolean goTo(Goal goal) {
         speed = 0;
+        vanillaRange = false;
         followTarget = null;
         followRange = 1;
         debounce.reset();
@@ -334,6 +344,21 @@ public class BaritonePathNavigate extends PathNavigateGround {
         return request(pos, 1, new GoalNear(pos, 1));
     }
 
+    /**
+     * D-041 (CNPC M7.5 NpcNavRange): vanilla pogodba — iskanje za AI taske vidi entiteta ±
+     * ({@code FOLLOW_RANGE} + 8). Kliče se za vsakim {@code setGoalAndPath}, ki doseg ponastavi.
+     */
+    private void applyVanillaRange() {
+        if (vanillaRange && baritone.getSettings().npcRespectFollowRange.value) {
+            baritone.getPathingBehavior().setSearchRange(searchRangeBlocks(getPathSearchRange()));
+        }
+    }
+
+    /** D-041: {@code FOLLOW_RANGE} → doseg v blokih (navzgor, vsaj 1). */
+    static int searchRangeBlocks(float followRange) {
+        return Math.max(1, (int) Math.ceil(followRange));
+    }
+
     public int requests() {
         return requests;
     }
@@ -348,6 +373,8 @@ public class BaritonePathNavigate extends PathNavigateGround {
             case NEW:
                 newSearches++;
                 baritone.getCustomGoalProcess().setGoalAndPath(goal);
+                vanillaRange = true;
+                applyVanillaRange();
                 return true;
             case KEEP:
             case RESUME:

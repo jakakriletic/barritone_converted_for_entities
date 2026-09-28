@@ -104,7 +104,7 @@ public class MovementTraverse extends Movement {
             double WC = WALK_ONE_BLOCK_COST;
             boolean water = false;
             if (MovementHelper.isWater(pb0.getBlock()) || MovementHelper.isWater(pb1.getBlock())) {
-                WC = context.waterWalkSpeed;
+                WC = context.waterWalkSpeed + context.npcWaterPenalty; // D-040
                 water = true;
             } else {
                 if (destOn.getBlock() == Blocks.SOUL_SAND) {
@@ -112,7 +112,7 @@ public class MovementTraverse extends Movement {
                 } else if (frostWalker) {
                     // with frostwalker we can walk on water without the penalty, if we are sure we won't be using jesus
                 } else if (destOn.getBlock() == Blocks.WATER) {
-                    WC += context.walkOnWaterOnePenalty;
+                    WC += context.walkOnWaterOnePenalty + context.npcWaterPenalty; // D-040
                 }
                 if (srcDownBlock == Blocks.SOUL_SAND) {
                     WC += (WALK_ONE_OVER_SOUL_SAND_COST - WALK_ONE_BLOCK_COST) / 2;
@@ -212,7 +212,7 @@ public class MovementTraverse extends Movement {
         boolean water = false;
         for (int dy = 0; dy < h; dy++) {
             if (MovementHelper.isWater(context.getBlock(destX, y + dy, destZ))) {
-                WC = context.waterWalkSpeed;
+                WC = context.waterWalkSpeed + context.npcWaterPenalty; // D-040
                 water = true;
                 break;
             }
@@ -223,7 +223,7 @@ public class MovementTraverse extends Movement {
             } else if (frostWalker) {
                 // with frostwalker we can walk on water without the penalty
             } else if (destOn.getBlock() == Blocks.WATER) {
-                WC += context.walkOnWaterOnePenalty;
+                WC += context.walkOnWaterOnePenalty + context.npcWaterPenalty; // D-040
             }
             if (srcDownBlock == Blocks.SOUL_SAND) {
                 WC += (WALK_ONE_OVER_SOUL_SAND_COST - WALK_ONE_BLOCK_COST) / 2;
@@ -271,14 +271,14 @@ public class MovementTraverse extends Movement {
     private boolean tryOpenDoors(MovementState state, IBlockState bs, BlockPos doorPos, BlockPos from) {
         if (bs.getBlock() instanceof BlockDoor) {
             boolean notPassable = !MovementHelper.isDoorPassable(ctx, doorPos, from);
-            // Automatone b1899f30: odpirajo se samo lesena vrata
-            boolean canOpen = bs.getMaterial() == net.minecraft.block.material.Material.WOOD;
+            // Automatone b1899f30: odpirajo se samo lesena vrata; D-039: kaj se odpre, določa instanca
+            boolean canOpen = MovementHelper.mayOpen(bs, baritone.getSettings());
             if (notPassable && canOpen) {
                 state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(new BlockStateInterface(ctx).access, doorPos), ctx.entityRotations()), true))
                         .setInput(Input.CLICK_RIGHT, true);
                 return true;
             }
-        } else if (bs.getBlock() instanceof BlockFenceGate) {
+        } else if (bs.getBlock() instanceof BlockFenceGate && MovementHelper.mayOpen(bs, baritone.getSettings())) {
             BlockPos blocked = !MovementHelper.isGatePassable(ctx, doorPos.up(), from.up()) ? doorPos.up()
                     : !MovementHelper.isGatePassable(ctx, doorPos, from) ? doorPos
                     : null;

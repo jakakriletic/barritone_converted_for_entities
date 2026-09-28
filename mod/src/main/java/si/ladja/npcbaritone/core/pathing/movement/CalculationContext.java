@@ -74,6 +74,8 @@ public class CalculationContext {
     public double backtrackCostFavoringCoefficient;
     public double jumpPenalty;
     public final double walkOnWaterOnePenalty;
+    /** D-040: {@code npcWaterPenalty} (CNPC U5). */
+    public final double npcWaterPenalty;
     public final BetterWorldBorder worldBorder;
 
     public final PrecomputedData precomputedData;
@@ -178,6 +180,7 @@ public class CalculationContext {
         this.backtrackCostFavoringCoefficient = settings.backtrackCostFavoringCoefficient.value;
         this.jumpPenalty = settings.jumpPenalty.value;
         this.walkOnWaterOnePenalty = settings.walkOnWaterOnePenalty.value;
+        this.npcWaterPenalty = settings.npcWaterPenalty.value;
         // why cache these things here, why not let the movements just get directly from settings?
         // because if some movements are calculated one way and others are calculated another way,
         // then you get a wildly inconsistent path that isn't optimal for either scenario.

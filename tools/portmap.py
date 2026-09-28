@@ -25,8 +25,11 @@ def classify(p):
     b=s.split('/java/baritone/',1)[1]
     if 'elytra' in b.lower(): return r('DROP','Elytra + nativni nether-pathfinder (28+ napak prevoda, D-002)')
     if b.startswith('api/command') or b.startswith('command/'): return r('DROP','klientski chat ukazi; nadomesti /npcb (M3)')
-    if b.startswith('api/schematic') or b.startswith('utils/schematic'): return r('DROP','gradnja po shemah')
-    if b.startswith('selection') or b.startswith('api/selection'): return r('DROP','izbira območij za gradnjo')
+    if b.startswith('utils/schematic/litematica/') or b.startswith('utils/schematic/schematica/'):
+        return r('DROP','integracija s klientskim modom Schematica/Litematica (D-037)')
+    if b == 'utils/schematic/SelectionSchematic.java': return r('DROP','izbira /sel; območja poda porabnik (D-037)')
+    if b.startswith('api/schematic') or b.startswith('utils/schematic'): return r('LATER','M14: sheme in bralniki datotek (D-037)')
+    if b.startswith('selection') or b.startswith('api/selection'): return r('DROP','izbira /sel; območja poda porabnik (D-037)')
     if b.startswith('utils/accessor') or b.startswith('api/utils/accessor'):
         if 'IChunkProviderServer' in b: return r('LATER','ni potreben: id2ChunkMap je v 1.12 javen')
         return r('DROP','mixin accessorji; v 1.12 strežniku javna polja / AT')
@@ -35,17 +38,26 @@ def classify(p):
     if b.startswith('process/'):
         n=os.path.basename(b)
         if n=='CustomGoalProcess.java': return r('ADAPT','edini proces v jedru: "pojdi do cilja"')
-        if n in ('FollowProcess.java','GetToBlockProcess.java'): return r('LATER','M10: sledenje entiteti, pot do bloka')
-        return r('DROP','rudarjenje/gradnja/farmanje/raziskovanje niso naloga NPC nog')
+        later={'MineProcess.java':'M12: rudarjenje (D-035)','GetToBlockProcess.java':'M12: pot do bloka',
+               'BackfillProcess.java':'M12: zasipanje lukenj','FarmProcess.java':'M13: farmanje',
+               'BuilderProcess.java':'M14: gradnja (D-037)','FollowProcess.java':'M15: sledenje kot proces'}
+        if n in later: return r('LATER',later[n])
+        if n=='ExploreProcess.java': return r('DROP','raziskovanje nenaloženega sveta (D-014, D-037)')
+        if n=='InventoryPauserProcess.java': return r('DROP','premik v inventarju je takojšen, ni pavze (D-034)')
+        return r('DROP','proces je izpuščen')
     if b.startswith('api/process/'):
         n=os.path.basename(b)
         if n in ('IBaritoneProcess.java','ICustomGoalProcess.java','PathingCommand.java','PathingCommandType.java'): return r('KEEP','pogodba procesov')
-        if n in ('IFollowProcess.java','IGetToBlockProcess.java'): return r('LATER','M10')
+        later={'IMineProcess.java':'M12','IGetToBlockProcess.java':'M12','IFarmProcess.java':'M13',
+               'IBuilderProcess.java':'M14','IFollowProcess.java':'M15'}
+        if n in later: return r('LATER',later[n])
         return r('DROP','proces je izpuščen')
     if b.startswith('cache/') or b.startswith('api/cache/'):
         n=os.path.basename(b)
         if n in ('IWorldData.java','WorldData.java','IWorldProvider.java','WorldProvider.java'): return r('REWRITE','minimalen per-dimension WorldData brez datotek na disku')
         if n=='IBlockTypeAccess.java': return r('KEEP','')
+        if n in ('WorldScanner.java','FasterWorldScanner.java','IWorldScanner.java'):
+            return r('LATER','M12: vzorec za strežniški ServerBlockScanner (D-035)')
         return r('DROP','klientski predpomnilnik regij/waypointi; NPC ne hodi po nenaloženem svetu (D-014)')
     if b.startswith('pathing/') or b.startswith('api/pathing/'):
         return r('ADAPT' ,'jedro; preimenovanja MCP + kontekst entitete') if CLIENTF else r('KEEP','jedro iskanja poti')
@@ -53,7 +65,8 @@ def classify(p):
         n=os.path.basename(b)
         if n in ('PathingBehavior.java','IPathingBehavior.java','Behavior.java','IBehavior.java'): return r('ADAPT','izvajanje poti; bounded executor (D-017)')
         if 'Look' in n or b.endswith('look') or '/look/' in b: return r('ADAPT','obrat entitete namesto kamere (D-011)')
-        return r('DROP','inventar/waypointi igralca')
+        if n=='InventoryBehavior.java': return r('LATER','M11: inventar workerja nad IItemHandler (D-034)')
+        return r('DROP','waypointi igralca')
     if b.startswith('event/') or b.startswith('api/event/'):
         n=os.path.basename(b)
         if n in ('ChatEvent.java','PacketEvent.java','RenderEvent.java','TabCompleteEvent.java','WorldEvent.java','BlockInteractEvent.java','SprintStateEvent.java','RotationMoveEvent.java'): return r('DROP','klientski dogodek')
@@ -61,15 +74,15 @@ def classify(p):
     n=os.path.basename(b)
     special={
      'IPlayerContext.java':('REWRITE','IEntityContext nad EntityLiving + referenčni okvir (D-006, D-021)'),
-     'IPlayerController.java':('REWRITE','interakcije entitete: samo vrata/ograje/lopute (D-015)'),
+     'IPlayerController.java':('REWRITE','interakcije entitete: vrata (D-015); M11 roke workerja (D-032)'),
      'InputOverrideHandler.java':('REWRITE','Input → moveForward/moveStrafing/setJumping/sprint (D-010)'),
      'PlayerMovementInput.java':('DROP','klientski MovementInput'),
      'IInputOverrideHandler.java':('KEEP',''),
      'BlockStateInterface.java':('ADAPT','strežniški id2ChunkMap, omejena kopija (D-013)'),
      'BlockStateInterfaceAccessWrapper.java':('ADAPT','Forge isSideSolid manjka (napaka prevoda)'),
-     'BlockBreakHelper.java':('LATER','rušenje privzeto izklopljeno (D-015)'),
-     'BlockPlaceHelper.java':('LATER','postavljanje privzeto izklopljeno (D-015)'),
-     'ToolSet.java':('ADAPT','orodje v roki entitete ali stub (cena rušenja)'),
+     'BlockBreakHelper.java':('LATER','M11: roke workerja (D-031, D-032)'),
+     'BlockPlaceHelper.java':('LATER','M11: roke workerja (D-031, D-032)'),
+     'ToolSet.java':('ADAPT','orodje v roki entitete ali stub (cena rušenja); M11 iz inventarja workerja (D-034)'),
      'PathingControlManager.java':('ADAPT',''),
      'PathingCommandContext.java':('KEEP',''),
      'BaritoneProcessHelper.java':('ADAPT',''),
@@ -122,7 +135,7 @@ def main():
     out.write('Ne urejaj ročno — spremeni pravila v skripti in jo poženi znova.\n\n')
     out.write('Akcije: **KEEP** nespremenjeno (razen relokacije paketa); **ADAPT** delne spremembe; ')
     out.write('**REWRITE** napisano znova po vzoru; **CLIENT** samo klientski debug prikaz (M3); ')
-    out.write('**LATER** odloženo (M10); **DROP** se ne prenese. Stolpec *klient* = datoteka uvaža klientske razrede.\n\n')
+    out.write('**LATER** odloženo v naveden milestone (M11–M15); **DROP** se ne prenese. Stolpec *klient* = datoteka uvaža klientske razrede.\n\n')
     out.write('| akcija | datotek | vrstic |\n|---|---:|---:|\n')
     for k in ['KEEP', 'ADAPT', 'REWRITE', 'CLIENT', 'LATER', 'DROP', 'REVIEW']:
         if cnt[k]:

@@ -20,10 +20,13 @@ package si.ladja.npcbaritone.forge;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.math.BlockPos;
+import si.ladja.npcbaritone.api.DoorMode;
 import si.ladja.npcbaritone.api.INpcBaritoneProvider;
 import si.ladja.npcbaritone.api.INpcNavigator;
 import si.ladja.npcbaritone.api.NavListener;
 import si.ladja.npcbaritone.api.NavState;
+import si.ladja.npcbaritone.api.SpeedMode;
+import si.ladja.npcbaritone.core.api.Settings;
 import si.ladja.npcbaritone.core.api.pathing.goals.Goal;
 import si.ladja.npcbaritone.core.api.pathing.goals.GoalBlock;
 
@@ -55,6 +58,8 @@ public final class ApiProvider implements INpcBaritoneProvider {
                 NpcBaritoneMod.LOG.warn("NpcBaritone.attach({}, {}): {}", entity, profile, ex.getMessage());
                 return null;
             }
+        } else {
+            Attach.reinstall(entity); // D-039: porabnik je morda zamenjal šive
         }
         return get(entity);
     }
@@ -80,6 +85,26 @@ public final class ApiProvider implements INpcBaritoneProvider {
 
     static NavState map(NavStatus.State s) {
         return NavState.valueOf(s.name());
+    }
+
+    /** D-039: vrata iz nastavitev instance. */
+    static DoorMode doorMode(Settings s) {
+        return s.npcOpenIronDoors.value ? DoorMode.ALL : s.npcOpenDoors.value ? DoorMode.WOODEN : DoorMode.NONE;
+    }
+
+    /** D-039: {@code {openDoors, openIronDoors}}; null = iz profila. */
+    static Boolean[] doorFlags(DoorMode mode) {
+        if (mode == null) {
+            return new Boolean[]{null, null};
+        }
+        switch (mode) {
+            case NONE:
+                return new Boolean[]{false, false};
+            case ALL:
+                return new Boolean[]{true, true};
+            default:
+                return new Boolean[]{true, false};
+        }
     }
 
     private static final class Handle implements INpcNavigator {
@@ -166,6 +191,35 @@ public final class ApiProvider implements INpcBaritoneProvider {
             if (n != null) {
                 n.removeListener(listener);
             }
+        }
+
+        @Override
+        public boolean reinstall() {
+            return Attach.reinstall(entity);
+        }
+
+        @Override
+        public SpeedMode speedMode() {
+            NpcbConfig.SpeedMode m = Attach.speedMode(entity, NpcBaritoneMod.config());
+            return m == null ? SpeedMode.valueOf(NpcBaritoneMod.config().speedMode.name()) : SpeedMode.valueOf(m.name());
+        }
+
+        @Override
+        public boolean setSpeedMode(SpeedMode mode) {
+            return Attach.setSpeedMode(entity, NpcBaritoneMod.config(),
+                    mode == null ? null : NpcbConfig.SpeedMode.valueOf(mode.name()));
+        }
+
+        @Override
+        public DoorMode doorMode() {
+            Settings s = Attach.settings(entity);
+            return s == null ? DoorMode.WOODEN : ApiProvider.doorMode(s);
+        }
+
+        @Override
+        public boolean setDoorMode(DoorMode mode) {
+            Boolean[] f = doorFlags(mode);
+            return Attach.setDoors(entity, NpcBaritoneMod.config(), f[0], f[1]);
         }
     }
 }
