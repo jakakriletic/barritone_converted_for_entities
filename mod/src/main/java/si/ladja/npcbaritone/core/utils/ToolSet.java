@@ -56,10 +56,18 @@ public class ToolSet {
 
     private final Settings settings;
 
+    /** M11.5: orodja workerja iz inventarja (D-034) ali null = predmet v roki entitete. */
+    private final java.util.List<ItemStack> tools;
+
     public ToolSet(EntityLivingBase player, Settings settings) {
+        this(player, settings, null);
+    }
+
+    public ToolSet(EntityLivingBase player, Settings settings, java.util.List<ItemStack> tools) {
         breakStrengthCache = new HashMap<>();
         this.player = player;
         this.settings = settings;
+        this.tools = tools;
 
         if (settings.considerPotionEffects.value) {
             double amplifier = potionAmplifier();
@@ -112,6 +120,14 @@ public class ToolSet {
      * @return A double containing the destruction ticks with the best tool
      */
     private double getBestDestructionTime(Block b) {
+        if (tools != null) {
+            // M11.5: najboljše orodje iz inventarja; roka je vedno na voljo (kot WorkerInventory.takeTool)
+            double best = calculateSpeedVsBlock(ItemStack.EMPTY, b.getDefaultState());
+            for (ItemStack t : tools) {
+                best = Math.max(best, calculateSpeedVsBlock(t, b.getDefaultState()));
+            }
+            return best * avoidanceMultiplier(b);
+        }
         ItemStack stack = heldItem();
         return calculateSpeedVsBlock(stack, b.getDefaultState()) * avoidanceMultiplier(b);
     }

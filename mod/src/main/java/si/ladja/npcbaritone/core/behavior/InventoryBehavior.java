@@ -20,9 +20,9 @@ package si.ladja.npcbaritone.core.behavior;
 import si.ladja.npcbaritone.core.Baritone;
 
 /**
- * D-015: entiteta nima inventarja. Nadomestek Baritonovega {@code InventoryBehavior}, da
- * premiki, ki bi postavljali bloke, ostanejo nespremenjeni: metnih blokov ni nikoli.
- * Profil z inventarjem je M10.
+ * D-015: navigacijska entiteta nima inventarja — metnih blokov ni nikoli. Nadomestek
+ * Baritonovega {@code InventoryBehavior}, da premiki, ki postavljajo bloke, ostanejo
+ * nespremenjeni. M11.5 (D-034): worker jih ima, če jih ima porabnikov inventar.
  */
 public final class InventoryBehavior extends Behavior {
 
@@ -30,11 +30,20 @@ public final class InventoryBehavior extends Behavior {
         super(baritone);
     }
 
+    /** M11.5: samo worker z metnim blokom v inventarju in {@code allowPlace} (D-031, D-034). */
     public boolean hasGenericThrowaway() {
-        return false;
+        if (!baritone.getSettings().allowPlace.value) {
+            return false;
+        }
+        si.ladja.npcbaritone.core.api.work.IWorkContext w = baritone.workContext();
+        return w != null && w.hasThrowaway();
     }
 
+    /**
+     * Pri igralcu izbere blok v hotbaru; pri workerju ga roke vzamejo iz inventarja šele ob kliku
+     * (D-034), zato je tu samo preverba, ali ga imajo.
+     */
     public boolean selectThrowawayForLocation(boolean select, int x, int y, int z) {
-        return false;
+        return hasGenericThrowaway();
     }
 }

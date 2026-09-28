@@ -30,6 +30,7 @@ import si.ladja.npcbaritone.core.api.pathing.movement.ActionCosts;
 import si.ladja.npcbaritone.core.pathing.precompute.PrecomputedData;
 import si.ladja.npcbaritone.core.utils.BlockStateInterface;
 import si.ladja.npcbaritone.core.utils.ToolSet;
+import si.ladja.npcbaritone.core.api.work.IWorkContext;
 import si.ladja.npcbaritone.core.utils.pathing.BetterWorldBorder;
 import si.ladja.npcbaritone.core.world.ChunkSnapshot;
 
@@ -55,6 +56,13 @@ public class CalculationContext {
     public final boolean canSprint;
     protected final double placeBlockCost; // protected because you should call the function instead
     public final boolean allowBreak;
+    /**
+     * M11.5: posnetek workerja ali null. Z entiteto in brez posnetka (ne-worker) rušenja in
+     * postavljanja ni ne glede na profil (D-030, D-031); headless (brez instance) ostane po profilu.
+     */
+    public final IWorkContext work;
+    /** Iskanje za entiteto brez rok: vse rušenje in postavljanje je COST_INF. */
+    private final boolean noHands;
     public final List<Block> allowBreakAnyway;
     public final boolean allowParkour;
     public final boolean allowParkourPlace;
@@ -119,25 +127,31 @@ public class CalculationContext {
 
     /** Headless za dano velikost entitete (M8.8 golden testi). */
     public static CalculationContext headless(BlockStateInterface bsi, EntitySize size) {
-        return new CalculationContext(null, null, bsi, true, size, false);
+        return new CalculationContext(null, null, bsi, true, size, false, null);
+    }
+
+    /** Headless worker (M11.9 golden testi): rušenje/postavljanje po profilu in {@code work}. */
+    public static CalculationContext headlessWorker(BlockStateInterface bsi, IWorkContext work) {
+        return new CalculationContext(null, null, bsi, true, EntitySize.STANDARD, false, work);
     }
 
     /**
      * Headless s splošno vejo premikov tudi za standardno velikost (test enakosti vej, M8).
      */
     public static CalculationContext headlessSizeAware(BlockStateInterface bsi, EntitySize size) {
-        return new CalculationContext(null, null, bsi, true, size, true);
+        return new CalculationContext(null, null, bsi, true, size, true, null);
     }
 
     /**
      * @param entity lahko null (headless): brez orodja, očarov in učinkov
      */
     public CalculationContext(IBaritone baritone, EntityLivingBase entity, BlockStateInterface bsi, boolean forUseOnAnotherThread) {
-        this(baritone, entity, bsi, forUseOnAnotherThread, EntitySize.of(entity), false);
+        this(baritone, entity, bsi, forUseOnAnotherThread, EntitySize.of(entity), false,
+                baritone instanceof si.ladja.npcbaritone.core.Baritone ? ((si.ladja.npcbaritone.core.Baritone) baritone).workContext() : null);
     }
 
     private CalculationContext(IBaritone baritone, EntityLivingBase entity, BlockStateInterface bsi, boolean forUseOnAnotherThread,
-                               EntitySize size, boolean forceSizeAware) {
+                               EntitySize size, boolean forceSizeAware, IWorkContext work) {
         Settings settings = bsi.settings;
         this.size = size;
         this.requiredSideSpace = size.sideSpace;
@@ -148,14 +162,16 @@ public class CalculationContext {
         this.baritone = baritone;
         this.settings = settings;
         this.bsi = bsi;
-        this.toolSet = new ToolSet(entity, settings);
-        // D-015: brez inventarja ni metnih blokov ne vedra
-        this.hasThrowaway = false;
+        this.work = work;
+        this.noHands = baritone != null && work == null;
+        this.toolSet = new ToolSet(entity, settings, work == null ? null : work.tools());
+        // D-015: brez inventarja ni metnih blokov ne vedra; M11.5: worker iz posnetka inventarja
+        this.hasThrowaway = work != null && settings.allowPlace.value && work.hasThrowaway();
         this.hasWaterBucket = false;
         // Mobi nimajo lakote; igralčeva meja 6 hrane odpade
         this.canSprint = settings.allowSprint.value;
         this.placeBlockCost = settings.blockPlacementPenalty.value;
-        this.allowBreak = settings.allowBreak.value;
+        this.allowBreak = settings.allowBreak.value && !noHands;
         this.allowBreakAnyway = new ArrayList<>(settings.allowBreakAnyway.value);
         this.allowParkour = settings.allowParkour.value;
         this.allowParkourPlace = settings.allowParkourPlace.value;
@@ -211,7 +227,7 @@ public class CalculationContext {
         if (!hasThrowaway) { // only true if allowPlace is true, see constructor
             return COST_INF;
         }
-        if (isPossiblyProtected(x, y, z)) {
+        if (isPossiblyProtected(x, y, z) || (work != null && !work.mayPlace(x, y, z))) {
             return COST_INF;
         }
         if (!worldBorder.canPlaceAt(x, z)) {
@@ -221,11 +237,11 @@ public class CalculationContext {
     }
 
     public double breakCostMultiplierAt(int x, int y, int z, IBlockState current) {
-        if (!allowBreak && !allowBreakAnyway.contains(current.getBlock())) {
+        if (noHands || (!allowBreak && !allowBreakAnyway.contains(current.getBlock()))) {
             return COST_INF;
         }
-        if (isPossiblyProtected(x, y, z)) {
-            return COST_INF;
+        if (isPossiblyProtected(x, y, z) || (work != null && !work.mayBreak(x, y, z, current))) {
+            return COST_INF; // D-033: iskanje obide, česar roke ne smejo porušiti
         }
         return 1;
     }

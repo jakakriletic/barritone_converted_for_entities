@@ -65,6 +65,19 @@ public class Baritone implements IBaritone {
 
     public BlockStateInterface bsi;
 
+    /** M11.5: posnetek workerja za iskanje; null = ne-worker (D-030). Nastavi forge plast. */
+    private volatile java.util.function.Supplier<si.ladja.npcbaritone.core.api.work.IWorkContext> workContext;
+
+    public void setWorkContext(java.util.function.Supplier<si.ladja.npcbaritone.core.api.work.IWorkContext> supplier) {
+        this.workContext = supplier;
+    }
+
+    /** Svež posnetek (glavna nit) ali null za ne-workerja. */
+    public si.ladja.npcbaritone.core.api.work.IWorkContext workContext() {
+        java.util.function.Supplier<si.ladja.npcbaritone.core.api.work.IWorkContext> s = workContext;
+        return s == null ? null : s.get();
+    }
+
     /** Profil nastavitev (D-016); privzeto skupni NPC profil {@link BaritoneAPI#getSettings()}. */
     private volatile Settings settings;
 
