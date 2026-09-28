@@ -26,6 +26,9 @@ import si.ladja.npcbaritone.api.INpcNavigator;
 import si.ladja.npcbaritone.api.NavListener;
 import si.ladja.npcbaritone.api.NavState;
 import si.ladja.npcbaritone.api.SpeedMode;
+import si.ladja.npcbaritone.api.work.INpcWorker;
+import si.ladja.npcbaritone.api.work.WorkerSpec;
+import si.ladja.npcbaritone.forge.work.WorkerRegistry;
 import si.ladja.npcbaritone.core.api.Settings;
 import si.ladja.npcbaritone.core.api.pathing.goals.Goal;
 import si.ladja.npcbaritone.core.api.pathing.goals.GoalBlock;
@@ -75,7 +78,30 @@ public final class ApiProvider implements INpcBaritoneProvider {
     @Override
     public synchronized boolean detach(EntityLiving entity) {
         handles.remove(entity);
+        WorkerRegistry.INSTANCE.release(entity); // worker brez navigacije ne obstaja
         return Attach.detach(entity);
+    }
+
+    /** M11.2 (D-030): {@code worker.enabled=false} → null; sicer pripne s profilom iz {@code spec}. */
+    @Override
+    public synchronized INpcWorker worker(EntityLiving entity, WorkerSpec spec) {
+        if (spec == null || !NpcBaritoneMod.config().workerEnabled) {
+            return null;
+        }
+        if (attach(entity, spec.profile()) == null) {
+            return null;
+        }
+        return WorkerRegistry.INSTANCE.register(entity, spec);
+    }
+
+    @Override
+    public INpcWorker getWorker(EntityLiving entity) {
+        return entity == null ? null : WorkerRegistry.INSTANCE.get(entity);
+    }
+
+    @Override
+    public boolean release(EntityLiving entity) {
+        return entity != null && WorkerRegistry.INSTANCE.release(entity);
     }
 
     @Override

@@ -103,7 +103,7 @@ task apiJar(type: Jar, dependsOn: classes) {
     from(sourceSets.main.allJava) { include apiIncludes }
     from(rootProject.file('../LICENSE')) { into 'META-INF' }
     from(rootProject.file('../NOTICE.md')) { into 'META-INF' }
-    manifest { attributes('NpcBaritone-Api-Version': '2') } // D-039
+    manifest { attributes('NpcBaritone-Api-Version': '3') } // D-039, D-030 (worker)
 }
 build.dependsOn apiJar
 

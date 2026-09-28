@@ -85,6 +85,23 @@ public class ApiJarTest {
             "      boolean own = nav.speedMode() == SpeedMode.OWN;",
             "    }",
             "  }",
+            "  public static void work(EntityLiving npc, net.minecraftforge.items.IItemHandler chest,",
+            "                          com.mojang.authlib.GameProfile owner) {",
+            "    if (!NpcBaritone.available() || NpcBaritone.apiVersion() < 3) return;",
+            "    si.ladja.npcbaritone.api.work.WorkerSpec spec = si.ladja.npcbaritone.api.work.WorkerSpec.builder()",
+            "        .inventory(chest).owner(owner)",
+            "        .area(si.ladja.npcbaritone.api.work.WorkArea.box(new BlockPos(0, 60, 0), new BlockPos(15, 70, 15)))",
+            "        .permission((pos, state) -> pos.getY() > 61)",
+            "        .build();",
+            "    si.ladja.npcbaritone.api.work.INpcWorker w = NpcBaritone.worker(npc, spec);",
+            "    if (w == null) return;",
+            "    w.addListener(new si.ladja.npcbaritone.api.work.IWorkerListener() {",
+            "      @Override public void onInventoryFull(EntityLiving e) { }",
+            "    });",
+            "    w.pause(); w.resume();",
+            "    boolean same = NpcBaritone.getWorker(npc) == w && w.navigator() != null && w.spec() == spec;",
+            "    NpcBaritone.release(npc);",
+            "  }",
             "}");
 
     @Test
@@ -141,12 +158,14 @@ public class ApiJarTest {
                     String t = line.trim();
                     if (t.startsWith("import ") && !(t.startsWith("import net.minecraft.") || t.startsWith("import java.")
                             || t.startsWith("import javax.") || t.startsWith("import si.ladja.npcbaritone.api.")
+                            || t.startsWith("import net.minecraftforge.items.") // D-034: inventar workerja
+                            || t.equals("import com.mojang.authlib.GameProfile;") // D-044: lastnik workerja
                             || t.startsWith("import si.ladja.npcbaritone.core.api.pathing.goals."))) {
                         bad.add(f.getFileName() + ": " + t);
                     }
                 }
             }
         }
-        assertEquals("api/ sme uvažati samo MC, Javo in cilje:\n" + String.join("\n", bad), 0, bad.size());
+        assertEquals("api/ sme uvažati samo MC, Javo, cilje, IItemHandler in GameProfile:\n" + String.join("\n", bad), 0, bad.size());
     }
 }

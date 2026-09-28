@@ -38,6 +38,7 @@ public final class NpcbConfig {
     public static final String CAT_PROFILE = "profile";
     public static final String CAT_MOVEMENT = "movement";
     public static final String CAT_DEBUG = "debug";
+    public static final String CAT_WORKER = "worker";
 
     public enum SpeedMode { PLAYER, OWN }
 
@@ -60,6 +61,11 @@ public final class NpcbConfig {
      * {@code npcbcrowdyield=true} (za A/B zagone brez urejanja configa). Privzeto false.
      */
     public final boolean crowdYield;
+    /**
+     * M11.2 (D-030): {@code worker.enabled} — {@code false} izklopi plast 2 in 3 v celoti
+     * ({@code NpcBaritone.worker()} vrne {@code null}). Privzeto true.
+     */
+    public final boolean workerEnabled;
     /**
      * D-016, M3.1: poimenovani profili — ime → prepisi nastavitev Baritona (ključ z malimi
      * črkami → vrednost). {@value #DEFAULT_PROFILE} je vedno prisoten in brez prepisov.
@@ -97,6 +103,15 @@ public final class NpcbConfig {
     NpcbConfig(int searchThreads, int searchQueueLimit, int snapshotMarginChunks, int shareRadiusChunks,
                SpeedMode speedMode, int maxTurnDegrees, boolean syncPathsToOps,
                Map<String, Map<String, String>> profiles, boolean largeEntities, boolean crowdYield) {
+        this(searchThreads, searchQueueLimit, snapshotMarginChunks, shareRadiusChunks, speedMode, maxTurnDegrees,
+                syncPathsToOps, profiles, largeEntities, crowdYield, true);
+    }
+
+    NpcbConfig(int searchThreads, int searchQueueLimit, int snapshotMarginChunks, int shareRadiusChunks,
+               SpeedMode speedMode, int maxTurnDegrees, boolean syncPathsToOps,
+               Map<String, Map<String, String>> profiles, boolean largeEntities, boolean crowdYield,
+               boolean workerEnabled) {
+        this.workerEnabled = workerEnabled;
         this.largeEntities = largeEntities;
         this.crowdYield = crowdYield;
         this.searchThreads = clamp(searchThreads, 1, 8);
@@ -126,6 +141,7 @@ public final class NpcbConfig {
         cfg.setCategoryComment(CAT_PROFILE, "Profili nastavitev Baritona na instanco (D-016). Ključi pridejo v M1.");
         cfg.setCategoryComment(CAT_MOVEMENT, "Vhodi, hitrost in obrat telesa (D-010, D-011). Uporablja se od M2.");
         cfg.setCategoryComment(CAT_DEBUG, "Diagnostika (M3).");
+        cfg.setCategoryComment(CAT_WORKER, "Worker: rušenje, postavljanje, inventar (M11, D-030).");
         int threads = cfg.getInt("threads", CAT_SEARCH, d.searchThreads, 1, 8, "Število iskalnih niti.");
         int queue = cfg.getInt("queueLimit", CAT_SEARCH, d.searchQueueLimit, 8, 1024, "Največ čakajočih iskanj.");
         int margin = cfg.getInt("snapshotMarginChunks", CAT_SEARCH, d.snapshotMarginChunks, 2, 32, "Rob posnetka chunkov okoli začetka in cilja.");
@@ -137,6 +153,8 @@ public final class NpcbConfig {
         boolean crowd = cfg.getBoolean("crowdYield", CAT_MOVEMENT, d.crowdYield,
                 "M7.10: v gneči (druga entiteta pred nogami) počakaj namesto rinjenja; čakanje ne šteje v časovno omejitev premika. false = kot Baritone.")
                 || Boolean.getBoolean("npcbcrowdyield");
+        boolean worker = cfg.getBoolean("enabled", CAT_WORKER, d.workerEnabled,
+                "M11 (D-030): workerji (API 3). false = NpcBaritone.worker() vrne null; navigacija (API 1-2) ostane.");
         boolean sync = cfg.getBoolean("syncPathsToOps", CAT_DEBUG, d.syncPathsToOps, "Pošlji poti vsem operaterjem z modom na klientu (debug prikaz). Brez tega jih dobi samo, kdor vklopi /npcb debug on.");
         String[] named = cfg.getStringList("named", CAT_PROFILE, DEFAULT_NAMED_PROFILES,
                 "Poimenovani profili: 'ime: nastavitev=vrednost, nastavitev=vrednost'. Imena nastavitev so Baritonova (Settings). Profil 'default' je vedno prisoten.");
@@ -144,7 +162,7 @@ public final class NpcbConfig {
             cfg.save();
         }
         return new NpcbConfig(threads, queue, margin, share, parseSpeedMode(speed), turn, sync, parseProfiles(named), large,
-                crowd);
+                crowd, worker);
     }
 
     /**
@@ -224,7 +242,7 @@ public final class NpcbConfig {
                 + ", snapshotMargin=" + snapshotMarginChunks + ", shareRadius=" + shareRadiusChunks
                 + ", speedMode=" + speedMode.name().toLowerCase(Locale.ROOT)
                 + ", maxTurn=" + maxTurnDegrees + ", syncPathsToOps=" + syncPathsToOps
-                + ", largeEntities=" + largeEntities + ", crowdYield=" + crowdYield
+                + ", largeEntities=" + largeEntities + ", crowdYield=" + crowdYield + ", workerEnabled=" + workerEnabled
                 + ", profiles=" + profiles.keySet() + "}";
     }
 }

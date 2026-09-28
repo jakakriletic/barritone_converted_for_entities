@@ -19,6 +19,9 @@ package si.ladja.npcbaritone.api;
 
 import net.minecraft.entity.EntityLiving;
 
+import si.ladja.npcbaritone.api.work.INpcWorker;
+import si.ladja.npcbaritone.api.work.WorkerSpec;
+
 import javax.annotation.Nullable;
 
 /** Izvedba API (mod {@code npcbaritone}); porabnik jo dobi prek {@link NpcBaritone}. */
@@ -34,4 +37,19 @@ public interface INpcBaritoneProvider {
 
     /** D-019: ali Baritone to entiteto sploh vodi (širina ≤ 1, višina ≤ 2 do M8). */
     boolean supports(EntityLiving entity);
+
+    /** API 3 (D-030). */
+    @Nullable
+    default INpcWorker worker(EntityLiving entity, WorkerSpec spec) {
+        return null;
+    }
+
+    @Nullable
+    default INpcWorker getWorker(EntityLiving entity) {
+        return null;
+    }
+
+    default boolean release(EntityLiving entity) {
+        return false;
+    }
 }

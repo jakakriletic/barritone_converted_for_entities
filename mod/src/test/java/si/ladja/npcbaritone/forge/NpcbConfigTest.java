@@ -142,4 +142,15 @@ public class NpcbConfigTest {
         assertEquals(NpcbConfig.SpeedMode.OWN, c.speedMode);
         assertEquals(5, c.maxTurnDegrees);
     }
+
+    /** M11.2 (D-030): {@code worker.enabled} izklopi plast 2 in 3 v celoti; privzeto vklopljeno. */
+    @Test
+    public void workerEnabledByDefaultAndConfigTurnsItOff() throws Exception {
+        assertTrue(NpcbConfig.defaults().workerEnabled);
+        File f = tmp.newFile("npcb-worker.cfg");
+        Files.write(f.toPath(), Arrays.asList("worker {", "    B:enabled=false", "}"), StandardCharsets.UTF_8);
+        NpcbConfig off = NpcbConfig.load(new Configuration(f));
+        assertFalse(off.workerEnabled);
+        assertTrue(off.toString().contains("workerEnabled=false"));
+    }
 }

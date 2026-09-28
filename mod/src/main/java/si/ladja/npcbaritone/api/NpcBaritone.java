@@ -19,6 +19,9 @@ package si.ladja.npcbaritone.api;
 
 import net.minecraft.entity.EntityLiving;
 
+import si.ladja.npcbaritone.api.work.INpcWorker;
+import si.ladja.npcbaritone.api.work.WorkerSpec;
+
 import javax.annotation.Nullable;
 
 /**
@@ -39,6 +42,11 @@ import javax.annotation.Nullable;
  * // po tem, ko porabnik zamenja navigator/move helper (npr. CNPC updateTasks):
  * INpcNavigator nav = NpcBaritone.get(npc);
  * if (nav != null && NpcBaritone.apiVersion() >= 2) nav.reinstall();
+ *
+ * // API 3: worker (rušenje/postavljanje samo v območju, D-030/D-033; zmožnosti od M11.3 dalje)
+ * if (NpcBaritone.apiVersion() >= 3) {
+ *     INpcWorker w = NpcBaritone.worker(npc, WorkerSpec.builder().inventory(chest).area(area).build());
+ * }
  * }</pre>
  *
  * <p>Porabnik prevaja proti {@code npcbaritone-<ver>-api.jar} ({@code compileOnly}); ob zagonu
@@ -49,11 +57,12 @@ import javax.annotation.Nullable;
 public final class NpcBaritone {
 
     /**
-     * 1 — navigacija (M6.7); 2 — {@code reinstall}, hitrost in vrata na instanco (D-039).
-     * Porabnik, ki kliče metode API 2, najprej preveri {@code apiVersion() >= 2}: starejši mod bi
-     * vrgel {@code AbstractMethodError}.
+     * 1 — navigacija (M6.7); 2 — {@code reinstall}, hitrost in vrata na instanco (D-039);
+     * 3 — worker ({@code api.work}, D-030). Porabnik, ki kliče metode API n, najprej preveri
+     * {@code apiVersion() >= n}: starejši mod bi vrgel {@code AbstractMethodError} ali
+     * {@code NoClassDefFoundError}.
      */
-    public static final int API_VERSION = 2;
+    public static final int API_VERSION = 3;
 
     private static volatile INpcBaritoneProvider provider;
 
@@ -99,5 +108,30 @@ public final class NpcBaritone {
     public static boolean supports(EntityLiving entity) {
         INpcBaritoneProvider p = provider;
         return p != null && p.supports(entity);
+    }
+
+    /**
+     * API 3 (D-030): registrira entiteto kot workerja (pripne navigacijo s profilom iz
+     * {@code spec}, če še ni pripeta). Ponovni klic zamenja {@code spec} in vrne isti ročaj.
+     *
+     * @return null, če mod ni naložen, je {@code worker.enabled=false}, entiteta ni podprta ali
+     * profil ne obstaja
+     */
+    @Nullable
+    public static INpcWorker worker(EntityLiving entity, WorkerSpec spec) {
+        INpcBaritoneProvider p = provider;
+        return p == null ? null : p.worker(entity, spec);
+    }
+
+    @Nullable
+    public static INpcWorker getWorker(EntityLiving entity) {
+        INpcBaritoneProvider p = provider;
+        return p == null ? null : p.getWorker(entity);
+    }
+
+    /** API 3: odjavi workerja; navigacija ostane pripeta (za odklop {@link #detach}). */
+    public static boolean release(EntityLiving entity) {
+        INpcBaritoneProvider p = provider;
+        return p != null && p.release(entity);
     }
 }
