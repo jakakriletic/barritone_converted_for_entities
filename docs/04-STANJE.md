@@ -4,6 +4,25 @@ Najnovejši zapis je na vrhu. Vsaka seja doda zapis ob začetku in koncu.
 
 ---
 
+## 2026-09-28 — M7.6: način OWN usklajen z vanilla vhodom gibanja
+
+V primerljivem scenariju CNPC M2.7 je `gib(max)` na odprtem ostal previsok tudi po D-042:
+Baritone 0,2632 proti vanilli 0,1482 bloka/tick. `BaritoneMoveHelper` je po
+`EntityLiving.setAIMoveSpeed` prepisal `moveForward` na 1, čeprav vanilla v tej metodi
+nastavi `moveForward` na uporabljeno hitrost. V načinu `OWN` je zdaj vhod enak vanilli;
+`PLAYER` ostane pri Baritonovem vhodu ±1. Test za pogodbo hitrosti je najprej padel pri
+prevodu, nato celoten `build` z JUnit uspel.
+
+V ponovnem zagonu CNPC M7.6 je odprta proga A dala 0,1566 bloka/tick; prvi zagon
+grla B 4/8 prihodov proti vanilli 6/8. Naslednji seriji po tri ponovitve sta dali
+grlo A Baritone 4–6/8 proti vanilla 1/8, grlo B 6–8/8 proti 6/8. M7 A3/A4
+ostajata odprta: dolžina Baritonove poti ni izmerjena, stroška na glavni niti se
+po razponih prekrivata. CNPC meritvi:
+`docs/meritve/2026-09-28-M7.6-hitrost-in-ab.md` in
+`docs/meritve/2026-09-28-M7.7-ab-tri-ponovitve.md`.
+
+---
+
 ## 2026-09-27 (6) — prvi A/B zagon M7.6 ovrednoten; hitrost `own` popravljena (D-042)
 
 **Zagon uporabnika (CNPC 17:52–17:54, `nav-run -Ozadje baritone`):** N1–N15 in B1–B5 zelena,

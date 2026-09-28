@@ -95,8 +95,9 @@ public class BaritoneMoveHelper extends EntityMoveHelper {
         float strafe = axis(in.isInputForcedDown(Input.MOVE_LEFT), in.isInputForcedDown(Input.MOVE_RIGHT), sneak);
         entity.setSneaking(sneak);
         entity.setSprinting(sprint); // najprej: spremeni atribut
-        entity.setAIMoveSpeed(moveSpeed(speedMode, speed().getAttributeValue(), nav == null ? 0 : nav.requestedSpeed())); // pokliče tudi setMoveForward
-        entity.setMoveForward(forward);
+        float appliedSpeed = moveSpeed(speedMode, speed().getAttributeValue(), nav == null ? 0 : nav.requestedSpeed());
+        entity.setAIMoveSpeed(appliedSpeed); // EntityLiving nastavi tudi moveForward = appliedSpeed
+        entity.setMoveForward(forwardInput(speedMode, forward, appliedSpeed));
         entity.setMoveStrafing(strafe);
         if (speedMode == NpcbConfig.SpeedMode.PLAYER) {
             entity.jumpMovementFactor = sprint ? SPEED_IN_AIR * 1.3F : SPEED_IN_AIR;
@@ -114,6 +115,12 @@ public class BaritoneMoveHelper extends EntityMoveHelper {
             return (float) (attribute * requestedSpeed);
         }
         return (float) attribute;
+    }
+
+    /** Vanilla {@code EntityMoveHelper.MOVE_TO} pusti {@code moveForward = setAIMoveSpeed(speed)}.
+     * V {@code own} ohranimo ta vhod; {@code player} uporablja Baritonov vhod ±1. */
+    static float forwardInput(NpcbConfig.SpeedMode mode, float axis, float appliedSpeed) {
+        return mode == NpcbConfig.SpeedMode.OWN ? axis * appliedSpeed : axis;
     }
 
     /**

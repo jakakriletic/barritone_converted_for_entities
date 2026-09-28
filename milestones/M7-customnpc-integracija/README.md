@@ -44,7 +44,7 @@ Brez te odločitve M7 ne začne (D-005).
 **Vrata V4:** A3 in A4 ⇒ Baritone ostane izbiren v CNPC in se dokumentira za uporabnike.
 Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 
-## Stanje (2026-09-27, veja `m7-cnpc` iz `main`)
+## Stanje (2026-09-28, veja `m7-next` iz `m7-cnpc`)
 
 | # | Stanje |
 |---|---|
@@ -53,7 +53,8 @@ Sicer ostane izklopljen in knjižnica služi drugim porabnikom (ladje, M9).
 | API 2 | **Windows build + 125 JUnit + T2 10/10** (2026-09-27). Dodan profil `avoid_water` za CNPC U5. |
 | M7.2–M7.3 | CNPC most + globalni config `RwNavBackend=0` + NBT ključ na NPC; dedicated smoke brez knjižnice in z njo (izklopljeno/vklopljeno), NBT preživi restart. |
 | M7.4 | `updateTasks()` po gradnji taskov znova namesti navigator; kopenski NPC se pripne, leteči odklopi in po vrnitvi znova pripne (dedicated preverba). Formacije in jahači so izključeni po politiki, v svetu še ne preverjeni. |
-| M7.5 | hitrost `OWN`, vrata `NONE`/`WOODEN`, `avoidsWater` → profil `avoid_water` (dedicated preverba profila). **2026-09-27 (5):** `avoid_water` popravljen (D-040, prej brez učinka), doseg `NpcNavRange` = `FOLLOW_RANGE` za vanilla zahteve (D-041) — build, T2 10/10, selftest 6/6 (2026-09-27); v CNPC še ne preizkušeno. |
+| M7.5 | hitrost `OWN`, vrata `NONE`/`WOODEN`, `avoidsWater` → profil `avoid_water` (dedicated preverba profila). **2026-09-27 (5):** `avoid_water` popravljen (D-040, prej brez učinka), doseg `NpcNavRange` = `FOLLOW_RANGE` za vanilla zahteve (D-041) — build, T2 10/10, selftest 6/6 (2026-09-27); D-042 in popravek vhoda `OWN` (28. 9.) po primerljivi meritvi. |
 | M7.2–M7.4 commit | CNPC `3e458aa` (veja `codex/m7-cnpc-integration`; prej necommitano) |
-| M7.6 | **v kodi** (CNPC `325a745`): `nav-run.ps1 -Ozadje baritone`, merila B1–B5, `bar.*` iz `/npcb perf`; [scenarij](../../../customNPC_rework/docs/scenariji/M7.6-ab-baritone.md). Čaka na zagon |
-| M7.7–M7.8 | serije A/B (3+3) in jahanje/formacije v igri odprti; veličina 2 za Baritona še ni merjena |
+| M7.6 | scenarij in prvi posamezni A/B zagoni zeleni (CNPC `325a745`); meritev 28. 9. v `04-STANJE.md` |
+| M7.7 | 3 + 3 ponovitve zeleni; prihod na grlu A boljši, toda dolžina Baritonove poti in primerljiv strošek iskanj še manjkajo; V4 odprt |
+| M7.8 | odprto: preverba jahanja v svetu |
